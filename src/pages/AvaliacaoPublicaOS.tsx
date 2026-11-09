@@ -15,24 +15,30 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
   const [veiculo, setVeiculo] = useState('');
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [erroEnvio, setErroEnvio] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEnviando(true);
+    setErroEnvio(null);
 
-    await api.salvarAvaliacaoOS({
-      empresa_id: empresaId || 'empresa-atual',
-      os_id: osId,
-      cliente_nome: nomeCliente.trim() || 'Cliente Satisfeito',
-      veiculo_modelo: veiculo.trim() || 'Veículo do Cliente',
-      veiculo_placa: 'AUT-0000',
-      nota,
-      comentario: comentario.trim() || null,
-      data: new Date().toISOString(),
-    });
-
-    setEnviando(false);
-    setEnviado(true);
+    try {
+      await api.salvarAvaliacaoOS({
+        empresa_id: empresaId || 'empresa-atual',
+        os_id: osId,
+        cliente_nome: nomeCliente.trim() || 'Cliente Satisfeito',
+        veiculo_modelo: veiculo.trim() || 'Veículo do Cliente',
+        veiculo_placa: 'AUT-0000',
+        nota,
+        comentario: comentario.trim() || null,
+        data: new Date().toISOString(),
+      });
+      setEnviado(true);
+    } catch {
+      setErroEnvio('Não foi possível enviar sua avaliação agora. Tente novamente em instantes.');
+    } finally {
+      setEnviando(false);
+    }
   };
 
   if (enviado) {
@@ -153,6 +159,11 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
             <Send className="w-4 h-4 stroke-[2.5]" />
             <span>{enviando ? 'Enviando…' : 'Enviar Avaliação'}</span>
           </button>
+          {erroEnvio && (
+            <p role="alert" className="text-center text-xs sm:text-sm text-red-400 font-bold">
+              {erroEnvio}
+            </p>
+          )}
         </form>
       </div>
     </div>

@@ -88,9 +88,14 @@ export function Equipe({ empresaId }: EquipeProps) {
   const [escalas, setEscalas] = useState<EscalaFolga[]>([]);
   const [pontos, setPontos] = useState<RegistroPonto[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoOS[]>([]);
-  const [parametrosFolha, setParametrosFolha] = useState<ParametrosFolha>(() =>
-    api.obterParametrosFolha(empresaId)
-  );
+  const [parametrosFolha, setParametrosFolha] = useState<ParametrosFolha>({
+    dia_pagamento: 5,
+    dia_adiantamento: 20,
+    comissao_global_servico_pct: 15,
+    comissao_global_peca_pct: 5,
+    paga_hora_extra_padrao: true,
+    valor_hora_extra_padrao: 25,
+  });
   const [coordsOficina, setCoordsOficina] = useState<{
     lat: number;
     lon: number;
@@ -175,18 +180,19 @@ export function Equipe({ empresaId }: EquipeProps) {
   const carregarTudo = useCallback(async () => {
     try {
       setCarregando(true);
-      const [users, cfgOficina, escalasData, pontosData, avsData] = await Promise.all([
+      const [users, cfgOficina, escalasData, pontosData, avsData, paramsFolha] = await Promise.all([
         api.listarUsuarios(empresaId),
         api.obterConfiguracoesOficina(empresaId),
         api.listarEscalasFolgas(empresaId),
         api.listarPontos(empresaId),
         api.listarAvaliacoesOS(empresaId),
+        api.obterParametrosFolha(empresaId),
       ]);
       setUsuarios(users);
       setEscalas(escalasData);
       setPontos(pontosData);
       setAvaliacoes(avsData);
-      setParametrosFolha(api.obterParametrosFolha(empresaId));
+      setParametrosFolha(paramsFolha);
 
       if (cfgOficina.latitude_gps && cfgOficina.longitude_gps) {
         setCoordsOficina({

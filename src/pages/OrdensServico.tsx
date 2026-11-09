@@ -711,8 +711,12 @@ export function OrdensServico({
           : prev
       );
       setStatusAutoSave('saved');
-    } catch {
+    } catch (e) {
+      // Sem caminho alternativo: se não salvou no servidor, a pessoa precisa saber.
       setStatusAutoSave('idle');
+      setErroOperacao(
+        (e as Error).message || 'Não foi possível salvar as alterações da OS. Tente novamente.'
+      );
     }
   };
 
