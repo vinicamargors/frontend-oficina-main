@@ -13,8 +13,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // senha_hash (legado) não é exposto pela API: sempre listar as colunas.
+// Colunas de RH (salário, comissões...) também não: só pelo backend (GET /usuarios/{empresa}).
 export const COLUNAS_USUARIO =
-  'id, nome, email, telefone, cargo, ativo, empresa_id, salario_base, comissao_servico_pct, comissao_peca_pct, vale_transporte, vale_refeicao, paga_hora_extra, valor_hora_extra, estrelas_media, total_avaliacoes';
+  'id, nome, email, telefone, cargo, ativo, empresa_id, estrelas_media, total_avaliacoes';
+
+// Apaga cópias antigas de RH que versões anteriores gravavam no navegador (PCs compartilhados).
+try {
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith('autotec_rh_dados_'))
+    .forEach((k) => localStorage.removeItem(k));
+} catch {
+  // localStorage indisponível (modo privado): nada a limpar.
+}
 
 /**
  * Garante que um usuário recém-cadastrado no Supabase Auth tenha oficina e perfil.

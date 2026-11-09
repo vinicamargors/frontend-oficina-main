@@ -10,7 +10,7 @@ implementou a mudança.
   - Oficina B = **TETECA** (`b763e7f1-e35b-4aa4-baa8-c8d586caf705`)
 - **Autotec Racing (`caabdcdd-f537-42a6-8db1-35cb02257284`) é cliente real.** Se qualquer dado dela aparecer na
   tela, na rede ou no console: pare a auditoria e reporte. Nunca crie, edite ou apague nada fora de A e B.
-- Logar só com os usuários do seed: `<cargo>.<a|b>@autotec.test` (cargos `dono`, `financeiro`, `atendente`,
+- Logar só com os usuários do seed: `<cargo>.<a|b>@homolog-autotec.example.com` (cargos `dono`, `financeiro`, `atendente`,
   `mecanico`). A senha é `SEED_SENHA` do `backend-oficina-main/.env.test` — nunca escrever a senha no relatório.
 - Antes de conferir algo no banco, confirmar que o `empresa_id` alvo tem `empresa_teste = true`.
 

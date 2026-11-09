@@ -1,4 +1,4 @@
-import { supabase, COLUNAS_USUARIO } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import {
   Cliente,
   ClienteCreateInput,
@@ -1309,128 +1309,14 @@ export const api = {
   },
 
   // Equipe, RH e Usuários
-  listarUsuarios: async (empresaId: string): Promise<Usuario[]> => {
-    let baseList: Usuario[] = [];
+  // RH (salário, comissões, vales) só sai pelo backend, que exige DONO/master. Nada de RH no navegador.
+  listarUsuarios: (empresaId: string) => request<Usuario[]>(`/usuarios/${empresaId}`),
 
-    // 1. Tenta carregar direto do Supabase para garantir todas as colunas de RH (salário, comissões, etc.)
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select(COLUNAS_USUARIO)
-        .eq('empresa_id', empresaId)
-        .order('nome');
-      if (!error && data && data.length > 0) {
-        baseList = data as Usuario[];
-      }
-    } catch {}
+  criarUsuario: (dados: UsuarioCreateInput) =>
+    request<Usuario>(`/usuarios/${dados.empresa_id}`, { method: 'POST', body: JSON.stringify(dados) }),
 
-    // 2. Se Supabase não retornou, tenta a rota FastAPI
-    if (baseList.length === 0) {
-      try {
-        const res = await request<Usuario[]>(`/usuarios/${empresaId}`);
-        if (res && res.length > 0) baseList = res;
-      } catch {}
-    }
-
-    // 3. Mescla com cache local de RH
-    const rawRH = localStorage.getItem(`autotec_rh_dados_${empresaId}`);
-    const rhDados: Record<string, Partial<Usuario>> = rawRH ? JSON.parse(rawRH) : {};
-
-    return baseList.map((u) => {
-      const rh = rhDados[u.id] || {};
-      const salRaw = u.salario_base !== undefined && u.salario_base !== null
-        ? Number(u.salario_base)
-        : (rh.salario_base !== undefined && rh.salario_base !== null ? Number(rh.salario_base) : null);
-      const salVal = salRaw !== null && !isNaN(salRaw) && salRaw > 0 ? salRaw : null;
-
-      return {
-        ...u,
-        salario_base: salVal,
-        comissao_servico_pct: u.comissao_servico_pct !== undefined && u.comissao_servico_pct !== null ? Number(u.comissao_servico_pct) : (rh.comissao_servico_pct ?? 0),
-        comissao_peca_pct: u.comissao_peca_pct !== undefined && u.comissao_peca_pct !== null ? Number(u.comissao_peca_pct) : (rh.comissao_peca_pct ?? 0),
-        vale_transporte: u.vale_transporte !== undefined && u.vale_transporte !== null ? Number(u.vale_transporte) : (rh.vale_transporte ?? 0),
-        vale_refeicao: u.vale_refeicao !== undefined && u.vale_refeicao !== null ? Number(u.vale_refeicao) : (rh.vale_refeicao ?? 0),
-        paga_hora_extra: u.paga_hora_extra !== undefined && u.paga_hora_extra !== null ? Boolean(u.paga_hora_extra) : (rh.paga_hora_extra ?? false),
-        valor_hora_extra: u.valor_hora_extra !== undefined && u.valor_hora_extra !== null ? Number(u.valor_hora_extra) : (rh.valor_hora_extra ?? 0),
-        estrelas_media: u.estrelas_media !== undefined && u.estrelas_media !== null ? Number(u.estrelas_media) : (rh.estrelas_media ?? 5.0),
-        total_avaliacoes: u.total_avaliacoes !== undefined && u.total_avaliacoes !== null ? Number(u.total_avaliacoes) : (rh.total_avaliacoes ?? 0),
-      };
-    });
-  },
-
-  criarUsuario: async (dados: UsuarioCreateInput): Promise<Usuario> => {
-    try {
-      const res = await request<Usuario>(`/usuarios/${dados.empresa_id}`, {
-        method: 'POST',
-        body: JSON.stringify(dados),
-      });
-      // Salva dados de RH no banco se as colunas existirem
-      try {
-        await supabase
-          .from('usuarios')
-          .update({
-            salario_base: dados.salario_base || 0,
-            comissao_servico_pct: dados.comissao_servico_pct || 0,
-            comissao_peca_pct: dados.comissao_peca_pct || 0,
-            vale_transporte: dados.vale_transporte || 0,
-            vale_refeicao: dados.vale_refeicao || 0,
-            paga_hora_extra: dados.paga_hora_extra || false,
-            valor_hora_extra: dados.valor_hora_extra || 0,
-          })
-          .eq('id', res.id);
-      } catch {}
-
-      // Salva dados de RH no cache local
-      const chave = `autotec_rh_dados_${dados.empresa_id}`;
-      const rhDados: Record<string, any> = JSON.parse(
-        localStorage.getItem(chave) || '{}'
-      );
-      rhDados[res.id] = {
-        salario_base: dados.salario_base,
-        comissao_servico_pct: dados.comissao_servico_pct,
-        comissao_peca_pct: dados.comissao_peca_pct,
-        vale_transporte: dados.vale_transporte,
-        vale_refeicao: dados.vale_refeicao,
-        paga_hora_extra: dados.paga_hora_extra,
-        valor_hora_extra: dados.valor_hora_extra,
-      };
-      localStorage.setItem(chave, JSON.stringify(rhDados));
-      return { ...res, ...rhDados[res.id] };
-    } catch (e) {
-      const err = e as Error;
-      throw new Error(err.message || 'Falha ao cadastrar colaborador no servidor.');
-    }
-  },
-
-  atualizarUsuario: async (
-    empresaId: string,
-    usuarioId: string,
-    dados: UsuarioUpdateInput
-  ): Promise<Usuario> => {
-    // 1. Chama a API do FastAPI (onde 'exigir_cargos("DONO", "master")' valida o perfil de segurança)
-    const respApi = await request<Usuario>(`/usuarios/${empresaId}/${usuarioId}`, {
-      method: 'PUT',
-      body: JSON.stringify(dados),
-    });
-
-    // 2. Atualiza dados de RH em cache local por segurança
-    const chave = `autotec_rh_dados_${empresaId}`;
-    const rhDados: Record<string, any> = JSON.parse(
-      localStorage.getItem(chave) || '{}'
-    );
-    rhDados[usuarioId] = {
-      ...(rhDados[usuarioId] || {}),
-      ...dados,
-    };
-    localStorage.setItem(chave, JSON.stringify(rhDados));
-
-    return {
-      ...respApi,
-      id: usuarioId,
-      empresa_id: empresaId,
-      ...rhDados[usuarioId],
-    } as Usuario;
-  },
+  atualizarUsuario: (empresaId: string, usuarioId: string, dados: UsuarioUpdateInput) =>
+    request<Usuario>(`/usuarios/${empresaId}/${usuarioId}`, { method: 'PUT', body: JSON.stringify(dados) }),
 
   desativarUsuario: async (empresaId: string, usuarioId: string): Promise<void> => {
     await request<{ status: string; detail: string }>(`/usuarios/${empresaId}/${usuarioId}`, {
