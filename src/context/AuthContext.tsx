@@ -8,7 +8,7 @@ import {
 } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, garantirPerfilOficina } from '../lib/supabase';
-import { api } from '../api/client';
+import { api, ApiError, migrarConfigLocal } from '../api/client';
 import { Usuario } from '../types';
 
 export interface RegisterInput {
@@ -59,16 +59,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const syncUserProfile = useCallback(async (authUser: User) => {
     const perfilLocal = await garantirPerfilOficina(authUser);
+    let perfil: Usuario;
     try {
-      const perfilBackend = await api.getMe();
-      setUser(perfilBackend);
-    } catch {
-      // Caso o backend no Render esteja em cold-start (acordando), usa o perfil já validado
-      if (perfilLocal && perfilLocal.ativo) {
-        setUser(perfilLocal);
-      } else {
+      perfil = await api.getMe();
+    } catch (err) {
+      // O perfil lido direto só vale se o backend estiver fora do ar (acordando).
+      // Se o backend respondeu recusando (401/403/404), o acesso é negado.
+      const recusado = err instanceof ApiError && err.status >= 400 && err.status < 500;
+      if (recusado) throw err;
+      if (!perfilLocal || !perfilLocal.ativo) {
         throw new Error('Usuário inativo ou sem perfil vinculado.');
       }
+      perfil = perfilLocal;
+    }
+    setUser(perfil);
+
+    // Dono: leva para o servidor o que versões antigas guardavam só neste navegador (uma vez).
+    if (perfil.cargo === 'DONO' && perfil.empresa_id) {
+      migrarConfigLocal(perfil.empresa_id).catch(() => {});
     }
   }, []);
 

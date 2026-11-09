@@ -71,7 +71,7 @@ export function Oficina({ empresaId }: OficinaProps) {
       setCarregando(true);
       const [cfg, paramsFolha] = await Promise.all([
         api.obterConfiguracoesOficina(empresaId),
-        Promise.resolve(api.obterParametrosFolha(empresaId)),
+        api.obterParametrosFolha(empresaId),
       ]);
 
       setNomeFantasia(cfg.nome_fantasia || '');
@@ -186,7 +186,7 @@ export function Oficina({ empresaId }: OficinaProps) {
       });
 
       // Salva parâmetros de folha e comissões
-      api.salvarParametrosFolha(empresaId, {
+      await api.salvarParametrosFolha(empresaId, {
         dia_pagamento: diaPagamento,
         dia_adiantamento: diaAdiantamento,
         comissao_global_servico_pct: comissaoServico,
