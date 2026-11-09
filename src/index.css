@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@property --arc-start {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --arc-end {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --progress-dash-animation {
+  syntax: "*";
+  inherits: false;
+  initial-value: progress-dash 3s ease-in-out infinite;
+}
+
+:root {
+  color-scheme: dark;
+  accent-color: #F97316;
+  scrollbar-color: #64748B #0B0F17;
+  scrollbar-width: thin;
+  -webkit-tap-highlight-color: rgba(249, 115, 22, 0.2);
+}
+
+@media (pointer: fine) {
+  html {
+    overscroll-behavior: none;
+  }
+}
+
+body {
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  background-color: #0B0F17;
+  color: #F8FAFC;
+  margin: 0;
+  min-height: 100dvh;
+}
+
+/* Windows dark-mode <select> fix & mobile touch ergonomics */
+select,
+option {
+  background-color: #111827;
+  color: #F8FAFC;
+}
+
+button,
+a,
+input,
+select,
+textarea,
+label {
+  touch-action: manipulation;
+}
+
+/* Mobile inputs >= 16px to prevent iOS auto-zoom */
+input,
+select,
+textarea {
+  font-size: 1rem;
+}
+
+/* User-interaction validity styling (browser-ui-theming) */
+input:user-invalid,
+select:user-invalid,
+textarea:user-invalid {
+  border-color: #EF4444;
+}
+
+input:user-valid,
+select:user-valid,
+textarea:user-valid {
+  border-color: #334155;
+}
+
+/* Clear, unobscured :focus-visible rings */
+:focus-visible {
+  outline: 3px solid #F97316;
+  outline-offset: 2px;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Native <progress> indeterminate spinner (modern-web-guidance: spinner) */
+progress.loading-spinner:indeterminate::-webkit-progress-bar,
+progress.loading-spinner:indeterminate::-webkit-progress-value {
+  display: none;
+  background: none;
+}
+progress.loading-spinner:indeterminate::-moz-progress-bar {
+  display: none;
+  background: none;
+}
+
+progress.loading-spinner:indeterminate {
+  --_from: calc(90deg + var(--arc-start, 0deg));
+  --_to: calc(90deg + var(--arc-end, 158deg));
+  --size: 22px;
+  --thickness: 3px;
+  --spinner-color: currentColor;
+  --track-color: rgba(255, 255, 255, 0.22);
+  --spinner-duration: 1.2s;
+  --_used-spinner-duration: var(--spinner-duration);
+
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  appearance: none;
+  background: conic-gradient(
+      from var(--_from),
+      var(--spinner-color) calc(var(--_to) - var(--_from)),
+      transparent 0
+    )
+    var(--track-color);
+
+  animation:
+    progress-spin var(--_used-spinner-duration) linear infinite
+    var(--progress-dash-animation, );
+}
+
+@supports (background-clip: border-area) {
+  progress.loading-spinner:indeterminate {
+    background-clip: border-area;
+    border: var(--thickness) solid transparent;
+    background-origin: border-box;
+  }
+}
+
+@supports not (background-clip: border-area) {
+  progress.loading-spinner:indeterminate {
+    --clip-boundary: calc(100% - var(--thickness));
+    mask-image: radial-gradient(
+      farthest-side,
+      transparent var(--clip-boundary),
+      black var(--clip-boundary)
+    );
+    border: 0;
+  }
+}
+
+@keyframes progress-spin {
+  to {
+    rotate: 1turn;
+  }
+}
+
+@keyframes progress-dash {
+  from {
+    --arc-start: 0deg;
+    --arc-end: 3deg;
+  }
+  50% {
+    --arc-start: 100deg;
+    --arc-end: 358deg;
+  }
+  to {
+    --arc-start: 360deg;
+    --arc-end: 363deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  progress.loading-spinner:indeterminate {
+    --_used-spinner-duration: 6s;
+  }
+}
+
