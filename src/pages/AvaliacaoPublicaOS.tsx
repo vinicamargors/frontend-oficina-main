@@ -1,10 +1,36 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { api } from '../api/client';
-import { Star, CheckCircle2, Wrench, Send, Heart } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Star } from 'lucide-react';
+import { Button, Field, Logo, Panel } from '../components/ui';
 
 interface AvaliacaoPublicaOSProps {
   osId: string;
   empresaId?: string;
+}
+
+const NOTAS = [1, 2, 3, 4, 5];
+
+const TEXTO_DA_NOTA: Record<number, string> = {
+  5: 'Excelente! Superou expectativas',
+  4: 'Muito bom! Satisfeito',
+  3: 'Regular',
+  2: 'Abaixo do esperado',
+  1: 'Insatisfeito',
+};
+
+const CLASSE_CAMPO_TEXTO =
+  'w-full resize-none rounded-lg border border-line-strong bg-sunken p-3 text-sm text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
+
+// Página pública (sem login) aberta pelo link que o cliente recebe no WhatsApp: marca, um bloco só, nada da oficina além disso.
+function Casca({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="flex min-h-dvh flex-col items-center bg-canvas px-4 py-8 text-ink sm:justify-center">
+      <Logo tamanho={32} className="mb-6" />
+      <Panel espaco="lg" className="w-full max-w-md">
+        {children}
+      </Panel>
+    </main>
+  );
 }
 
 export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps) {
@@ -16,6 +42,12 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
+  const estrelas = useRef<(HTMLButtonElement | null)[]>([]);
+  const tituloObrigado = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (enviado) tituloObrigado.current?.focus();
+  }, [enviado]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,132 +73,120 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
     }
   };
 
+  // Grupo de rádio: setas movem e marcam, Home/End vão às pontas; só a nota marcada entra na ordem de Tab
+  const aoTeclar = (e: KeyboardEvent<HTMLButtonElement>, estrela: number) => {
+    let alvo = 0;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') alvo = estrela === 5 ? 1 : estrela + 1;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') alvo = estrela === 1 ? 5 : estrela - 1;
+    else if (e.key === 'Home') alvo = 1;
+    else if (e.key === 'End') alvo = 5;
+    if (!alvo) return;
+    e.preventDefault();
+    setNota(alvo);
+    estrelas.current[alvo - 1]?.focus();
+  };
+
   if (enviado) {
     return (
-      <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
-        <div className="bg-surface border-2 border-success rounded-lg p-6 sm:p-8 max-w-md w-full text-center space-y-4 shadow-2xl">
-          <div className="w-16 h-16 rounded-full bg-success/15 border-2 border-success text-success flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-10 h-10" />
-          </div>
-          <h2 className="text-2xl font-semibold text-ink">Avaliação Enviada!</h2>
-          <p className="text-ink-muted text-sm">
-            Muito obrigado pelo seu feedback! Sua opinião é fundamental para aprimorarmos continuamente nosso atendimento e a qualidade do serviço dos nossos mecânicos.
+      <Casca>
+        <div className="space-y-3 text-center">
+          <CheckCircle2 className="mx-auto h-10 w-10 text-success" aria-hidden="true" />
+          <h1 ref={tituloObrigado} tabIndex={-1} className="text-[1.375rem] font-semibold text-ink focus:outline-none">
+            Obrigado pela sua avaliação
+          </h1>
+          <p className="text-sm text-ink-muted">
+            Ela já chegou à oficina e ajuda a melhorar o atendimento e a reconhecer o trabalho dos mecânicos. Pode fechar esta página.
           </p>
-          <div className="pt-4 border-t border-line">
-            <span className="text-xs text-ink-subtle flex items-center justify-center gap-1">
-              <span>Feito com carinho pela equipe Mecanify</span>
-              <Heart className="w-3.5 h-3.5 text-danger fill-danger" />
-            </span>
-          </div>
         </div>
-      </div>
+      </Casca>
     );
   }
 
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
-      <div className="bg-surface border-2 border-line rounded-lg p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl">
-        <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-lg bg-muted border-2 border-brand text-brand-ink flex items-center justify-center mx-auto">
-            <Wrench className="w-7 h-7 stroke-[2.5]" />
+    <Casca>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-1 text-center">
+          <h1 className="text-[1.375rem] font-semibold text-ink">Como foi o serviço no seu carro?</h1>
+          <p className="text-sm text-ink-muted">Sua nota ajuda a oficina a reconhecer os melhores mecânicos.</p>
+        </div>
+
+        <div className="space-y-2 text-center">
+          <div role="radiogroup" aria-label="Sua nota para o serviço e o atendimento" className="flex items-center justify-center gap-1">
+            {NOTAS.map((estrela) => {
+              const cheia = estrela <= (hoverNota || nota);
+              return (
+                <button
+                  key={estrela}
+                  ref={(el) => {
+                    estrelas.current[estrela - 1] = el;
+                  }}
+                  type="button"
+                  role="radio"
+                  aria-checked={nota === estrela}
+                  aria-label={estrela === 1 ? '1 estrela' : `${estrela} estrelas`}
+                  tabIndex={nota === estrela ? 0 : -1}
+                  onMouseEnter={() => setHoverNota(estrela)}
+                  onMouseLeave={() => setHoverNota(0)}
+                  onClick={() => setNota(estrela)}
+                  onKeyDown={(e) => aoTeclar(e, estrela)}
+                  className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-transform hover:scale-110 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <Star
+                    aria-hidden="true"
+                    className={`h-8 w-8 ${cheia ? 'fill-brand text-brand-ink' : 'text-ink-muted'}`}
+                  />
+                </button>
+              );
+            })}
           </div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-ink">Como foi o serviço no seu carro?</h1>
-          <p className="text-xs sm:text-sm text-ink-subtle">
-            Sua avaliação ajuda a reconhecer os melhores mecânicos da nossa oficina.
+          <p role="status" className="text-sm font-medium text-ink">
+            {TEXTO_DA_NOTA[nota]}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* SELETOR DE 1 A 5 ESTRELAS */}
-          <div className="bg-sunken border border-line rounded-lg p-4 text-center space-y-2">
-            <div className="text-xs font-semibold text-ink-muted uppercase tracking-wider">
-              Sua nota para o serviço e atendimento
-            </div>
-            <div className="flex items-center justify-center gap-2 pt-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onMouseEnter={() => setHoverNota(star)}
-                  onMouseLeave={() => setHoverNota(0)}
-                  onClick={() => setNota(star)}
-                  className="p-1 cursor-pointer transform hover:scale-115 transition-transform"
-                >
-                  <Star
-                    className={`w-8 h-8 ${
-                      star <= (hoverNota || nota)
-                        ? 'text-warning fill-warning'
-                        : 'text-ink-subtle'
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-            <div className="text-sm font-semibold text-warning">
-              {nota === 5
-                ? 'Excelente! Superou expectativas ★★★★★'
-                : nota === 4
-                ? 'Muito bom! Satisfeito ★★★★☆'
-                : nota === 3
-                ? 'Regular ★★★☆☆'
-                : nota === 2
-                ? 'Abaixo do esperado ★★☆☆☆'
-                : 'Insatisfeito ★☆☆☆☆'}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-ink mb-1">Seu Nome</label>
+        <div className="space-y-4">
+          <Field rotulo="Seu nome">
             <input
               type="text"
               required
               value={nomeCliente}
               onChange={(e) => setNomeCliente(e.target.value)}
               placeholder="Ex: João da Silva"
-              className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink text-xs sm:text-sm"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-xs font-semibold text-ink mb-1">Modelo do seu Veículo</label>
+          <Field rotulo="Modelo do veículo">
             <input
               type="text"
               value={veiculo}
               onChange={(e) => setVeiculo(e.target.value)}
               placeholder="Ex: Chevrolet Onix 1.4"
-              className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink text-xs sm:text-sm"
             />
-          </div>
+          </Field>
 
-          <div>
-            <label className="block text-xs font-semibold text-ink mb-1">
-              Deixe um comentário ou elogio para o mecânico (opcional)
-            </label>
+          <Field rotulo="Comentário (opcional)">
             <textarea
               rows={3}
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
               placeholder="Conte como foi o atendimento, a agilidade ou o diagnóstico do carro…"
-              className="w-full p-3 bg-sunken border border-line rounded-xl text-ink text-xs sm:text-sm resize-none"
+              className={CLASSE_CAMPO_TEXTO}
             />
-          </div>
+          </Field>
+        </div>
 
-          <button
-            type="submit"
-            disabled={enviando}
-            className="w-full min-h-[48px] rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-info/40 disabled:opacity-50"
-          >
-            <Send className="w-4 h-4 stroke-[2.5]" />
-            <span>{enviando ? 'Enviando…' : 'Enviar Avaliação'}</span>
-          </button>
+        <div className="space-y-3">
           {erroEnvio && (
-            <p role="alert" className="text-center text-xs sm:text-sm text-danger font-semibold">
-              {erroEnvio}
+            <p role="alert" className="flex items-start gap-2 text-sm font-medium text-danger">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{erroEnvio}</span>
             </p>
           )}
-        </form>
-      </div>
-    </div>
+          <Button type="submit" carregando={enviando} className="w-full">
+            {enviando ? 'Enviando…' : erroEnvio ? 'Tentar novamente' : 'Enviar avaliação'}
+          </Button>
+        </div>
+      </form>
+    </Casca>
   );
 }
-
