@@ -19,6 +19,7 @@ export default {
         ink: { DEFAULT: token('ink'), muted: token('ink-muted'), subtle: token('ink-subtle') },
         brand: { DEFAULT: token('brand'), hover: token('brand-hover'), ink: token('brand-ink') },
         'on-brand': token('on-brand'),
+        'on-solid': token('on-solid'),
         danger: { DEFAULT: token('danger'), solid: token('danger-solid') },
         success: { DEFAULT: token('success'), solid: token('success-solid') },
         warning: token('warning'),

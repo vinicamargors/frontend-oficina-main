@@ -10,3 +10,5 @@ export { PlateChip, formatarPlaca } from './PlateChip';
 export { Skeleton } from './Skeleton';
 export { ThemeToggle } from './ThemeToggle';
 export { BrandMark } from './BrandMark';
+export { Logo } from './Logo';
+export { CLASSE_CAMPO } from './campo';

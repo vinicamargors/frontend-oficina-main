@@ -50,6 +50,8 @@ for (const [nome, ler] of Object.entries(temas)) {
     par('line-strong', 'sunken', 3);
     par('line-strong', 'surface', 3);
     par('on-brand', 'brand', 4.5);
+    par('on-solid', 'danger-solid', 4.5);
+    par('on-solid', 'success-solid', 4.5);
     for (const bg of ['danger-solid', 'success-solid']) {
       it(`branco sobre ${bg} >= 4.5`, () => {
         expect(razao(BRANCO, t[bg])).toBeGreaterThanOrEqual(4.5);

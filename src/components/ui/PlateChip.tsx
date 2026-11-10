@@ -8,6 +8,7 @@ export function PlateChip({ placa }: { placa: string }) {
   return (
     <span
       className="inline-flex flex-col overflow-hidden rounded-[4px] border border-[#1D4ED8]/30 bg-[#FFFFFF] align-middle"
+      role="img"
       aria-label={`Placa ${formatarPlaca(placa)}`}
     >
       <span className="h-1 bg-[#1D4ED8]" aria-hidden="true" />

@@ -19,6 +19,7 @@
   --c-done: 15 118 110;
   --c-danger-solid: 180 35 24;
   --c-success-solid: 21 128 61;
+  --c-on-solid: 255 255 255;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.08);
   color-scheme: light;
 }
@@ -44,6 +45,7 @@
   --c-done: 45 212 191;
   --c-danger-solid: 217 45 32;
   --c-success-solid: 21 128 61;
+  --c-on-solid: 255 255 255;
   --shadow-card: none;
   color-scheme: dark;
 }
