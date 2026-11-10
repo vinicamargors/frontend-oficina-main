@@ -4,7 +4,7 @@ export type Tema = 'claro' | 'escuro';
 export type PreferenciaTema = Tema | 'sistema';
 
 const CHAVE = 'mecanify_tema';
-// codemod:ignore-start (valores das metas theme-color de index.html; meta não lê tokens CSS)
+// codemod:ignore-start (espelha as metas theme-color de index.html: meta não lê tokens CSS; manter os dois em sincronia)
 const COR_BARRA: Record<Tema, string> = { claro: '#F1EDE4', escuro: '#111214' };
 // codemod:ignore-end
 const CONSULTA_ESCURO = '(prefers-color-scheme: dark)';

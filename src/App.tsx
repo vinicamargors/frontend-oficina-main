@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
 import { DashboardOperacional } from './pages/DashboardOperacional';
@@ -11,7 +11,7 @@ import { Oficina } from './pages/Oficina';
 import { AvaliacaoPublicaOS } from './pages/AvaliacaoPublicaOS';
 import { api } from './api/client';
 import { Empresa, StatusOS } from './types';
-import { BrandMark, Button, ThemeToggle } from './components/ui';
+import { Button, Logo, ThemeToggle } from './components/ui';
 import {
   Ellipsis,
   LayoutDashboard,
@@ -62,6 +62,23 @@ function AppShell() {
   });
 
   const [maisAberto, setMaisAberto] = useState(false);
+  const barraRef = useRef<HTMLElement>(null);
+  const folhaRef = useRef<HTMLDivElement>(null);
+  const maisBtnRef = useRef<HTMLButtonElement>(null);
+  const [alturaBarra, setAlturaBarra] = useState(0);
+
+  // Mede a barra inferior (varia com a área segura do aparelho) para encaixar a folha "Mais" logo acima dela.
+  useLayoutEffect(() => {
+    if (maisAberto && barraRef.current) setAlturaBarra(barraRef.current.offsetHeight);
+  }, [maisAberto]);
+
+  // Foco entra na folha ao abrir e volta para o botão "Mais" ao fechar.
+  useEffect(() => {
+    if (!maisAberto) return;
+    const botao = maisBtnRef.current;
+    folhaRef.current?.querySelector<HTMLElement>('button, select')?.focus();
+    return () => botao?.focus();
+  }, [maisAberto]);
 
   useEffect(() => {
     if (!maisAberto) return;
@@ -173,7 +190,7 @@ function AppShell() {
   if (loading) {
     return (
       <div className="min-h-dvh w-full bg-canvas text-ink flex flex-col items-center justify-center p-6 gap-4">
-        <BrandMark tamanho={56} />
+        <Logo tamanho={40} />
         <div className="flex items-center gap-3 text-lg font-semibold">
           <progress aria-label="Carregando" className="loading-spinner" />
           <span>Abrindo Mecanify…</span>
@@ -286,25 +303,20 @@ function AppShell() {
       {/* MENU LATERAL (DESKTOP) */}
       <aside
         aria-label="Menu Principal da Oficina"
-        className="print:hidden hidden lg:flex w-60 shrink-0 bg-surface border-r border-line flex-col justify-between p-3 sticky top-0 h-dvh"
+        className="print:hidden hidden lg:flex w-60 shrink-0 bg-canvas flex-col justify-between px-3 py-6 sticky top-0 h-dvh"
       >
-        <div className="space-y-5 min-h-0 overflow-y-auto">
-          <div className="flex items-center gap-3 px-2 pt-1">
-            <BrandMark tamanho={32} />
-            <div className="min-w-0">
-              <span translate="no" className="text-base font-semibold text-ink block leading-tight">
-                Mecanify
-              </span>
-              <span className="text-xs text-ink-muted truncate block">
-                {empresaAtual?.nome_fantasia || 'Painel Operacional'}
-              </span>
-            </div>
+        <div className="space-y-8 min-h-0 overflow-y-auto">
+          <div className="px-3 space-y-1.5">
+            <Logo tamanho={28} />
+            <span className="text-xs text-ink-muted truncate block">
+              {empresaAtual?.nome_fantasia || 'Painel Operacional'}
+            </span>
           </div>
 
           {seletorMaster('seletor-oficina-desktop')}
 
           <nav aria-label="Seções">
-            <ul className="space-y-0.5">
+            <ul className="space-y-1">
               {visibleNav.map((item) => {
                 const Icon = item.icon;
                 const active = activeTab === item.id;
@@ -314,16 +326,11 @@ function AppShell() {
                       type="button"
                       onClick={() => irPara(item.id)}
                       aria-current={active ? 'page' : undefined}
-                      className={`relative w-full h-10 px-3 rounded-md text-sm flex items-center gap-3 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                        active
-                          ? 'bg-muted text-ink font-semibold'
-                          : 'text-ink-muted font-medium hover:bg-muted hover:text-ink'
+                      className={`w-full h-10 px-3 rounded-lg text-sm font-medium flex items-center gap-3 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                        active ? 'bg-muted text-ink' : 'text-ink-muted hover:bg-muted/60 hover:text-ink'
                       }`}
                     >
-                      {active && (
-                        <span aria-hidden="true" className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-brand" />
-                      )}
-                      <Icon size={20} className="shrink-0" aria-hidden="true" />
+                      <Icon size={20} strokeWidth={1.75} className={`shrink-0 ${active ? 'text-brand-ink' : ''}`} aria-hidden="true" />
                       <span className="truncate">{item.label}</span>
                     </button>
                   </li>
@@ -333,8 +340,8 @@ function AppShell() {
           </nav>
         </div>
 
-        <div className="pt-3 mt-3 border-t border-line space-y-2">
-          <div className="flex items-center gap-2 px-2">
+        <div className="pt-4 mt-4 border-t border-line space-y-2">
+          <div className="flex items-center gap-2 px-3">
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium text-ink truncate">{user.nome}</div>
               <div className="text-xs text-ink-muted truncate">{cargoLegivel}</div>
@@ -349,17 +356,14 @@ function AppShell() {
 
       {/* ÁREA CENTRAL */}
       <div className="flex-1 flex flex-col min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0 print:pb-0">
-        <header className="print:hidden lg:hidden bg-surface border-b border-line px-3 h-12 flex items-center gap-2.5 sticky top-0 z-30">
-          <BrandMark tamanho={28} />
-          <span translate="no" className="text-base font-semibold text-ink">
-            Mecanify
-          </span>
+        <header className="print:hidden lg:hidden bg-canvas px-4 h-14 flex items-center gap-3 sticky top-0 z-30">
+          <Logo tamanho={26} />
           <span className="text-xs text-ink-muted truncate">{empresaAtual?.nome_fantasia}</span>
         </header>
 
-        <main id="conteudo-principal" className="flex-1 w-full p-3 sm:p-5 lg:p-7 print:p-0">
+        <main id="conteudo-principal" className="flex-1 w-full p-4 md:p-8 print:p-0">
           {!effectiveEmpresaId ? (
-            <div className="bg-surface border border-line rounded-lg p-8 space-y-2">
+            <div className="bg-surface rounded-2xl p-8 space-y-2">
               <h2 className="text-xl font-semibold text-ink">Selecione uma oficina para ver o pátio</h2>
               <p className="text-sm text-ink-muted">
                 Sua conta Master está autenticada. Escolha uma oficina no seletor para carregar os dados.
@@ -404,8 +408,10 @@ function AppShell() {
           <div
             role="dialog"
             aria-label="Mais opções"
-            className="fixed left-0 right-0 z-40 bg-surface border-t border-line rounded-t-xl p-3 space-y-3 max-h-[70dvh] overflow-y-auto"
-            style={{ bottom: 'calc(4.0625rem + env(safe-area-inset-bottom))' }}
+            aria-modal="true"
+            ref={folhaRef}
+            className="fixed left-0 right-0 z-40 bg-surface rounded-t-2xl p-3 space-y-3 max-h-[70dvh] overflow-y-auto"
+            style={{ bottom: alturaBarra }}
           >
             {extrasMobile.length > 0 && (
               <ul className="space-y-0.5">
@@ -418,14 +424,11 @@ function AppShell() {
                         type="button"
                         onClick={() => irPara(item.id)}
                         aria-current={active ? 'page' : undefined}
-                        className={`relative w-full min-h-11 px-3 rounded-md text-sm flex items-center gap-3 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                          active ? 'bg-muted text-ink font-semibold' : 'text-ink-muted font-medium hover:bg-muted hover:text-ink'
+                        className={`w-full min-h-12 px-3 rounded-lg text-sm font-medium flex items-center gap-3 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                          active ? 'bg-muted text-ink' : 'text-ink-muted hover:bg-muted/60 hover:text-ink'
                         }`}
                       >
-                        {active && (
-                          <span aria-hidden="true" className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-brand" />
-                        )}
-                        <Icon size={20} className="shrink-0" aria-hidden="true" />
+                        <Icon size={20} strokeWidth={1.75} className={`shrink-0 ${active ? 'text-brand-ink' : ''}`} aria-hidden="true" />
                         <span className="truncate">{item.label}</span>
                       </button>
                     </li>
@@ -434,7 +437,7 @@ function AppShell() {
               </ul>
             )}
             {seletorMaster('seletor-oficina-mobile')}
-            <div className="pt-3 border-t border-line flex items-center gap-2 px-1">
+            <div className="pt-3 border-t border-line flex items-center gap-2 px-3">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-ink truncate">{user.nome}</div>
                 <div className="text-xs text-ink-muted truncate">{cargoLegivel}</div>
@@ -450,8 +453,9 @@ function AppShell() {
 
       {/* BARRA INFERIOR (MOBILE) */}
       <nav
+        ref={barraRef}
         aria-label="Navegação Rápida Mobile"
-        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-line px-1 pt-1 flex items-stretch gap-0.5"
+        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-line/60 px-1 pt-1 flex items-stretch"
         style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
       >
         {[
@@ -468,25 +472,26 @@ function AppShell() {
             type="button"
             onClick={aoClicar}
             aria-current={ativo ? 'page' : undefined}
-            className={`min-h-14 min-w-11 flex-1 rounded-md flex flex-col items-center justify-center gap-1 px-1 text-xs font-medium cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-              ativo ? 'bg-muted text-ink' : 'text-ink-muted hover:bg-muted'
+            className={`min-h-14 min-w-11 flex-1 rounded-lg flex flex-col items-center justify-center gap-1 px-1 text-xs font-medium cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              ativo ? 'text-ink' : 'text-ink-muted hover:text-ink'
             }`}
           >
-            <Icon size={20} className={ativo ? 'text-brand-ink' : ''} aria-hidden="true" />
+            <Icon size={20} strokeWidth={1.75} className={ativo ? 'text-brand-ink' : ''} aria-hidden="true" />
             <span className="truncate max-w-full leading-none">{rotulo}</span>
           </button>
         ))}
         <button
+          ref={maisBtnRef}
           type="button"
           onClick={() => setMaisAberto((v) => !v)}
           aria-expanded={maisAberto}
           aria-haspopup="dialog"
           aria-current={abaNoExtra && !maisAberto ? 'page' : undefined}
-          className={`min-h-14 min-w-11 flex-1 rounded-md flex flex-col items-center justify-center gap-1 px-1 text-xs font-medium cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-            abaNoExtra || maisAberto ? 'bg-muted text-ink' : 'text-ink-muted hover:bg-muted'
+          className={`min-h-14 min-w-11 flex-1 rounded-lg flex flex-col items-center justify-center gap-1 px-1 text-xs font-medium cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            abaNoExtra || maisAberto ? 'text-ink' : 'text-ink-muted hover:text-ink'
           }`}
         >
-          <Ellipsis size={20} className={abaNoExtra ? 'text-brand-ink' : ''} aria-hidden="true" />
+          <Ellipsis size={20} strokeWidth={1.75} className={abaNoExtra ? 'text-brand-ink' : ''} aria-hidden="true" />
           <span className="leading-none">Mais</span>
         </button>
       </nav>

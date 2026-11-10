@@ -29,6 +29,7 @@ test.describe('shell desktop', () => {
     await expect(menu.locator('[aria-current="page"]')).toHaveCount(1);
     await expect(menu.locator('[aria-current="page"]')).toContainText('Radar do Pátio');
 
+    await expect(menu.getByRole('img', { name: 'Mecanify' })).toBeVisible();
     await expect(menu.getByText('Dono', { exact: true })).toBeVisible();
     await expect(menu.getByText('DONO', { exact: true })).toHaveCount(0);
 
@@ -107,6 +108,7 @@ test.describe('shell mobile', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'radar');
 
+    await expect(page.getByRole('banner').getByRole('img', { name: 'Mecanify' })).toBeVisible();
     const barra = page.getByRole('navigation', { name: MOBILE });
     const botoes = barra.getByRole('button');
     expect(await botoes.count()).toBeLessThanOrEqual(5);
@@ -128,6 +130,8 @@ test.describe('shell mobile', () => {
     await expect(mais).toHaveAttribute('aria-expanded', 'false');
     await mais.click();
     await expect(mais).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('dialog', { name: 'Mais opções' })).toHaveAttribute('aria-modal', 'true');
+    await expect(page.getByRole('dialog', { name: 'Mais opções' }).locator(':focus')).toHaveCount(1);
     const folha = page.getByRole('dialog', { name: 'Mais opções' });
     await expect(folha.getByRole('button', { name: 'Caixa & Financeiro' })).toBeVisible();
     await expect(folha.getByRole('button', { name: 'Equipe & RH' })).toBeVisible();
