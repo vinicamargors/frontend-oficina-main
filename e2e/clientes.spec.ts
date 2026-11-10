@@ -303,6 +303,24 @@ test.describe('sair das folhas de formulário', () => {
     expect(escritas).toEqual([]);
   });
 
+  test('veículo em rascunho só com o chassi (vindo da busca da placa) também conta como dado digitado', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` }).click();
+    await page.getByRole('menuitem', { name: /Adicionar veículo/ }).click();
+    const d = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
+    await d.getByRole('textbox', { name: /^Placa/ }).fill('ZZZ9Z99');
+    await d.getByRole('button', { name: 'Buscar Placa' }).click();
+    await expect(d.getByLabel(/^Modelo/)).toHaveValue('Gol 1.0');
+    // apaga tudo o que aparece; o chassi preenchido pela busca continua no rascunho
+    for (const campo of [d.getByRole('textbox', { name: /^Placa/ }), d.getByLabel(/^Modelo/), d.getByLabel(/^Marca/), d.getByLabel(/^Cor/), d.getByLabel(/^Ano/)]) {
+      await campo.fill('');
+    }
+    await page.keyboard.press('Escape');
+    await expect(d).toBeVisible();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+  });
+
   test('formulário intacto fecha com Esc sem perguntar', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);

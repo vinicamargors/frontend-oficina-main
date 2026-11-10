@@ -504,7 +504,7 @@ export function ClientesVeiculos({
     cliTelefone !== (clienteEmEdicao?.telefone || '') ||
     cliCpfCnpj !== (clienteEmEdicao?.cpf_cnpj || '') ||
     cliEndereco !== (clienteEmEdicao?.endereco || '') ||
-    novosVeiculosRascunho.some((r) => r.placa || r.modelo || r.marca || r.cor || r.ano || r.km_atual);
+    novosVeiculosRascunho.some((r) => r.placa || r.modelo || r.marca || r.cor || r.ano || r.km_atual || r.chassi);
   const veiculoSujo =
     veiculoEmEdicao !== null &&
     (editVeiPlaca !== (veiculoEmEdicao.placa || '') ||
