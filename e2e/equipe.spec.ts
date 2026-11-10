@@ -321,6 +321,35 @@ test.describe('escalas', () => {
   });
 });
 
+// 10/11/2026 às 22:00 em São Paulo = 01:00Z do dia 11: em UTC "hoje" já virou amanhã.
+const NOITE_SP = new Date('2026-11-11T01:00:00Z');
+
+test.describe('datas no calendário local (22h em São Paulo)', () => {
+  test('ponto batido às 22h grava a data e a hora locais', async ({ page, context }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await context.grantPermissions(['geolocation']);
+    await context.setGeolocation({ latitude: -23.55052, longitude: -46.633308 });
+    await page.clock.setFixedTime(NOITE_SP);
+    await abrir(page, tema);
+    await irParaAba(page, 'Ponto');
+    await page.getByRole('button', { name: 'Bater ponto agora' }).click();
+    await page.getByRole('dialog', { name: 'Registrar ponto agora?' }).getByRole('button', { name: 'Registrar ponto' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ data: '2026-11-10', hora: '22:00', tipo: 'ENTRADA' });
+  });
+
+  test('agendar período às 22h: começa hoje e termina em 15 dias, no calendário local', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(NOITE_SP);
+    await abrir(page, tema);
+    await irParaAba(page, 'Escalas');
+    await page.getByRole('button', { name: /Agendar férias ou folga/ }).click();
+    const d = page.getByRole('dialog', { name: 'Agendar férias ou folga' });
+    await expect(d.getByLabel('Data início *')).toHaveValue('2026-11-10');
+    await expect(d.getByLabel('Data fim *')).toHaveValue('2026-11-25');
+  });
+});
+
 test.describe('ponto eletrônico', () => {
   test('bater ponto pede confirmação, valida o raio por GPS e lista o registro', async ({ page, context }, info) => {
     const { tema } = contextoDoProjeto(info);

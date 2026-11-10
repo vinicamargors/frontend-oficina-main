@@ -44,6 +44,7 @@ import { FORMAS_PAGAMENTO } from './ordens/formasPagamento';
 import { ETAPAS_OS, mensagemEtapa } from './ordens/etapas';
 import { LinhaOrdem } from './ordens/LinhaOrdem';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
+import { dataLocalISO } from '../lib/data';
 import { useCelular } from '../lib/useMediaQuery';
 
 interface OrdensServicoProps {
@@ -1055,9 +1056,10 @@ export function OrdensServico({
       return;
     }
     const hoje = new Date();
-    const fimStr = hoje.toISOString().slice(0, 10);
-    const inicio = new Date(Date.now() - dias * 24 * 60 * 60 * 1000);
-    const inicioStr = inicio.toISOString().slice(0, 10);
+    const fimStr = dataLocalISO(hoje);
+    const inicio = new Date(hoje);
+    inicio.setDate(inicio.getDate() - dias);
+    const inicioStr = dataLocalISO(inicio);
     setDataInicio(inicioStr);
     setDataFim(fimStr);
   };

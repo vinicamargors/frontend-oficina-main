@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../api/client';
+import { hojeLocalISO } from '../lib/data';
 import { useAuth } from '../context/AuthContext';
 import { EstoqueItem, EstoqueCreateInput, EstoqueUpdateInput } from '../types';
 import {
@@ -439,7 +440,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
     link.href = url;
     link.setAttribute(
       'download',
-      `estoque_mecanify_${new Date().toISOString().slice(0, 10)}.csv`
+      `estoque_mecanify_${hojeLocalISO()}.csv`
     );
     document.body.appendChild(link);
     link.click();

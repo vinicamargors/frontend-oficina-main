@@ -174,6 +174,24 @@ test.describe('bancada: confirmação do Pago', () => {
   });
 });
 
+test.describe('datas no calendário local (22h em São Paulo)', () => {
+  test('período rápido às 22h: "Hoje" e "Últimos 7 dias" terminam hoje, não amanhã', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(new Date('2026-11-11T01:00:00Z')); // 10/11 22:00 local
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'ordens');
+    const filtros = page.getByRole('button', { name: /^Filtros/ });
+    if ((await filtros.getAttribute('aria-expanded')) !== 'true') await filtros.click();
+    await page.getByRole('button', { name: 'Hoje', exact: true }).click();
+    await expect(page.getByLabel('Data inicial')).toHaveValue('2026-11-10');
+    await expect(page.getByLabel('Data final')).toHaveValue('2026-11-10');
+    await page.getByRole('button', { name: 'Últimos 7 dias', exact: true }).click();
+    await expect(page.getByLabel('Data inicial')).toHaveValue('2026-11-03');
+    await expect(page.getByLabel('Data final')).toHaveValue('2026-11-10');
+  });
+});
+
 test.describe('lista de ordens de serviço', () => {
   const lista = (page: Page) => page.getByRole('list', { name: 'Ordens de serviço' });
 

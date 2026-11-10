@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../api/client';
+import { hojeLocalISO } from '../lib/data';
 import { useAuth } from '../context/AuthContext';
 import {
   TransacaoFinanceira,
@@ -132,9 +133,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   const [formDescricao, setFormDescricao] = useState('');
   const [formCategoria, setFormCategoria] = useState('ALUGUEL');
   const [formValor, setFormValor] = useState('');
-  const [formVencimento, setFormVencimento] = useState(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  const [formVencimento, setFormVencimento] = useState(hojeLocalISO);
   const [formForma, setFormForma] = useState('PIX');
   const [formObservacoes, setFormObservacoes] = useState('');
   const [formJaPago, setFormJaPago] = useState(false);
@@ -310,7 +309,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       descricao: '',
       categoria: tipo === 'DESPESA' ? 'ALUGUEL' : 'APORTE',
       valor: '',
-      vencimento: new Date().toISOString().slice(0, 10),
+      vencimento: hojeLocalISO(),
       forma: 'PIX',
       observacoes: '',
       jaPago: false,
@@ -400,7 +399,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
     try {
       setSalvandoTransacao(true);
-      const hoje = new Date().toISOString().slice(0, 10);
+      const hoje = hojeLocalISO();
       const statusFinal: StatusTransacao = formJaPago ? 'LIQUIDADO' : 'PENDENTE';
 
       if (transacaoEmEdicao) {

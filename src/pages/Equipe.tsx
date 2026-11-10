@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../api/client';
+import { dataLocalISO, hojeLocalISO } from '../lib/data';
 import { useAuth } from '../context/AuthContext';
 import {
   Usuario,
@@ -162,13 +163,11 @@ export function Equipe({ empresaId }: EquipeProps) {
   const [escalaTipo, setEscalaTipo] = useState<'FERIAS' | 'FOLGA' | 'ATESTADO' | 'PLANTAO'>(
     'FERIAS'
   );
-  const [escalaInicio, setEscalaInicio] = useState(
-    () => new Date().toISOString().slice(0, 10)
-  );
+  const [escalaInicio, setEscalaInicio] = useState(hojeLocalISO);
   const [escalaFim, setEscalaFim] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 15);
-    return d.toISOString().slice(0, 10);
+    return dataLocalISO(d);
   });
   const [escalaObs, setEscalaObs] = useState('');
   const [erroEscala, setErroEscala] = useState<string | null>(null);
@@ -562,7 +561,7 @@ export function Equipe({ empresaId }: EquipeProps) {
 
         const dentroRaio = distancia <= coordsOficina.raio;
         const agora = new Date();
-        const dataStr = agora.toISOString().slice(0, 10);
+        const dataStr = dataLocalISO(agora);
         const horaStr = agora.toTimeString().slice(0, 5);
 
         let novoPonto: RegistroPonto;

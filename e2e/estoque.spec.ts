@@ -246,6 +246,17 @@ test.describe('ações da peça', () => {
     ]);
     expect(download.suggestedFilename()).toMatch(/^estoque_mecanify_\d{4}-\d{2}-\d{2}\.csv$/);
   });
+
+  test('exportar CSV às 22h em São Paulo leva a data local no nome', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(new Date('2026-11-11T01:00:00Z')); // 10/11 22:00 local
+    await abrir(page, tema);
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Exportar CSV' }).click(),
+    ]);
+    expect(download.suggestedFilename()).toBe('estoque_mecanify_2026-11-10.csv');
+  });
 });
 
 test.describe('formulário da peça', () => {

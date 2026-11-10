@@ -413,6 +413,9 @@ test.describe('falha da API nas confirmações', () => {
     await expect(d.getByRole('alert')).toBeVisible();
     await expect(d).toBeVisible();
     expect(dialogos).toEqual([]);
+    // dinheiro: a baixa que falhou não pode aparecer como recebida
+    await expect(linha(page, PENDENTE_RECEITA.descricao)).toContainText('Pendente');
+    await expect(linha(page, PENDENTE_RECEITA.descricao)).not.toContainText('Recebido');
     falhar = false;
     await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
     await expect(d).toHaveCount(0);
@@ -448,6 +451,44 @@ test.describe('falha da API nas confirmações', () => {
     await menuDe(page, RECEITA_PAGA.descricao);
     await page.getByRole('menuitem', { name: 'Excluir lançamento' }).click();
     await expect(d.getByRole('alert')).toHaveCount(0);
+  });
+});
+
+// 10/11/2026 às 22:00 em São Paulo = 01:00Z do dia 11: em UTC "hoje" já virou amanhã.
+const NOITE_SP = new Date('2026-11-11T01:00:00Z');
+const HOJE_SP = '2026-11-10';
+
+test.describe('datas no calendário local (22h em São Paulo)', () => {
+  test('dar baixa às 22h grava a data de hoje, não a de amanhã', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(NOITE_SP);
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    await page.getByRole('dialog', { name: 'Dar baixa no lançamento?' }).getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    const e = (await ultimaEscrita(page))!;
+    expect(e.caminho).toContain(`/${PENDENTE_RECEITA.id}/liquidar`);
+    expect(e.corpo).toEqual({ data_liquidacao: HOJE_SP, forma_pagamento: 'PIX' });
+  });
+
+  test('novo lançamento às 22h: vencimento padrão é hoje; "já foi paga" sem vencimento liquida hoje', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(NOITE_SP);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: 'Novo lançamento' }).click();
+    const d = page.getByRole('dialog', { name: 'Novo lançamento' });
+    await expect(d.getByLabel('Vencimento *')).toHaveValue(HOJE_SP);
+
+    await d.getByLabel('Descrição *').fill('Taxa');
+    await d.getByLabel('Valor (R$) *').fill('35');
+    await d.getByLabel('Vencimento *').evaluate((el) => el.removeAttribute('required'));
+    await d.getByLabel('Vencimento *').fill('');
+    await d.getByRole('checkbox', { name: /Já foi (paga|recebida)/ }).check();
+    await d.getByRole('button', { name: 'Salvar lançamento' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ status: 'LIQUIDADO', data_liquidacao: HOJE_SP });
   });
 });
 
