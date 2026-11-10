@@ -447,6 +447,52 @@ test.describe('master trocando de oficina', () => {
     await expect(page.getByLabel('Chave PIX')).toHaveValue(cfgB.chave_pix);
     await expect(page.getByText('Alterações não salvas')).toHaveCount(0);
   });
+
+  test('A editada e descartada → B lenta e falhando → volta para A: esqueleto e depois o erro, nunca o que foi descartado', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await abrirComoMaster(page, tema, { atrasoB: 600, falharB: () => true });
+    let aLentaEFalhando = false;
+    await page.route(`**/api/v1/empresas/${EMPRESA_ID}/configuracoes`, async (r) => {
+      if (r.request().method() !== 'GET' || !aLentaEFalhando) return r.fallback();
+      await new Promise((ok) => setTimeout(ok, 1200));
+      return r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'Servidor fora do ar' }) });
+    });
+    const escritas = registrarEscritas(page);
+    await page.getByLabel('Chave PIX').fill('digitado-em-a');
+    await trocarOficina(page, largura, EMPRESA_B);
+    await folhaDescartar(page).getByRole('button', { name: 'Descartar' }).click();
+    await expect(page.getByRole('main').getByRole('alert')).toBeVisible(); // B falhou
+    await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(0);
+
+    // a cada quadro: algum campo chegou a mostrar o que foi descartado em A?
+    await page.evaluate(() => {
+      const w = window as unknown as { __viuDescartado?: boolean };
+      w.__viuDescartado = false;
+      const olhar = () => {
+        if ([...document.querySelectorAll('input')].some((i) => i.value === 'digitado-em-a')) w.__viuDescartado = true;
+        requestAnimationFrame(olhar);
+      };
+      olhar();
+    });
+    aLentaEFalhando = true;
+    await trocarOficina(page, largura, EMPRESA_ID);
+    // A recarregando: esqueleto (sem campos)
+    await expect(page.getByRole('main').getByRole('heading', { level: 2, name: 'Identificação' })).toBeVisible();
+    await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(0);
+    // A falhou: painel de erro, sem formulário que poderia salvar o descartado
+    await expect(page.getByRole('main').getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
+    await expect(page.getByRole('main').getByRole('alert')).toContainText('Servidor fora do ar');
+    await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Salvar alterações' })).toHaveCount(0);
+    expect(await page.evaluate(() => (window as unknown as { __viuDescartado?: boolean }).__viuDescartado)).toBe(false);
+
+    if (largura < 1024) await page.keyboard.press('Escape'); // fecha a folha "Mais"
+    aLentaEFalhando = false;
+    await page.getByRole('button', { name: 'Tentar novamente' }).click();
+    await expect(page.getByLabel('Chave PIX')).toHaveValue(configuracoesEmpresa.chave_pix);
+    expect(await page.evaluate(() => (window as unknown as { __viuDescartado?: boolean }).__viuDescartado)).toBe(false);
+    expect(escritas).toEqual([]);
+  });
 });
 
 // ------------------------------------------------------------------ trocar de tela com formulário sujo

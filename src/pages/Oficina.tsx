@@ -50,6 +50,13 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
   const [carregando, setCarregando] = useState(true);
   // De qual oficina são os dados no formulário: trocar de oficina (master) volta ao esqueleto/erro, nunca mostra os de outra
   const [empresaDosDados, setEmpresaDosDados] = useState<string | null>(null);
+  // Trocou de oficina: esquece já no render (sem esperar o efeito) que havia dados. Em A→B→A com B sem
+  // carregar, o formulário ainda guarda o que foi descartado em A e não pode voltar a aparecer nem ser salvo.
+  const [empresaVista, setEmpresaVista] = useState(empresaId);
+  if (empresaVista !== empresaId) {
+    setEmpresaVista(empresaId);
+    setEmpresaDosDados(null);
+  }
   const jaCarregou = empresaDosDados === empresaId;
   // Só a carga mais recente pode preencher o formulário (uma resposta atrasada de outra oficina é ignorada)
   const cargaAtual = useRef(0);
