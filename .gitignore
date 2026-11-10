@@ -7,3 +7,12 @@ dist-ssr
 .DS_Store
 *.tsbuildinfo
 
+
+# log de execução do gate da taste-skill (muda a cada parada)
+.taste-skill/gate.json
+
+# estado do subagent-driven-development (scratch)
+.superpowers/
+prints/
+test-results/
+playwright-report/

@@ -1,8 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useRef, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import {
-  Wrench,
-  LogIn,
   UserPlus,
   MailCheck,
   AlertTriangle,
@@ -13,13 +11,16 @@ import {
   ArrowRight,
   ArrowLeft,
   KeyRound,
-  Lock,
+  LogIn,
   Car,
   ClipboardCheck,
   ShieldCheck,
-} from 'lucide-react';
+} from "lucide-react";
+import { Button, Field, Logo, Tabs, ThemeToggle } from "../components/ui";
+import { CLASSE_CAMPO } from "../components/ui/campo";
 
-type AuthMode = 'login' | 'cadastro' | 'recuperar' | 'nova-senha';
+type AuthMode = "login" | "cadastro" | "recuperar" | "nova-senha";
+type CampoErro = "oficina" | "nome" | "email" | "senha" | "confirmar";
 
 export function Login() {
   const {
@@ -34,42 +35,48 @@ export function Login() {
 
   const [mode, setMode] = useState<AuthMode>(() => {
     const params = new URLSearchParams(window.location.search);
-    const m = params.get('modo');
+    const m = params.get("modo");
     if (
       isPasswordRecovery ||
-      m === 'nova-senha' ||
-      params.get('type') === 'recovery' ||
-      window.location.hash.includes('type=recovery')
+      m === "nova-senha" ||
+      params.get("type") === "recovery" ||
+      window.location.hash.includes("type=recovery")
     ) {
-      return 'nova-senha';
+      return "nova-senha";
     }
-    if (m === 'cadastro') return 'cadastro';
-    if (m === 'recuperar') return 'recuperar';
-    return 'login';
+    if (m === "cadastro") return "cadastro";
+    if (m === "recuperar") return "recuperar";
+    return "login";
   });
 
   // Sincroniza automaticamente se o evento PASSWORD_RECOVERY disparar
   useEffect(() => {
     if (isPasswordRecovery) {
-      setMode('nova-senha');
+      setMode("nova-senha");
     }
   }, [isPasswordRecovery]);
 
   // Campos do formulário
-  const [nomeOficina, setNomeOficina] = useState('');
-  const [nome, setNome] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [nomeOficina, setNomeOficina] = useState("");
+  const [nome, setNome] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   // Estados de feedback
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [erroCampo, setErroCampo] = useState<{
+    campo: CampoErro;
+    msg: string;
+  } | null>(null);
   const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
-  const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
+  const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(
+    null,
+  );
   const [resetEmailSentTo, setResetEmailSentTo] = useState<string | null>(null);
   const [resendSuccess, setResendSuccess] = useState<string | null>(null);
 
@@ -82,27 +89,28 @@ export function Login() {
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    url.searchParams.set('modo', mode);
-    window.history.replaceState({}, '', url.toString());
+    url.searchParams.set("modo", mode);
+    window.history.replaceState({}, "", url.toString());
 
     const titles: Record<AuthMode, string> = {
-      login: 'Entrar — Mecanify',
-      cadastro: 'Criar Conta da Oficina — Mecanify',
-      recuperar: 'Recuperar Senha — Mecanify',
-      'nova-senha': 'Definir Nova Senha — Mecanify',
+      login: "Entrar — Mecanify",
+      cadastro: "Criar Conta da Oficina — Mecanify",
+      recuperar: "Recuperar Senha — Mecanify",
+      "nova-senha": "Definir Nova Senha — Mecanify",
     };
     document.title = titles[mode];
     return () => {
-      document.title = 'Mecanify — Gestão de Oficina'; // ao sair do login, volta o título do app
+      document.title = "Mecanify — Gestão de Oficina"; // ao sair do login, volta o título do app
     };
   }, [mode]);
 
   const switchMode = (newMode: AuthMode) => {
-    if (mode === 'nova-senha' && newMode !== 'nova-senha') {
+    if (mode === "nova-senha" && newMode !== "nova-senha") {
       clearPasswordRecovery();
     }
     setMode(newMode);
     setError(null);
+    setErroCampo(null);
     setResendSuccess(null);
     setUnconfirmedEmail(null);
     setConfirmationSentTo(null);
@@ -112,6 +120,7 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setErroCampo(null);
     setResendSuccess(null);
     setUnconfirmedEmail(null);
 
@@ -120,9 +129,12 @@ export function Login() {
     const trimmedConfirmar = confirmarSenha.trim();
 
     // Fluxo 1: Recuperar Senha (pede apenas e-mail)
-    if (mode === 'recuperar') {
-      if (!trimmedEmail || !trimmedEmail.includes('@')) {
-        setError('Digite o e-mail da sua conta para enviarmos o link de recuperação.');
+    if (mode === "recuperar") {
+      if (!trimmedEmail || !trimmedEmail.includes("@")) {
+        setErroCampo({
+          campo: "email",
+          msg: "Digite o e-mail da sua conta para enviarmos o link de recuperação.",
+        });
         emailInputRef.current?.focus();
         return;
       }
@@ -133,7 +145,8 @@ export function Login() {
       } catch (err: unknown) {
         const customErr = err as Error;
         setError(
-          customErr.message || 'Não foi possível enviar o link de recuperação agora.'
+          customErr.message ||
+            "Não foi possível enviar o link de recuperação agora.",
         );
       } finally {
         setSubmitting(false);
@@ -142,14 +155,20 @@ export function Login() {
     }
 
     // Fluxo 2: Definir Nova Senha (após clicar no link do e-mail)
-    if (mode === 'nova-senha') {
+    if (mode === "nova-senha") {
       if (trimmedSenha.length < 6) {
-        setError('A nova senha precisa ter pelo menos 6 caracteres.');
+        setErroCampo({
+          campo: "senha",
+          msg: "A nova senha precisa ter pelo menos 6 caracteres.",
+        });
         senhaInputRef.current?.focus();
         return;
       }
       if (trimmedSenha !== trimmedConfirmar) {
-        setError('As duas senhas digitadas não conferem. Digite novamente.');
+        setErroCampo({
+          campo: "confirmar",
+          msg: "As duas senhas digitadas não conferem. Digite novamente.",
+        });
         confirmarSenhaInputRef.current?.focus();
         return;
       }
@@ -160,7 +179,7 @@ export function Login() {
         const customErr = err as Error;
         setError(
           customErr.message ||
-            'Link expirado ou inválido. Solicite um novo link em "Esqueci minha senha".'
+            'Link expirado ou inválido. Solicite um novo link em "Esqueci minha senha".',
         );
       } finally {
         setSubmitting(false);
@@ -169,34 +188,46 @@ export function Login() {
     }
 
     // Fluxo 3: Criar Conta ou Login
-    if (mode === 'cadastro') {
+    if (mode === "cadastro") {
       if (!nomeOficina.trim()) {
-        setError('Informe o nome da sua oficina para configurar o painel.');
+        setErroCampo({
+          campo: "oficina",
+          msg: "Informe o nome da sua oficina para configurar o painel.",
+        });
         oficinaInputRef.current?.focus();
         return;
       }
       if (!nome.trim()) {
-        setError('Informe seu nome para identificação nas Ordens de Serviço.');
+        setErroCampo({
+          campo: "nome",
+          msg: "Informe seu nome para identificação nas Ordens de Serviço.",
+        });
         nomeInputRef.current?.focus();
         return;
       }
     }
 
-    if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      setError('Digite um endereço de e-mail válido (ex.: oficina@email.com).');
+    if (!trimmedEmail || !trimmedEmail.includes("@")) {
+      setErroCampo({
+        campo: "email",
+        msg: "Digite um endereço de e-mail válido (ex.: oficina@email.com).",
+      });
       emailInputRef.current?.focus();
       return;
     }
 
     if (trimmedSenha.length < 6) {
-      setError('A senha precisa ter pelo menos 6 caracteres.');
+      setErroCampo({
+        campo: "senha",
+        msg: "A senha precisa ter pelo menos 6 caracteres.",
+      });
       senhaInputRef.current?.focus();
       return;
     }
 
     setSubmitting(true);
     try {
-      if (mode === 'login') {
+      if (mode === "login") {
         await login(trimmedEmail, trimmedSenha);
       } else {
         const result = await register({
@@ -214,9 +245,9 @@ export function Login() {
       const customErr = err as Error & { code?: string };
       setError(
         customErr.message ||
-          'Não foi possível concluir o acesso. Verifique sua conexão e tente novamente.'
+          "Não foi possível concluir o acesso. Verifique sua conexão e tente novamente.",
       );
-      if (customErr.code === 'EMAIL_NOT_CONFIRMED') {
+      if (customErr.code === "EMAIL_NOT_CONFIRMED") {
         setUnconfirmedEmail(trimmedEmail);
       }
     } finally {
@@ -231,11 +262,13 @@ export function Login() {
     try {
       await resendConfirmation(targetEmail);
       setResendSuccess(
-        `Novo link de confirmação enviado para ${targetEmail}. Verifique também a caixa de Spam.`
+        `Novo link de confirmação enviado para ${targetEmail}. Verifique também a caixa de Spam.`,
       );
     } catch (err: unknown) {
       const customErr = err as Error;
-      setError(customErr.message || 'Falha ao reenviar o e-mail de confirmação.');
+      setError(
+        customErr.message || "Falha ao reenviar o e-mail de confirmação.",
+      );
     } finally {
       setResending(false);
     }
@@ -248,439 +281,316 @@ export function Login() {
     try {
       await requestPasswordReset(targetEmail);
       setResendSuccess(
-        `Enviamos um novo link de redefinição de senha para ${targetEmail}.`
+        `Enviamos um novo link de redefinição de senha para ${targetEmail}.`,
       );
     } catch (err: unknown) {
       const customErr = err as Error;
-      setError(customErr.message || 'Aguarde 1 minuto antes de solicitar outro link.');
+      setError(
+        customErr.message || "Aguarde 1 minuto antes de solicitar outro link.",
+      );
     } finally {
       setResending(false);
     }
   };
 
+  const tituloModo: Record<AuthMode, string> = {
+    login: "Acessar painel da oficina",
+    cadastro: "Cadastrar nova oficina",
+    recuperar: "Recuperar senha",
+    "nova-senha": "Criar nova senha",
+  };
+  const subtituloModo: Record<AuthMode, string> = {
+    login: "Digite seu e-mail e senha para abrir o pátio.",
+    cadastro: "Você receberá um e-mail de confirmação para ativar a conta.",
+    recuperar:
+      "Informe seu e-mail de acesso e enviaremos um link seguro para criar outra senha.",
+    "nova-senha":
+      "Digite e confirme a nova senha para entrar direto no Mecanify.",
+  };
+  const classeInput = `${CLASSE_CAMPO} h-12 md:h-12 md:min-h-12 text-base`;
+  const erroDe = (c: CampoErro) =>
+    erroCampo?.campo === c ? erroCampo.msg : undefined;
+
+  const avisoErro = (children: React.ReactNode) => (
+    <div
+      role="alert"
+      className="flex items-start gap-3 rounded-xl bg-danger/15 p-4 text-sm font-medium text-danger"
+    >
+      <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+      <span>{children}</span>
+    </div>
+  );
+  const avisoSucesso = (texto: string) => (
+    <div
+      role="status"
+      className="flex items-start gap-3 rounded-xl bg-success/15 p-4 text-sm font-medium text-success"
+    >
+      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+      <span>{texto}</span>
+    </div>
+  );
+
+  const beneficios = [
+    {
+      Icone: Car,
+      texto: "Placas e histórico de cada veículo, em uma consulta.",
+    },
+    {
+      Icone: ClipboardCheck,
+      texto: "Ordens de serviço com peças, mão de obra e status em um toque.",
+    },
+    {
+      Icone: ShieldCheck,
+      texto: "Dados de cada oficina isolados e protegidos.",
+    },
+  ];
+
   return (
-    <div className="min-h-dvh w-full bg-[#071226] text-[#F8FAFC] grid grid-cols-1 lg:grid-cols-12">
-      {/* COLUNA ESQUERDA — IDENTIDADE INDUSTRIAL MECANIFY (Azul Oficina + Laranja) */}
-      <aside className="lg:col-span-5 bg-[#1E3A8A] border-b-4 lg:border-b-0 lg:border-r-4 border-[#38BDF8] p-6 sm:p-10 lg:p-12 flex flex-col justify-between">
-        <div>
-          {/* Marca Mecanify */}
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
-              <Wrench className="w-9 h-9 stroke-[2.5]" aria-hidden="true" />
-            </div>
-            <div>
-              <span
-                translate="no"
-                className="text-2xl sm:text-3xl font-bold tracking-tight text-white block leading-none"
-              >
-                Mecanify
-              </span>
-              <span className="text-sm sm:text-base text-blue-100 font-medium mt-1 block">
-                Sistema de Pátio &amp; Gestão Automotiva
-              </span>
-            </div>
-          </div>
-
-          <h1 className="mt-8 lg:mt-12 text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.08] tracking-tight">
-            Controle total do pátio no celular ou na bancada.
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-blue-100 leading-relaxed max-w-xl">
-            Feito para o ritmo da oficina: botões grandes, leitura imediata de placas,
-            controle de peças e orçamento rápido direto para o WhatsApp do cliente.
-          </p>
-        </div>
-
-        {/* Blocos Grandes de Benefícios Operacionais */}
-        <div className="mt-8 lg:mt-12 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3.5">
-          <div className="bg-[#172554] border-2 border-blue-700 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
-              <Car className="w-6 h-6 stroke-[2.2]" aria-hidden="true" />
-            </div>
-            <div>
-              <div className="font-bold text-white text-base">Placas &amp; Veículos</div>
-              <div className="text-sm text-blue-200">
-                Consulta rápida e histórico por carro
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#172554] border-2 border-blue-700 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-[#2563EB] text-white flex items-center justify-center shrink-0">
-              <ClipboardCheck className="w-6 h-6 stroke-[2.2]" aria-hidden="true" />
-            </div>
-            <div>
-              <div className="font-bold text-white text-base">Ordens de Serviço</div>
-              <div className="text-sm text-blue-200">
-                Peças, mão de obra e status em 1 toque
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#172554] border-2 border-blue-700 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-emerald-500 text-[#071226] flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-6 h-6 stroke-[2.2]" aria-hidden="true" />
-            </div>
-            <div>
-              <div className="font-bold text-white text-base">Multi-Oficina Isolado</div>
-              <div className="text-sm text-blue-200">
-                Dados protegidos com confirmação por e-mail
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-dvh w-full bg-canvas text-ink lg:grid lg:grid-cols-2">
+      {/* Apresentação: só em telas largas */}
+      <aside className="hidden lg:flex flex-col justify-center gap-10 px-16 xl:px-24 py-16">
+        <Logo tamanho={56} legenda />
+        <p className="max-w-lg text-5xl font-semibold leading-[1.08] tracking-tight text-balance">
+          Controle total do pátio no celular ou na bancada.
+        </p>
+        <ul className="flex max-w-lg flex-col gap-4">
+          {beneficios.map(({ Icone, texto }) => (
+            <li
+              key={texto}
+              className="flex items-start gap-3 text-base text-ink-muted"
+            >
+              <Icone
+                className="mt-0.5 h-5 w-5 shrink-0 text-brand-ink"
+                aria-hidden="true"
+              />
+              <span>{texto}</span>
+            </li>
+          ))}
+        </ul>
       </aside>
 
-      {/* COLUNA DIREITA — FORMULÁRIOS DE ACESSO, CADASTRO E RECUPERAÇÃO DE SENHA */}
       <main
         id="conteudo-principal"
-        className="lg:col-span-7 flex items-center justify-center p-4 sm:p-8 lg:p-12 bg-[#071226]"
+        className="flex min-h-dvh flex-col px-4 pb-8 pt-3 sm:px-8 lg:min-h-0 lg:justify-center lg:px-12"
       >
-        <div className="w-full max-w-2xl bg-[#0B1B36] border-2 border-[#264577] rounded-2xl p-6 sm:p-10">
-          {/* 1. TELA PÓS-CADASTRO: CONFIRMAÇÃO DE E-MAIL ENVIADA */}
-          {confirmationSentTo ? (
-            <div className="space-y-6" aria-live="polite">
-              <div className="w-20 h-20 rounded-2xl bg-[#38BDF8] text-[#071226] flex items-center justify-center">
-                <MailCheck className="w-11 h-11 stroke-[2.2]" aria-hidden="true" />
-              </div>
+        <div className="mx-auto flex w-full max-w-md items-center justify-between pb-4 lg:hidden">
+          <Logo tamanho={32} legenda />
+          <ThemeToggle />
+        </div>
+        <div className="hidden lg:absolute lg:right-6 lg:top-6 lg:block">
+          <ThemeToggle />
+        </div>
 
+        <div className="mx-auto w-full max-w-md rounded-2xl bg-surface p-6 sm:p-8">
+          {confirmationSentTo ? (
+            <div className="flex flex-col gap-5" aria-live="polite">
+              <MailCheck
+                className="h-10 w-10 text-brand-ink"
+                aria-hidden="true"
+              />
               <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                <h1 className="text-2xl font-semibold leading-tight">
                   Confirme seu e-mail para ativar sua oficina
-                </h2>
-                <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+                </h1>
+                <p className="text-base text-ink-muted">
                   Enviamos um link de ativação para:
                 </p>
-                <div className="bg-[#12274D] border-2 border-[#38BDF8] rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-bold text-white break-all">
+                <p className="break-all rounded-xl bg-muted px-4 py-3 font-mono text-base font-semibold">
                   {confirmationSentTo}
-                </div>
+                </p>
               </div>
-
-              <div className="bg-[#12274D] border border-[#264577] rounded-xl p-5 space-y-2 text-slate-200 text-base">
-                <p className="font-semibold text-white">Como ativar agora (leva 10 segundos):</p>
-                <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
-                  <li>Abra o aplicativo de e-mail no seu celular ou computador.</li>
-                  <li>Procure pelo e-mail do Mecanify (olhe também no Spam).</li>
-                  <li>Toque em <strong>Confirmar Meu E-mail</strong> para liberar seu acesso.</li>
-                </ol>
-              </div>
-
-              {resendSuccess && (
-                <div className="p-4 rounded-xl bg-emerald-950 border-2 border-emerald-500 text-emerald-200 flex items-center gap-3 text-base">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" aria-hidden="true" />
-                  <span>{resendSuccess}</span>
-                </div>
-              )}
-
-              {error && (
-                <div className="p-4 rounded-xl bg-red-950 border-2 border-red-500 text-red-200 flex items-center gap-3 text-base">
-                  <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" aria-hidden="true" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <button
-                  type="button"
-                  disabled={resending}
-                  onClick={() => handleResendEmail(confirmationSentTo)}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#12274D] hover:bg-[#264577] border-2 border-[#3A5C90] text-white font-bold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
-                >
-                  {resending ? (
-                    <>
-                      <progress aria-label="Reenviando" className="loading-spinner" />
-                      <span>Reenviando e-mail…</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-5 h-5" aria-hidden="true" />
-                      <span>Reenviar E-mail</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
+              <ol className="list-decimal list-inside space-y-1.5 text-sm text-ink-muted">
+                <li>Abra o aplicativo de e-mail no celular ou computador.</li>
+                <li>Procure o e-mail do Mecanify (olhe também no Spam).</li>
+                <li>
+                  Toque em{" "}
+                  <strong className="text-ink">Confirmar Meu E-mail</strong>.
+                </li>
+              </ol>
+              {resendSuccess && avisoSucesso(resendSuccess)}
+              {error && avisoErro(error)}
+              <div className="flex flex-col gap-3">
+                <Button
+                  className="h-12 w-full text-base"
+                  icone={ArrowRight}
                   onClick={() => {
                     setEmail(confirmationSentTo);
-                    switchMode('login');
+                    switchMode("login");
                   }}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-base flex items-center justify-center gap-3 cursor-pointer"
                 >
-                  <span>Já confirmei — Entrar</span>
-                  <ArrowRight className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
-                </button>
+                  Já confirmei, entrar
+                </Button>
+                <Button
+                  variante="secundario"
+                  className="h-12 w-full text-base"
+                  icone={RefreshCw}
+                  carregando={resending}
+                  onClick={() => handleResendEmail(confirmationSentTo)}
+                >
+                  {resending ? "Reenviando e-mail…" : "Reenviar e-mail"}
+                </Button>
               </div>
             </div>
           ) : resetEmailSentTo ? (
-            /* 2. TELA PÓS-SOLICITAÇÃO DE RECUPERAÇÃO DE SENHA */
-            <div className="space-y-6" aria-live="polite">
-              <div className="w-20 h-20 rounded-2xl bg-[#2563EB] text-white flex items-center justify-center">
-                <KeyRound className="w-11 h-11 stroke-[2.2]" aria-hidden="true" />
-              </div>
-
+            <div className="flex flex-col gap-5" aria-live="polite">
+              <KeyRound
+                className="h-10 w-10 text-brand-ink"
+                aria-hidden="true"
+              />
               <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
-                  Link de recuperação enviado!
-                </h2>
-                <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
-                  Enviamos um e-mail com o botão para criar sua nova senha em:
+                <h1 className="text-2xl font-semibold leading-tight">
+                  Link de recuperação enviado
+                </h1>
+                <p className="text-base text-ink-muted">
+                  Enviamos um e-mail para criar sua nova senha em:
                 </p>
-                <div className="bg-[#12274D] border-2 border-[#2563EB] rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-bold text-white break-all">
+                <p className="break-all rounded-xl bg-muted px-4 py-3 font-mono text-base font-semibold">
                   {resetEmailSentTo}
-                </div>
+                </p>
               </div>
-
-              <div className="bg-[#12274D] border border-[#264577] rounded-xl p-5 space-y-2 text-slate-200 text-base">
-                <p className="font-semibold text-white">Próximo passo:</p>
-                <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
-                  <li>Abra seu e-mail e toque no botão <strong>Redefinir Minha Senha</strong>.</li>
-                  <li>Você voltará automaticamente para cá para digitar a senha nova.</li>
-                </ol>
-              </div>
-
-              {resendSuccess && (
-                <div className="p-4 rounded-xl bg-emerald-950 border-2 border-emerald-500 text-emerald-200 flex items-center gap-3 text-base">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" aria-hidden="true" />
-                  <span>{resendSuccess}</span>
-                </div>
-              )}
-
-              {error && (
-                <div className="p-4 rounded-xl bg-red-950 border-2 border-red-500 text-red-200 flex items-center gap-3 text-base">
-                  <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" aria-hidden="true" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <button
-                  type="button"
-                  disabled={resending}
+              <ol className="list-decimal list-inside space-y-1.5 text-sm text-ink-muted">
+                <li>
+                  Abra seu e-mail e toque em{" "}
+                  <strong className="text-ink">Redefinir Minha Senha</strong>.
+                </li>
+                <li>Você volta para cá para digitar a senha nova.</li>
+              </ol>
+              {resendSuccess && avisoSucesso(resendSuccess)}
+              {error && avisoErro(error)}
+              <div className="flex flex-col gap-3">
+                <Button
+                  className="h-12 w-full text-base"
+                  icone={ArrowLeft}
+                  onClick={() => switchMode("login")}
+                >
+                  Voltar para o login
+                </Button>
+                <Button
+                  variante="secundario"
+                  className="h-12 w-full text-base"
+                  icone={RefreshCw}
+                  carregando={resending}
                   onClick={() => handleResendPasswordReset(resetEmailSentTo)}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#12274D] hover:bg-[#264577] border-2 border-[#3A5C90] text-white font-bold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
                 >
-                  {resending ? (
-                    <>
-                      <progress aria-label="Reenviando" className="loading-spinner" />
-                      <span>Reenviando link…</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-5 h-5" aria-hidden="true" />
-                      <span>Reenviar Link</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-base flex items-center justify-center gap-3 cursor-pointer"
-                >
-                  <ArrowLeft className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
-                  <span>Voltar para o Login</span>
-                </button>
+                  {resending ? "Reenviando link…" : "Reenviar link"}
+                </Button>
               </div>
             </div>
           ) : (
-            <>
-              {/* SELETOR DE MODO GIGANTE (Exibido em Login / Cadastro) */}
-              {(mode === 'login' || mode === 'cadastro') && (
-                <div
-                  role="tablist"
-                  aria-label="Escolha entre entrar ou criar nova conta"
-                  className="grid grid-cols-2 gap-3 bg-[#071226] p-2 rounded-xl border-2 border-[#12274D] mb-8"
-                >
-                  <button
-                    role="tab"
-                    type="button"
-                    aria-selected={mode === 'login'}
-                    onClick={() => switchMode('login')}
-                    className={`min-h-[58px] rounded-lg px-4 py-3 font-bold text-base sm:text-lg flex items-center justify-center gap-3 cursor-pointer ${
-                      mode === 'login'
-                        ? 'bg-[#38BDF8] text-[#071226]'
-                        : 'bg-transparent text-slate-300 hover:bg-[#12274D] hover:text-white'
-                    }`}
-                  >
-                    <LogIn className="w-6 h-6 shrink-0" aria-hidden="true" />
-                    <span>Entrar</span>
-                  </button>
-
-                  <button
-                    role="tab"
-                    type="button"
-                    aria-selected={mode === 'cadastro'}
-                    onClick={() => switchMode('cadastro')}
-                    className={`min-h-[58px] rounded-lg px-4 py-3 font-bold text-base sm:text-lg flex items-center justify-center gap-3 cursor-pointer ${
-                      mode === 'cadastro'
-                        ? 'bg-[#2563EB] text-white'
-                        : 'bg-transparent text-slate-300 hover:bg-[#12274D] hover:text-white'
-                    }`}
-                  >
-                    <UserPlus className="w-6 h-6 shrink-0" aria-hidden="true" />
-                    <span>Criar Conta</span>
-                  </button>
+            <div className="flex flex-col gap-5">
+              {(mode === "login" || mode === "cadastro") && (
+                <div className="self-start max-w-full">
+                  <Tabs
+                    rotuloGrupo="Escolha entre entrar ou criar nova conta"
+                    ativo={mode}
+                    aoMudar={(id) => switchMode(id as AuthMode)}
+                    itens={[
+                      { id: "login", rotulo: "Entrar", icone: LogIn },
+                      {
+                        id: "cadastro",
+                        rotulo: "Criar conta",
+                        icone: UserPlus,
+                      },
+                    ]}
+                  />
                 </div>
               )}
 
-              {/* BOTÃO VOLTAR QUANDO ESTIVER EM RECUPERAR SENHA */}
-              {mode === 'recuperar' && (
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="mb-6 min-h-[48px] px-4 py-2.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border-2 border-[#264577] text-slate-200 font-bold text-base inline-flex items-center gap-2.5 cursor-pointer"
+              {mode === "recuperar" && (
+                <Button
+                  variante="fantasma"
+                  tamanho="sm"
+                  icone={ArrowLeft}
+                  className="self-start"
+                  onClick={() => switchMode("login")}
                 >
-                  <ArrowLeft className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
-                  <span>Voltar para o Login</span>
-                </button>
+                  Voltar para o login
+                </Button>
               )}
 
-              {/* CABEÇALHO DO FORMULÁRIO */}
-              <div className="mb-6">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
-                  {mode === 'login' && 'Acessar Painel da Oficina'}
-                  {mode === 'cadastro' && 'Cadastrar Nova Oficina'}
-                  {mode === 'recuperar' && 'Esqueceu sua senha?'}
-                  {mode === 'nova-senha' && 'Criar Nova Senha de Acesso'}
-                </h2>
-                <p className="text-base text-slate-300 mt-1">
-                  {mode === 'login' && 'Digite seu e-mail e senha para abrir o pátio.'}
-                  {mode === 'cadastro' &&
-                    'Preencha os dados abaixo. Você receberá um e-mail de confirmação para ativar a conta.'}
-                  {mode === 'recuperar' &&
-                    'Informe seu e-mail de acesso e enviaremos um link seguro para você criar outra senha.'}
-                  {mode === 'nova-senha' &&
-                    'Digite e confirme sua nova senha abaixo para entrar direto no Mecanify.'}
-                </p>
-              </div>
-
-              {/* ALERTA DE ERRO OU E-MAIL NÃO CONFIRMADO */}
-              <div aria-live="polite">
-                {error && (
-                  <div className="mb-6 p-5 rounded-xl bg-red-950 border-2 border-red-500 text-red-100 space-y-3">
-                    <div className="flex items-start gap-3.5">
-                      <AlertTriangle
-                        className="w-6 h-6 text-red-400 shrink-0 mt-0.5"
-                        aria-hidden="true"
-                      />
-                      <span className="text-base font-medium leading-snug">{error}</span>
-                    </div>
-
-                    {unconfirmedEmail && (
-                      <button
-                        type="button"
-                        disabled={resending}
-                        onClick={() => handleResendEmail(unconfirmedEmail)}
-                        className="w-full min-h-[52px] px-4 py-3 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-base flex items-center justify-center gap-2.5 cursor-pointer"
-                      >
-                        {resending ? (
-                          <>
-                            <progress aria-label="Reenviando" className="loading-spinner" />
-                            <span>Reenviando link de confirmação…</span>
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="w-5 h-5" aria-hidden="true" />
-                            <span>Reenviar E-mail de Confirmação Agora</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {resendSuccess && (
-                  <div className="mb-6 p-5 rounded-xl bg-emerald-950 border-2 border-emerald-500 text-emerald-100 flex items-center gap-3.5 text-base font-medium">
-                    <CheckCircle2
-                      className="w-6 h-6 text-emerald-400 shrink-0"
-                      aria-hidden="true"
-                    />
-                    <span>{resendSuccess}</span>
-                  </div>
+              <div className="space-y-1">
+                <h1 className="text-2xl font-semibold leading-tight tracking-tight">
+                  {tituloModo[mode]}
+                </h1>
+                {mode !== "login" && (
+                  <p className="text-sm text-ink-muted">
+                    {subtituloModo[mode]}
+                  </p>
                 )}
               </div>
 
-              {/* FORMULÁRIO PRINCIPAL */}
-              <form onSubmit={handleSubmit} noValidate className="space-y-5">
-                {mode === 'cadastro' && (
+              {error && (
+                <div aria-live="polite" className="space-y-3">
+                  {avisoErro(error)}
+                  {unconfirmedEmail && (
+                    <Button
+                      variante="secundario"
+                      className="w-full"
+                      icone={RefreshCw}
+                      carregando={resending}
+                      onClick={() => handleResendEmail(unconfirmedEmail)}
+                    >
+                      {resending
+                        ? "Reenviando link…"
+                        : "Reenviar e-mail de confirmação"}
+                    </Button>
+                  )}
+                </div>
+              )}
+              {resendSuccess && avisoSucesso(resendSuccess)}
+
+              <form
+                onSubmit={handleSubmit}
+                noValidate
+                className="flex flex-col gap-4"
+              >
+                {mode === "cadastro" && (
                   <>
-                    <div>
-                      <label
-                        htmlFor="campo-oficina"
-                        className="block text-base font-bold text-slate-100 mb-2"
-                      >
-                        Nome da Oficina
-                      </label>
+                    <Field rotulo="Nome da oficina" erro={erroDe("oficina")}>
                       <input
                         ref={oficinaInputRef}
-                        id="campo-oficina"
                         name="organization"
                         type="text"
                         autoComplete="organization"
                         required
                         value={nomeOficina}
                         onChange={(e) => setNomeOficina(e.target.value)}
-                        placeholder="Ex.: Auto Centro Irmãos Silva…"
-                        className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                        placeholder="Ex.: Auto Centro Irmãos Silva"
+                        className={classeInput}
                       />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <div>
-                        <label
-                          htmlFor="campo-nome"
-                          className="block text-base font-bold text-slate-100 mb-2"
-                        >
-                          Seu Nome (Responsável)
-                        </label>
-                        <input
-                          ref={nomeInputRef}
-                          id="campo-nome"
-                          name="name"
-                          type="text"
-                          autoComplete="name"
-                          required
-                          value={nome}
-                          onChange={(e) => setNome(e.target.value)}
-                          placeholder="Ex.: Carlos Mecânico…"
-                          className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="campo-telefone"
-                          className="block text-base font-bold text-slate-100 mb-2"
-                        >
-                          WhatsApp / Celular
-                        </label>
-                        <input
-                          id="campo-telefone"
-                          name="tel"
-                          type="tel"
-                          inputMode="tel"
-                          autoComplete="tel"
-                          value={telefone}
-                          onChange={(e) => setTelefone(e.target.value)}
-                          placeholder="Ex.: (11) 99999-0000…"
-                          className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-mono tabular-nums"
-                        />
-                      </div>
-                    </div>
+                    </Field>
+                    <Field rotulo="Seu nome" erro={erroDe("nome")}>
+                      <input
+                        ref={nomeInputRef}
+                        name="name"
+                        type="text"
+                        autoComplete="name"
+                        required
+                        value={nome}
+                        onChange={(e) => setNome(e.target.value)}
+                        placeholder="Ex.: Carlos Mecânico"
+                        className={classeInput}
+                      />
+                    </Field>
+                    <Field rotulo="WhatsApp ou celular">
+                      <input
+                        name="tel"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        value={telefone}
+                        onChange={(e) => setTelefone(e.target.value)}
+                        placeholder="(11) 99999-0000"
+                        className={`${classeInput} tabular-nums`}
+                      />
+                    </Field>
                   </>
                 )}
 
-                {mode !== 'nova-senha' && (
-                  <div>
-                    <label
-                      htmlFor="campo-email"
-                      className="block text-base font-bold text-slate-100 mb-2"
-                    >
-                      E-mail de Acesso
-                    </label>
+                {mode !== "nova-senha" && (
+                  <Field rotulo="E-mail" erro={erroDe("email")}>
                     <input
                       ref={emailInputRef}
-                      id="campo-email"
                       name="email"
                       type="email"
                       inputMode="email"
@@ -690,145 +600,110 @@ export function Login() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="seu.email@oficina.com.br…"
-                      className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                      placeholder="seu.email@oficina.com.br"
+                      className={classeInput}
                     />
-                  </div>
+                  </Field>
                 )}
 
-                {mode !== 'recuperar' && (
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <label
-                        htmlFor="campo-senha"
-                        className="block text-base font-bold text-slate-100"
-                      >
-                        {mode === 'nova-senha'
-                          ? 'Nova Senha (mínimo 6 caracteres)'
-                          : `Senha ${mode === 'cadastro' ? '(mínimo 6 caracteres)' : ''}`}
-                      </label>
-
-                      {mode === 'login' && (
-                        <button
-                          type="button"
-                          onClick={() => switchMode('recuperar')}
-                          className="min-h-[44px] px-2 text-sm sm:text-base font-bold text-[#38BDF8] hover:text-sky-300 underline underline-offset-4 cursor-pointer"
-                        >
-                          Esqueci minha senha
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="relative flex items-center">
+                {mode !== "recuperar" && (
+                  <div className="relative">
+                    <Field
+                      rotulo={mode === "nova-senha" ? "Nova senha" : "Senha"}
+                      dica={
+                        mode !== "login" ? "Mínimo de 6 caracteres." : undefined
+                      }
+                      erro={erroDe("senha")}
+                    >
                       <input
                         ref={senhaInputRef}
-                        id="campo-senha"
                         name="password"
-                        type={mostrarSenha ? 'text' : 'password'}
+                        type={mostrarSenha ? "text" : "password"}
                         autoComplete={
-                          mode === 'login' ? 'current-password' : 'new-password'
+                          mode === "login" ? "current-password" : "new-password"
                         }
                         required
                         minLength={6}
                         value={senha}
                         onChange={(e) => setSenha(e.target.value)}
                         placeholder={
-                          mode === 'nova-senha'
-                            ? 'Digite sua nova senha…'
-                            : 'Digite sua senha…'
+                          mode === "nova-senha"
+                            ? "Digite a nova senha"
+                            : "Digite sua senha"
                         }
-                        className="w-full min-h-[58px] pl-4 pr-16 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                        className={`${classeInput} pr-12`}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setMostrarSenha((v) => !v)}
-                        aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                        className="absolute right-2 min-w-[48px] min-h-[48px] rounded-lg text-slate-300 hover:text-white hover:bg-[#12274D] flex items-center justify-center cursor-pointer"
-                      >
-                        {mostrarSenha ? (
-                          <EyeOff className="w-6 h-6" aria-hidden="true" />
-                        ) : (
-                          <Eye className="w-6 h-6" aria-hidden="true" />
-                        )}
-                      </button>
-                    </div>
+                    </Field>
+                    <button
+                      type="button"
+                      onClick={() => setMostrarSenha((v) => !v)}
+                      aria-label={
+                        mostrarSenha ? "Ocultar senha" : "Mostrar senha"
+                      }
+                      className="absolute right-0 top-[26px] flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      {mostrarSenha ? (
+                        <EyeOff className="h-5 w-5" aria-hidden="true" />
+                      ) : (
+                        <Eye className="h-5 w-5" aria-hidden="true" />
+                      )}
+                    </button>
                   </div>
                 )}
 
-                {mode === 'nova-senha' && (
-                  <div>
-                    <label
-                      htmlFor="campo-confirmar-senha"
-                      className="block text-base font-bold text-slate-100 mb-2"
-                    >
-                      Repita a Nova Senha
-                    </label>
+                {mode === "nova-senha" && (
+                  <Field
+                    rotulo="Repita a nova senha"
+                    erro={erroDe("confirmar")}
+                  >
                     <input
                       ref={confirmarSenhaInputRef}
-                      id="campo-confirmar-senha"
                       name="confirm-password"
-                      type={mostrarSenha ? 'text' : 'password'}
+                      type={mostrarSenha ? "text" : "password"}
                       autoComplete="new-password"
                       required
                       minLength={6}
                       value={confirmarSenha}
                       onChange={(e) => setConfirmarSenha(e.target.value)}
-                      placeholder="Digite a mesma senha novamente…"
-                      className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                      placeholder="Digite a mesma senha novamente"
+                      className={classeInput}
                     />
-                  </div>
+                  </Field>
                 )}
 
-                <button
+                <Button
                   type="submit"
-                  disabled={submitting}
-                  className={`w-full min-h-[64px] px-6 py-4 rounded-xl font-bold text-lg sm:text-xl flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 ${
-                    mode === 'login' || mode === 'nova-senha'
-                      ? 'bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226]'
-                      : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white'
-                  }`}
+                  className="mt-1 h-12 w-full text-base"
+                  carregando={submitting}
                 >
-                  {submitting ? (
-                    <>
-                      <progress aria-label="Processando" className="loading-spinner" />
-                      <span>
-                        {mode === 'login' && 'Entrando na Oficina…'}
-                        {mode === 'cadastro' && 'Criando Conta e Enviando E-mail…'}
-                        {mode === 'recuperar' && 'Enviando Link de Recuperação…'}
-                        {mode === 'nova-senha' && 'Salvando Nova Senha…'}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      {mode === 'login' && (
-                        <>
-                          <LogIn className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
-                          <span>Entrar no Mecanify</span>
-                        </>
-                      )}
-                      {mode === 'cadastro' && (
-                        <>
-                          <UserPlus className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
-                          <span>Criar Conta e Receber Confirmação</span>
-                        </>
-                      )}
-                      {mode === 'recuperar' && (
-                        <>
-                          <KeyRound className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
-                          <span>Enviar Link para Redefinir Senha</span>
-                        </>
-                      )}
-                      {mode === 'nova-senha' && (
-                        <>
-                          <Lock className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
-                          <span>Salvar Nova Senha e Abrir Oficina</span>
-                        </>
-                      )}
-                    </>
-                  )}
-                </button>
+                  {submitting
+                    ? mode === "login"
+                      ? "Entrando…"
+                      : mode === "cadastro"
+                        ? "Criando conta…"
+                        : mode === "recuperar"
+                          ? "Enviando link…"
+                          : "Salvando senha…"
+                    : mode === "login"
+                      ? "Entrar no Mecanify"
+                      : mode === "cadastro"
+                        ? "Criar conta"
+                        : mode === "recuperar"
+                          ? "Enviar link de recuperação"
+                          : "Salvar nova senha"}
+                </Button>
+
+                {mode === "login" && (
+                  <Button
+                    variante="fantasma"
+                    className="w-full"
+                    onClick={() => switchMode("recuperar")}
+                  >
+                    Esqueci minha senha
+                  </Button>
+                )}
               </form>
-            </>
+            </div>
           )}
         </div>
       </main>

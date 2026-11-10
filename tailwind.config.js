@@ -1,32 +1,35 @@
 /** @type {import('tailwindcss').Config} */
+const token = (nome) => `rgb(var(--c-${nome}) / <alpha-value>)`;
+
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'monospace'],
+        sans: ['"Geist Variable"', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"Geist Mono Variable"', 'ui-monospace', 'monospace'],
       },
       colors: {
-        // Marca Mecanify: azul escuro (fundos e superfícies) + azul claro (acento).
-        mecanify: {
-          bg: '#071226',
-          surface: '#0B1B36',
-          card: '#12274D',
-          border: '#264577',
-          dark: '#1E3A8A',
-          accent: '#38BDF8',
-          accentHover: '#0EA5E9',
-        },
-        // Neutros com tom azul-marinho: os fundos/bordas/textos slate-* de todas as telas seguem a marca.
-        slate: {
-          50: '#F4F8FD', 100: '#E8EFFA', 200: '#D2DEF2', 300: '#B0C3E3', 400: '#86A0CC',
-          500: '#7090C4', 600: '#3A5C90', 700: '#264577', 800: '#12274D', 900: '#0B1B36', 950: '#071226',
-        },
+        canvas: token('canvas'),
+        surface: token('surface'),
+        muted: token('muted'),
+        sunken: token('sunken'),
+        line: { DEFAULT: token('line'), strong: token('line-strong') },
+        ink: { DEFAULT: token('ink'), muted: token('ink-muted'), subtle: token('ink-subtle') },
+        brand: { DEFAULT: token('brand'), hover: token('brand-hover'), ink: token('brand-ink') },
+        'on-brand': token('on-brand'),
+        'on-solid': token('on-solid'),
+        danger: { DEFAULT: token('danger'), solid: token('danger-solid') },
+        success: { DEFAULT: token('success'), solid: token('success-solid') },
+        warning: token('warning'),
+        info: token('info'),
+        done: token('done'),
+      },
+      boxShadow: {
+        card: 'var(--shadow-card)',
       },
     },
   },
   plugins: [],
 };
-

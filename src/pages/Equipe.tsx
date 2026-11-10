@@ -14,23 +14,35 @@ import {
 import {
   Users,
   UserPlus,
-  Calendar,
-  Clock,
-  Star,
   Printer,
   MessageCircle,
   CheckCircle2,
   AlertTriangle,
-  FileText,
-  DollarSign,
-  Pencil,
+  ShieldAlert,
   Trash2,
-  X,
   Send,
-  Navigation,
   RefreshCw,
   RotateCcw,
+  UserX,
+  Navigation,
 } from 'lucide-react';
+import { Button, CLASSE_CAMPO, Field, PageHeader, Panel, Skeleton, type TabItem } from '../components/ui';
+import { Folha } from '../components/Folha';
+import { AbasEquipe } from './equipe/AbasEquipe';
+import { LinhaColaborador, COLUNAS_COLABORADOR } from './equipe/LinhaColaborador';
+import { AbaFolha } from './equipe/AbaFolha';
+import { AbaEscalas } from './equipe/AbaEscalas';
+import { AbaPonto } from './equipe/AbaPonto';
+import { AbaAvaliacoes } from './equipe/AbaAvaliacoes';
+import {
+  calcularDistanciaMetros,
+  formatBRL,
+  formatData,
+  rotuloCargo,
+  rotuloTipoEscala,
+  totalFolhaColaborador,
+  vencimentoFolha,
+} from './equipe/auxiliares';
 
 interface EquipeProps {
   empresaId: string;
@@ -38,46 +50,21 @@ interface EquipeProps {
 
 type TabEquipe = 'colaboradores' | 'folha' | 'escalas' | 'ponto' | 'avaliacoes';
 
+// Rótulos curtos: as cinco abas cabem (ou rolam dentro da faixa) numa linha no celular
+const ABAS: TabItem[] = [
+  { id: 'colaboradores', rotulo: 'Equipe' },
+  { id: 'folha', rotulo: 'Folha' },
+  { id: 'escalas', rotulo: 'Escalas' },
+  { id: 'ponto', rotulo: 'Ponto' },
+  { id: 'avaliacoes', rotulo: 'Avaliações' },
+];
+
 const CARGOS_DISPONIVEIS: { id: CargoUsuario; label: string; desc: string }[] = [
   { id: 'MECANICO', label: 'Mecânico / Técnico', desc: 'Acessa pátio e lança serviços nas OS' },
   { id: 'ATENDENTE', label: 'Atendente / Recepção', desc: 'Atende clientes e abre orçamentos' },
   { id: 'FINANCEIRO', label: 'Financeiro', desc: 'Acesso total a caixa, DRE e pagamentos' },
   { id: 'DONO', label: 'Dono / Administrador', desc: 'Controle total da oficina e equipe' },
 ];
-
-const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    Number(valor || 0)
-  );
-
-const formatData = (iso?: string | null) => {
-  if (!iso) return '—';
-  try {
-    const [y, m, d] = iso.slice(0, 10).split('-');
-    return `${d}/${m}/${y}`;
-  } catch {
-    return iso.slice(0, 10);
-  }
-};
-
-// Cálculo de distância entre dois pontos GPS em metros (Fórmula de Haversine)
-function calcularDistanciaMetros(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371e3; // Raio da Terra em metros
-  const rad = (graus: number) => (graus * Math.PI) / 180;
-  const dLat = rad(lat2 - lat1);
-  const dLon = rad(lon2 - lon1);
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
-}
 
 export function Equipe({ empresaId }: EquipeProps) {
   const { user } = useAuth();
@@ -103,6 +90,8 @@ export function Equipe({ empresaId }: EquipeProps) {
   }>({ lat: -23.55052, lon: -46.633308, raio: 150 });
 
   const [carregando, setCarregando] = useState(true);
+  // Primeira carga concluída: até lá as abas mostram esqueleto (nunca área em branco)
+  const [carregado, setCarregado] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -112,8 +101,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // Modais e Filtros
-  const [mostrarInativos, setMostrarInativos] = useState(false);
+  // Modais (folhas) e confirmações
   const [modalColaboradorAberto, setModalColaboradorAberto] = useState(false);
   const [colaboradorEmEdicao, setColaboradorEmEdicao] = useState<Usuario | null>(null);
   const [modalConviteAberto, setModalConviteAberto] = useState(false);
@@ -121,6 +109,17 @@ export function Equipe({ empresaId }: EquipeProps) {
   const [cargoConvite, setCargoConvite] = useState<CargoUsuario>('MECANICO');
   const [nomeConvite, setNomeConvite] = useState('');
   const [telConvite, setTelConvite] = useState('');
+  const [colaboradorParaDesativar, setColaboradorParaDesativar] = useState<Usuario | null>(null);
+  const [colaboradorParaReativar, setColaboradorParaReativar] = useState<Usuario | null>(null);
+  const [confirmarFolhaAberto, setConfirmarFolhaAberto] = useState(false);
+  const [escalaParaExcluir, setEscalaParaExcluir] = useState<EscalaFolga | null>(null);
+  const [confirmarPontoAberto, setConfirmarPontoAberto] = useState(false);
+  const [processando, setProcessando] = useState(false);
+  const [erroFolha, setErroFolha] = useState<string | null>(null);
+  // Saída pendente de confirmação ("Descartar alterações?") quando o formulário do colaborador tem dados não salvos
+  const [saidaPendente, setSaidaPendente] = useState<(() => void) | null>(null);
+  const [formInicial, setFormInicial] = useState('');
+  const [salvandoColaborador, setSalvandoColaborador] = useState(false);
 
   // Form Colaborador (sem valores fictícios por padrão)
   const [formNome, setFormNome] = useState('');
@@ -145,9 +144,11 @@ export function Equipe({ empresaId }: EquipeProps) {
     () => usuarios.filter((u) => u.ativo === false),
     [usuarios]
   );
-  const colaboradoresVisiveis = useMemo(() => {
-    return mostrarInativos ? usuarios : usuariosAtivos;
-  }, [usuarios, mostrarInativos, usuariosAtivos]);
+  // Uma lista só: ativos e, por último, os desativados (sem precisar alternar filtro)
+  const colaboradoresVisiveis = useMemo(
+    () => [...usuariosAtivos, ...usuariosInativos],
+    [usuariosAtivos, usuariosInativos]
+  );
 
   // Modal Holerite
   const [modalHoleriteAberto, setModalHoleriteAberto] = useState(false);
@@ -168,6 +169,8 @@ export function Equipe({ empresaId }: EquipeProps) {
     return d.toISOString().slice(0, 10);
   });
   const [escalaObs, setEscalaObs] = useState('');
+  const [erroEscala, setErroEscala] = useState<string | null>(null);
+  const [salvandoEscala, setSalvandoEscala] = useState(false);
 
   // Ponto Mobile State
   const [registrandoPonto, setRegistrandoPonto] = useState(false);
@@ -206,6 +209,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       setErro(err.message || 'Erro ao carregar equipe.');
     } finally {
       setCarregando(false);
+      setCarregado(true);
     }
   }, [empresaId]);
 
@@ -233,6 +237,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     setFormVR('');
     setFormPagaHE(parametrosFolha.paga_hora_extra_padrao);
     setFormValorHE(String(parametrosFolha.valor_hora_extra_padrao ?? 25));
+    setErro(null);
     setModalColaboradorAberto(true);
   };
 
@@ -266,57 +271,100 @@ export function Equipe({ empresaId }: EquipeProps) {
     setFormValorHE(
       u.valor_hora_extra && u.valor_hora_extra > 0 ? String(u.valor_hora_extra) : ''
     );
+    setErro(null);
     setModalColaboradorAberto(true);
   };
 
-  // Exclusão Lógica (Desativar Colaborador)
-  const handleExcluirColaborador = async (u: Usuario) => {
-    const confirmar = window.confirm(
-      `Deseja realmente desativar o colaborador "${u.nome}"?\n\nEle será mantido no histórico da base de dados, mas removido da listagem ativa e da folha de pagamento.`
-    );
-    if (!confirmar) return;
+  // Formulário do colaborador: com dados digitados, Esc/Cancelar pedem confirmação em vez de descartar em silêncio
+  const valoresForm = JSON.stringify([
+    formNome,
+    formEmail,
+    formTelefone,
+    formCargo,
+    formSenha,
+    formSalario,
+    formComissaoServico,
+    formComissaoPeca,
+    formVT,
+    formVR,
+    formPagaHE,
+    formValorHE,
+  ]);
+  useEffect(() => {
+    // Ao abrir, guarda os valores iniciais (os setters de abertura já foram aplicados neste render)
+    if (modalColaboradorAberto) setFormInicial(valoresForm);
+    else setSaidaPendente(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalColaboradorAberto]);
+  const colaboradorSujo = modalColaboradorAberto && formInicial !== '' && valoresForm !== formInicial;
 
+  const fecharModalColaborador = () => {
+    setSaidaPendente(null);
+    setFormInicial('');
+    setModalColaboradorAberto(false);
+  };
+  const sairDoFormulario = () => {
+    if (colaboradorSujo) setSaidaPendente(() => fecharModalColaborador);
+    else fecharModalColaborador();
+  };
+
+  const abrirHolerite = (u: Usuario) => {
+    setColaboradorHolerite(u);
+    setModalHoleriteAberto(true);
+  };
+
+  // Exclusão Lógica (Desativar Colaborador) — confirmada na folha "Desativar colaborador?"
+  const handleExcluirColaborador = async (u: Usuario) => {
     try {
+      setProcessando(true);
       await api.desativarUsuario(empresaId, u.id);
       setUsuarios((prev) =>
         prev.map((item) => (item.id === u.id ? { ...item, ativo: false } : item))
       );
+      setColaboradorParaDesativar(null);
       dispararFeedback(`Colaborador "${u.nome}" desativado com sucesso!`);
     } catch (e) {
       const err = e as Error;
-      alert(`Erro ao desativar colaborador: ${err.message}`);
+      setErroFolha(`Erro ao desativar colaborador: ${err.message}`);
+    } finally {
+      setProcessando(false);
     }
   };
 
-  // Reativação de Colaborador
+  // Reativação de Colaborador — confirmada na folha "Reativar colaborador?"
   const handleReativarColaborador = async (u: Usuario) => {
     try {
+      setProcessando(true);
       await api.reativarUsuario(empresaId, u.id);
       setUsuarios((prev) =>
         prev.map((item) => (item.id === u.id ? { ...item, ativo: true } : item))
       );
+      setColaboradorParaReativar(null);
       dispararFeedback(`Colaborador "${u.nome}" reativado com sucesso!`);
     } catch (e) {
       const err = e as Error;
-      alert(`Erro ao reativar colaborador: ${err.message}`);
+      setErroFolha(`Erro ao reativar colaborador: ${err.message}`);
+    } finally {
+      setProcessando(false);
     }
   };
 
-  // Salvar Colaborador
+  // Salvar Colaborador (mensagens de validação e de erro aparecem dentro da folha, sem alert)
   const handleSalvarColaborador = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErro(null);
     if (!formNome.trim() || !formEmail.trim()) {
-      alert('Preencha nome e e-mail.');
+      setErro('Preencha nome e e-mail.');
       return;
     }
 
     if (!isGestor) {
-      alert('Acesso negado: apenas o Dono ou Administrador pode criar ou editar colaboradores.');
+      setErro('Acesso negado: apenas o Dono ou Administrador pode criar ou editar colaboradores.');
       return;
     }
 
     if (formSenha.trim() && formSenha.trim().length < 6) {
-      alert('A nova senha deve ter no mínimo 6 caracteres.');
+      setErro('A nova senha deve ter no mínimo 6 caracteres.');
       return;
     }
 
@@ -328,6 +376,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     const heNum = formValorHE.trim() ? parseFloat(formValorHE) : 0;
 
     try {
+      setSalvandoColaborador(true);
       if (colaboradorEmEdicao) {
         const emailAlterado =
           formEmail.trim().toLowerCase() !== (colaboradorEmEdicao.email || '').trim().toLowerCase();
@@ -375,10 +424,12 @@ export function Equipe({ empresaId }: EquipeProps) {
         setUsuarios((prev) => [criado, ...prev]);
         dispararFeedback(`Colaborador "${criado.nome}" cadastrado com sucesso!`);
       }
-      setModalColaboradorAberto(false);
+      fecharModalColaborador();
     } catch (e) {
       const err = e as Error;
-      alert(`Erro ao salvar colaborador: ${err.message || 'Verifique os dados.'}`);
+      setErro(`Erro ao salvar colaborador: ${err.message || 'Verifique os dados.'}`);
+    } finally {
+      setSalvandoColaborador(false);
     }
   };
 
@@ -401,31 +452,15 @@ export function Equipe({ empresaId }: EquipeProps) {
     window.open(waUrl, '_blank');
   };
 
-  // Automação: Lançar Folha no Contas a Pagar (Sem dados fictícios)
+  // Automação: Lançar Folha no Contas a Pagar (Sem dados fictícios) — valores mostrados na folha de confirmação
+  const [anoFolha, mesFolha] = mesFolhaRef.split('-');
+  const dataVencimentoFolha = vencimentoFolha(mesFolhaRef, parametrosFolha.dia_pagamento);
+  const totalFolhaGeral = usuariosAtivos.reduce((acc, u) => acc + totalFolhaColaborador(u), 0);
+
   const handleLancarFolhaContasPagar = async () => {
     const [ano, mes] = mesFolhaRef.split('-');
-    const proximoMes = parseInt(mes, 10) === 12 ? 1 : parseInt(mes, 10) + 1;
-    const proximoAno = parseInt(mes, 10) === 12 ? parseInt(ano, 10) + 1 : parseInt(ano, 10);
-    const dataVencimentoFolha = `${proximoAno}-${String(proximoMes).padStart(
-      2,
-      '0'
-    )}-${String(parametrosFolha.dia_pagamento).padStart(2, '0')}`;
-
-    const totalFolhaGeral = usuariosAtivos.reduce((acc, u) => {
-      const salario = (u.salario_base && u.salario_base > 0) ? u.salario_base : 0;
-      const vt = u.vale_transporte || 0;
-      const vr = u.vale_refeicao || 0;
-      return acc + salario + vt + vr;
-    }, 0);
-
-    const confirmar = window.confirm(
-      `Deseja lançar a Folha de Pagamento do mês ${mes}/${ano} no valor total de ${formatBRL(
-        totalFolhaGeral
-      )} no Contas a Pagar com vencimento para ${formatData(dataVencimentoFolha)}?\n\n(Baseada exclusivamente nos colaboradores ativos com valores cadastrados)`
-    );
-    if (!confirmar) return;
-
     try {
+      setProcessando(true);
       await api.criarTransacaoFinanceira({
         empresa_id: empresaId,
         tipo: 'DESPESA',
@@ -437,42 +472,68 @@ export function Equipe({ empresaId }: EquipeProps) {
         forma_pagamento: 'TED / Transferência',
         observacoes: `Lançamento automático de folha (${usuariosAtivos.length} colaboradores ativos).`,
       });
+      setConfirmarFolhaAberto(false);
       dispararFeedback(
         `Folha de ${formatBRL(
           totalFolhaGeral
         )} agendada com sucesso no Contas a Pagar para ${formatData(dataVencimentoFolha)}!`
       );
     } catch {
-      alert('Erro ao agendar folha no financeiro.');
+      setErroFolha('Erro ao agendar folha no financeiro.');
+    } finally {
+      setProcessando(false);
     }
   };
 
   // Salvar Escala / Férias
   const handleSalvarEscala = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErroEscala(null);
     if (!escalaUsuarioId) {
-      alert('Selecione o colaborador.');
+      setErroEscala('Selecione o colaborador.');
       return;
     }
     const usr = usuarios.find((u) => u.id === escalaUsuarioId);
-    const nova = await api.salvarEscalaFolga({
-      empresa_id: empresaId,
-      usuario_id: escalaUsuarioId,
-      usuario_nome: usr?.nome || 'Colaborador',
-      tipo: escalaTipo,
-      data_inicio: escalaInicio,
-      data_fim: escalaFim,
-      observacoes: escalaObs.trim() || null,
-    });
-    setEscalas((prev) => [nova, ...prev]);
-    setModalEscalaAberto(false);
-    dispararFeedback(`Período de ${escalaTipo} agendado para ${usr?.nome}!`);
+    try {
+      setSalvandoEscala(true);
+      const nova = await api.salvarEscalaFolga({
+        empresa_id: empresaId,
+        usuario_id: escalaUsuarioId,
+        usuario_nome: usr?.nome || 'Colaborador',
+        tipo: escalaTipo,
+        data_inicio: escalaInicio,
+        data_fim: escalaFim,
+        observacoes: escalaObs.trim() || null,
+      });
+      setEscalas((prev) => [nova, ...prev]);
+      setModalEscalaAberto(false);
+      dispararFeedback(`Período de ${rotuloTipoEscala(escalaTipo)} agendado para ${usr?.nome}!`);
+    } catch (err) {
+      setErroEscala(`Erro ao salvar o período: ${(err as Error).message || 'tente novamente.'}`);
+    } finally {
+      setSalvandoEscala(false);
+    }
   };
 
-  // Bater Ponto Eletrônico com Trava GPS
+  // Excluir Escala — confirmada na folha "Excluir período?"
+  const handleExcluirEscala = async (esc: EscalaFolga) => {
+    try {
+      setProcessando(true);
+      await api.deletarEscalaFolga(empresaId, esc.id);
+      setEscalas((prev) => prev.filter((e) => e.id !== esc.id));
+      setEscalaParaExcluir(null);
+      dispararFeedback('Período removido com sucesso.');
+    } catch (err) {
+      setErroFolha(`Erro ao remover o período: ${(err as Error).message || 'tente novamente.'}`);
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  // Bater Ponto Eletrônico com Trava GPS (falhas aparecem na própria aba, sem alert)
   const handleBaterPonto = () => {
     if (!navigator.geolocation) {
-      alert('Seu navegador não suporta geolocalização para registro de ponto.');
+      setPontoFeedback({ sucesso: false, msg: 'Seu navegador não suporta geolocalização para registro de ponto.' });
       return;
     }
 
@@ -525,930 +586,601 @@ export function Equipe({ empresaId }: EquipeProps) {
       },
       (err) => {
         setRegistrandoPonto(false);
-        alert(
-          `Falha ao obter geolocalização: ${err.message}. Ative a permissão de GPS no seu celular.`
-        );
+        setPontoFeedback({
+          sucesso: false,
+          msg: `Falha ao obter geolocalização: ${err.message}. Ative a permissão de GPS no seu celular.`,
+        });
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
+  const alertaErro = (mensagem: string) => (
+    <p role="alert" className="flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
+      <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span>{mensagem}</span>
+    </p>
+  );
+
+  const confirmarDescarte = saidaPendente && (
+    <div
+      role="alert"
+      ref={(el) => el?.scrollIntoView({ block: 'nearest' })}
+      className="space-y-3 rounded-xl bg-warning/15 p-4"
+    >
+      <p className="text-sm font-medium text-ink">Descartar alterações? O que você digitou será perdido.</p>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variante="secundario" onClick={() => setSaidaPendente(null)}>
+          Continuar editando
+        </Button>
+        <Button
+          variante="perigo"
+          onClick={() => {
+            const fechar = saidaPendente;
+            setSaidaPendente(null);
+            fechar();
+          }}
+        >
+          Descartar
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Fecha uma folha de confirmação (não fecha enquanto a ação está em andamento)
+  const fecharConfirmacao = (fechar: () => void) => () => {
+    if (processando) return;
+    setErroFolha(null);
+    fechar();
+  };
+
   if (!isGestor) {
     return (
-      <div className="bg-[#0B1B36] border-2 border-red-900/60 rounded-2xl p-6 sm:p-10 max-w-xl mx-auto my-8 text-center space-y-4">
-        <div className="w-16 h-16 rounded-2xl bg-red-950/80 border-2 border-red-500 text-red-400 mx-auto flex items-center justify-center">
-          <AlertTriangle className="w-8 h-8" />
-        </div>
-        <h1 className="text-xl sm:text-2xl font-black text-white">Acesso Restrito à Gestão</h1>
-        <p className="text-sm text-slate-300">
-          O módulo de Equipe &amp; RH contém informações salariais e de gestão da oficina. Seu perfil atual (<strong>{user?.cargo || 'Colaborador'}</strong>) não possui permissão para visualizar ou editar estes dados.
-        </p>
+      <div>
+        <PageHeader titulo="Equipe & RH" />
+        <Panel espaco="lg" className="mx-auto flex max-w-xl flex-col items-center gap-3 text-center">
+          <ShieldAlert className="h-10 w-10 text-danger" strokeWidth={1.5} aria-hidden="true" />
+          <h2 className="text-base font-semibold text-ink">Acesso restrito à gestão</h2>
+          <p className="text-sm text-ink-muted">
+            O módulo de Equipe &amp; RH contém informações salariais e de gestão da oficina. Seu perfil atual ({rotuloCargo(user?.cargo)}) não possui permissão para visualizar ou editar estes dados.
+          </p>
+        </Panel>
       </div>
     );
   }
 
+  const erroNaTela = erro && !modalColaboradorAberto;
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto pb-12">
-      {/* CABEÇALHO DA EQUIPE & RH */}
-      <header className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#38BDF8] text-[#38BDF8] flex items-center justify-center shrink-0">
-            <Users className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              <span>Equipe &amp; Recursos Humanos</span>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-blue-950 border border-blue-500 text-[11px] font-mono font-bold text-blue-300">
-                {usuariosAtivos.length} Colaboradores
-              </span>
-            </h1>
-            <p className="text-xs text-slate-400">
-              Cargos, salários, comissões, convites WhatsApp, folha de pagamento, escalas de folga e ponto eletrônico.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={carregarTudo}
-            disabled={carregando}
-            title="Atualizar dados da equipe"
-            className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-300 flex items-center justify-center cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-[#38BDF8]' : ''}`} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              handleGerarConvite();
-              setModalConviteAberto(true);
-            }}
-            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/40"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Convidar no WhatsApp</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={abrirModalCadastroColaborador}
-            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-sky-950/40"
-          >
-            <UserPlus className="w-4 h-4 stroke-[2.5]" />
-            <span>+ Novo Colaborador</span>
-          </button>
-        </div>
-      </header>
+    <div>
+      <PageHeader
+        titulo="Equipe & RH"
+        complemento={
+          carregado ? (
+            <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle" title="Colaboradores ativos">
+              {usuariosAtivos.length}
+            </span>
+          ) : undefined
+        }
+        abaixo={
+          <span className="hidden sm:inline">
+            Colaboradores, folha de pagamento, escalas, ponto eletrônico e avaliações dos clientes.
+          </span>
+        }
+        acoes={
+          <>
+            <Button icone={UserPlus} onClick={abrirModalCadastroColaborador}>
+              Novo colaborador
+            </Button>
+            <Button
+              variante="secundario"
+              icone={MessageCircle}
+              onClick={() => {
+                handleGerarConvite();
+                setModalConviteAberto(true);
+              }}
+              aria-label="Convidar no WhatsApp"
+              title="Convidar no WhatsApp"
+            >
+              <span className="hidden sm:inline">Convidar no WhatsApp</span>
+            </Button>
+            <Button
+              variante="secundario"
+              icone={RefreshCw}
+              onClick={carregarTudo}
+              carregando={carregando && carregado}
+              disabled={carregando}
+              title="Atualizar dados da equipe"
+              aria-label="Atualizar dados da equipe"
+            />
+          </>
+        }
+      />
 
       {/* FEEDBACK DE SUCESSO / ERRO */}
       <div aria-live="polite">
         {sucessoMsg && (
-          <div className="p-3 rounded-xl bg-emerald-950 border border-emerald-500 text-emerald-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <p role="status" className="mb-4 flex items-center gap-2 rounded-xl bg-success/15 px-4 py-3 text-sm font-medium text-success">
+            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{sucessoMsg}</span>
-          </div>
+          </p>
         )}
-        {erro && (
-          <div className="p-3 rounded-xl bg-red-950 border border-red-500 text-red-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-            <span>{erro}</span>
-          </div>
+      </div>
+      {erroNaTela && <div className="mb-4">{alertaErro(erro)}</div>}
+
+      <AbasEquipe itens={ABAS} ativo={activeTab} aoMudar={(id) => setActiveTab(id as TabEquipe)} idPainel="painel-equipe" />
+
+      <div role="tabpanel" id="painel-equipe" aria-labelledby={`aba-${activeTab}`}>
+        {!carregado ? (
+          <Panel>
+            <Skeleton linhas={6} />
+          </Panel>
+        ) : (
+          <>
+            {/* ABA 1: QUADRO DE COLABORADORES */}
+            {activeTab === 'colaboradores' &&
+              (colaboradoresVisiveis.length === 0 ? (
+                <Panel espaco="lg" className="flex flex-col items-center gap-3 text-center">
+                  <Users className="h-10 w-10 text-ink-subtle" strokeWidth={1.5} aria-hidden="true" />
+                  <h2 className="text-base font-semibold text-ink">Nenhum colaborador cadastrado</h2>
+                  <p className="max-w-md text-sm text-ink-muted">
+                    Cadastre a equipe para controlar cargos, salários, comissões e o ponto de cada um.
+                  </p>
+                </Panel>
+              ) : (
+                <Panel espaco="nenhum">
+                  <div
+                    aria-hidden="true"
+                    className={`hidden items-center gap-x-6 pb-2 pl-5 pr-2 pt-4 text-xs text-ink-muted lg:grid ${COLUNAS_COLABORADOR}`}
+                  >
+                    <span>Colaborador</span>
+                    <span>Cargo</span>
+                    <span>Avaliação</span>
+                    <span className="text-right">Salário base</span>
+                    <span>Situação</span>
+                    <span />
+                  </div>
+                  <ul aria-label="Colaboradores" className="divide-y divide-line">
+                    {colaboradoresVisiveis.map((u) => (
+                      <LinhaColaborador
+                        key={u.id}
+                        u={u}
+                        comissaoServicoPadrao={parametrosFolha.comissao_global_servico_pct}
+                        comissaoPecaPadrao={parametrosFolha.comissao_global_peca_pct}
+                        aoHolerite={() => abrirHolerite(u)}
+                        aoEditar={() => abrirModalEdicaoColaborador(u)}
+                        aoDesativar={() => {
+                          setErroFolha(null);
+                          setColaboradorParaDesativar(u);
+                        }}
+                        aoReativar={() => {
+                          setErroFolha(null);
+                          setColaboradorParaReativar(u);
+                        }}
+                      />
+                    ))}
+                  </ul>
+                  <p className="px-4 pb-4 pt-3 text-xs text-ink-muted lg:px-5">
+                    {usuariosAtivos.length} {usuariosAtivos.length === 1 ? 'ativo' : 'ativos'}
+                    {usuariosInativos.length > 0 &&
+                      ` · ${usuariosInativos.length} ${usuariosInativos.length === 1 ? 'desativado' : 'desativados'} (no fim da lista)`}
+                  </p>
+                </Panel>
+              ))}
+
+            {/* ABA 2: FOLHA DE PAGAMENTO & HOLERITES */}
+            {activeTab === 'folha' && (
+              <AbaFolha
+                ativos={usuariosAtivos}
+                parametros={parametrosFolha}
+                mesRef={mesFolhaRef}
+                totalGeral={totalFolhaGeral}
+                aoMudarMes={setMesFolhaRef}
+                aoLancar={() => {
+                  setErroFolha(null);
+                  setConfirmarFolhaAberto(true);
+                }}
+                aoHolerite={abrirHolerite}
+              />
+            )}
+
+            {/* ABA 3: ESCALAS & FÉRIAS */}
+            {activeTab === 'escalas' && (
+              <AbaEscalas
+                escalas={escalas}
+                aoAgendar={() => {
+                  setErroEscala(null);
+                  setModalEscalaAberto(true);
+                }}
+                aoExcluir={(esc) => {
+                  setErroFolha(null);
+                  setEscalaParaExcluir(esc);
+                }}
+              />
+            )}
+
+            {/* ABA 4: PONTO ELETRÔNICO COM GEOLOCALIZAÇÃO */}
+            {activeTab === 'ponto' && (
+              <AbaPonto
+                pontos={pontos}
+                raio={coordsOficina.raio}
+                registrando={registrandoPonto}
+                feedback={pontoFeedback}
+                aoBaterPonto={() => setConfirmarPontoAberto(true)}
+              />
+            )}
+
+            {/* ABA 5: AVALIAÇÕES DOS CLIENTES */}
+            {activeTab === 'avaliacoes' && <AbaAvaliacoes avaliacoes={avaliacoes} />}
+          </>
         )}
       </div>
 
-      {/* 5 ABAS DA EQUIPE */}
-      <nav
-        aria-label="Abas da Equipe"
-        className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 bg-[#071226] p-1.5 rounded-2xl border-2 border-[#12274D]"
+      {/* FOLHA: CONVITE POR WHATSAPP (os campos ficam guardados ao fechar) */}
+      <Folha aberto={modalConviteAberto} titulo="Convidar por WhatsApp" aoCancelar={() => setModalConviteAberto(false)}>
+        <div className="space-y-4">
+          <Field rotulo="Nome do colaborador">
+            <input
+              type="text"
+              value={nomeConvite}
+              onChange={(e) => setNomeConvite(e.target.value)}
+              placeholder="Ex: Carlos Mecânico"
+              className={CLASSE_CAMPO}
+            />
+          </Field>
+          <Field rotulo="WhatsApp (DDD + número)">
+            <input
+              type="tel"
+              inputMode="tel"
+              value={telConvite}
+              onChange={(e) => setTelConvite(e.target.value)}
+              placeholder="Ex: 11999998888"
+              className={`${CLASSE_CAMPO} tabular-nums`}
+            />
+          </Field>
+          <Field rotulo="Cargo">
+            <select value={cargoConvite} onChange={(e) => setCargoConvite(e.target.value as CargoUsuario)} className={CLASSE_CAMPO}>
+              {CARGOS_DISPONIVEIS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variante="secundario" onClick={() => setModalConviteAberto(false)}>
+            Fechar
+          </Button>
+          <Button icone={Send} onClick={handleEnviarConviteWhatsApp}>
+            Enviar convite no WhatsApp
+          </Button>
+        </div>
+      </Folha>
+
+      {/* FOLHA: CADASTRO / EDIÇÃO DE COLABORADOR */}
+      <Folha
+        aberto={modalColaboradorAberto}
+        tamanho="lg"
+        fecharNoFundo={false}
+        titulo={colaboradorEmEdicao ? 'Editar colaborador' : 'Novo colaborador'}
+        aoCancelar={sairDoFormulario}
       >
-        <button
-          type="button"
-          onClick={() => setActiveTab('colaboradores')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-            activeTab === 'colaboradores'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>Colaboradores</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('folha')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-            activeTab === 'folha'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
-          }`}
-        >
-          <DollarSign className="w-4 h-4" />
-          <span>Folha &amp; Holerites</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('escalas')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-            activeTab === 'escalas'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          <span>Escalas &amp; Férias</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('ponto')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-            activeTab === 'ponto'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          <span>Ponto Eletrônico</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('avaliacoes')}
-          className={`col-span-2 sm:col-span-1 min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-            activeTab === 'avaliacoes'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
-          }`}
-        >
-          <Star className="w-4 h-4" />
-          <span>Avaliações (★)</span>
-        </button>
-      </nav>
-
-      {/* ========================================================
-          ABA 1: QUADRO DE COLABORADORES
-          ======================================================== */}
-      {activeTab === 'colaboradores' && (
-        <div className="space-y-3">
-          {usuariosInativos.length > 0 && (
-            <div className="flex items-center justify-between text-xs text-slate-400 bg-[#071226]/70 border border-[#12274D] px-3.5 py-2 rounded-xl">
-              <span>
-                Exibindo <strong>{usuariosAtivos.length}</strong> colaboradores ativos
-                {mostrarInativos && ` e ${usuariosInativos.length} desativado(s)`}.
-              </span>
-              <button
-                type="button"
-                onClick={() => setMostrarInativos((p) => !p)}
-                className="text-[#38BDF8] hover:text-[#0EA5E9] font-bold text-xs cursor-pointer flex items-center gap-1 transition-colors"
-              >
-                {mostrarInativos
-                  ? 'Ocultar Desativados'
-                  : `Ver Desativados (${usuariosInativos.length})`}
-              </button>
-            </div>
-          )}
-
-          <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
-            {colaboradoresVisiveis.map((u) => {
-              const estrelas = u.estrelas_media ?? 5.0;
-              const temSalario = u.salario_base && u.salario_base > 0;
-
-              return (
-                <article
-                  key={u.id}
-                  className="p-3 sm:px-4 sm:py-3 hover:bg-[#0B1B36]/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                >
-                  <div className="min-w-0 sm:flex-1 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#12274D] text-blue-300 border border-blue-500/60 uppercase">
-                        {u.cargo}
-                      </span>
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          u.ativo !== false
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
-                            : 'bg-red-950 text-red-300 border border-red-600'
-                        }`}
-                      >
-                        {u.ativo !== false ? 'ATIVO' : 'DESATIVADO'}
-                      </span>
-                      <div className="flex items-center gap-1 bg-amber-950/60 border border-amber-600 px-2 py-0.5 rounded text-[10px] text-amber-300 font-bold">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        <span>{estrelas.toFixed(1)}</span>
-                        <span className="text-slate-400">({u.total_avaliacoes || 0})</span>
-                      </div>
-                    </div>
-
-                    <h3 className="text-base font-bold text-white leading-snug">{u.nome}</h3>
-                    <div className="text-xs text-slate-400 flex flex-wrap items-center gap-3 font-mono">
-                      <span>{u.email}</span>
-                      {u.telefone && <span>&bull; {u.telefone}</span>}
-                    </div>
-                  </div>
-
-                  {/* Lado Direito: Salário, Comissões e Ações */}
-                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#12274D]">
-                    <div className="text-right font-mono tabular-nums text-xs">
-                      <div className="text-slate-400 text-[10px]">Salário Base</div>
-                      <div className="text-sm font-bold text-white">
-                        {temSalario ? (
-                          formatBRL(u.salario_base!)
-                        ) : (
-                          <span className="text-amber-400 font-sans text-xs font-normal">
-                            Não informado
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-emerald-400">
-                        Comissão: {u.comissao_servico_pct ?? parametrosFolha.comissao_global_servico_pct}% M.O. &bull;{' '}
-                        {u.comissao_peca_pct ?? parametrosFolha.comissao_global_peca_pct}% Peças
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setColaboradorHolerite(u);
-                          setModalHoleriteAberto(true);
-                        }}
-                        title="Ver Holerite"
-                        className="h-8 px-2.5 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-blue-300 font-bold text-xs flex items-center gap-1 cursor-pointer"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Holerite</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => abrirModalEdicaoColaborador(u)}
-                        title="Editar Colaborador & RH"
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-amber-300 flex items-center justify-center cursor-pointer"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-
-                      {u.ativo !== false ? (
-                        <button
-                          type="button"
-                          onClick={() => handleExcluirColaborador(u)}
-                          title="Excluir Colaborador (Exclusão Lógica)"
-                          className="w-8 h-8 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 flex items-center justify-center cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleReativarColaborador(u)}
-                          title="Reativar Colaborador"
-                          className="h-8 px-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 flex items-center gap-1 text-xs font-bold cursor-pointer transition-colors"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Reativar</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          ABA 2: FOLHA DE PAGAMENTO & HOLERITES AUTOMÁTICOS
-          ======================================================== */}
-      {activeTab === 'folha' && (
-        <div className="space-y-4">
-          {/* BARRA DE CONTROLE DA FOLHA */}
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-[#38BDF8]" />
-                <span>Fechamento da Folha de Pagamento</span>
-              </h3>
-              <p className="text-xs text-slate-400">
-                Dia oficial de pagamento da oficina: <strong>Dia {parametrosFolha.dia_pagamento}</strong> (Adiantamento: Dia {parametrosFolha.dia_adiantamento})
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <input
-                type="month"
-                value={mesFolhaRef}
-                onChange={(e) => setMesFolhaRef(e.target.value)}
-                className="min-h-[40px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-xs"
-              />
-
-              <button
-                type="button"
-                onClick={handleLancarFolhaContasPagar}
-                className="min-h-[40px] px-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
-              >
-                <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-                <span>Lançar Folha no Contas a Pagar</span>
-              </button>
-            </div>
-          </div>
-
-          {/* LISTA DA FOLHA DOS COLABORADORES (APENAS ATIVOS) */}
-          <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
-            {usuariosAtivos.map((u) => {
-              const temSalario = u.salario_base && u.salario_base > 0;
-              const salarioBase = temSalario ? u.salario_base! : 0;
-              const comissaoMO = 0; // Sem comissões fictícias
-              const comissaoPeca = 0;
-              const vt = u.vale_transporte || 0;
-              const vr = u.vale_refeicao || 0;
-              const totalLiquido = salarioBase + comissaoMO + comissaoPeca + vt + vr;
-
-              return (
-                <div
-                  key={u.id}
-                  className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#0B1B36]/70 text-xs font-mono tabular-nums"
-                >
-                  <div className="font-sans">
-                    <strong className="text-sm font-bold text-white block">{u.nome}</strong>
-                    <span className="text-xs text-slate-400">{u.cargo}</span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-4 text-right">
-                    <div>
-                      <div className="text-[10px] text-slate-400 font-sans">Base</div>
-                      <div className="text-slate-200">
-                        {temSalario ? (
-                          formatBRL(salarioBase)
-                        ) : (
-                          <span className="text-amber-400 font-sans text-xs">Não informado</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[10px] text-emerald-400 font-sans">Comissões (OS)</div>
-                      <div className="text-emerald-400 font-bold">
-                        +{formatBRL(comissaoMO + comissaoPeca)}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-[10px] text-blue-400 font-sans">VT / VR</div>
-                      <div className="text-blue-300">+{formatBRL(vt + vr)}</div>
-                    </div>
-
-                    <div>
-                      <div className="text-[10px] text-[#38BDF8] font-sans font-bold">Líquido a Pagar</div>
-                      <div className="text-base font-black text-white">
-                        {temSalario || totalLiquido > 0 ? (
-                          formatBRL(totalLiquido)
-                        ) : (
-                          <span className="text-amber-400 font-sans text-xs">Não informado</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setColaboradorHolerite(u);
-                        setModalHoleriteAberto(true);
-                      }}
-                      className="min-h-[36px] px-3 rounded-lg bg-[#12274D] hover:bg-[#264577] text-white font-sans font-bold text-xs flex items-center gap-1 cursor-pointer"
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      <span>Ver Holerite</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          ABA 3: MONTADOR DE ESCALAS & CALENDÁRIO DE FÉRIAS
-          ======================================================== */}
-      {activeTab === 'escalas' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-400" />
-                <span>Escalas de Trabalho &amp; Calendário de Férias</span>
-              </h3>
-              <p className="text-xs text-slate-400">
-                Evite desfalque nos boxes planejando com antecedência as férias e folgas da equipe.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setModalEscalaAberto(true)}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-[#2563EB] hover:bg-blue-600 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
-            >
-              <Calendar className="w-4 h-4" />
-              <span>+ Agendar Férias / Folga</span>
-            </button>
-          </div>
-
-          {/* LISTA DE FÉRIAS E ESCALAS */}
-          {escalas.length === 0 ? (
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
-              <Calendar className="w-8 h-8 text-slate-500 mx-auto" />
-              <p className="text-sm font-bold text-white">Nenhuma escala ou férias agendadas</p>
-              <p className="text-xs text-slate-400">
-                Clique no botão acima para agendar o período de descanso de um colaborador.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
-              {escalas.map((esc) => (
-                <div
-                  key={esc.id}
-                  className="p-3.5 flex items-center justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-600 uppercase">
-                        {esc.tipo}
-                      </span>
-                      <strong className="text-sm font-bold text-white">{esc.usuario_nome}</strong>
-                    </div>
-                    <div className="text-slate-400 font-mono">
-                      Período: <strong className="text-white">{formatData(esc.data_inicio)}</strong> até{' '}
-                      <strong className="text-white">{formatData(esc.data_fim)}</strong>
-                      {esc.observacoes && <span className="ml-2">&bull; {esc.observacoes}</span>}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await api.deletarEscalaFolga(empresaId, esc.id);
-                      setEscalas((prev) => prev.filter((e) => e.id !== esc.id));
-                      dispararFeedback('Período removido com sucesso.');
-                    }}
-                    title="Remover Agendamento"
-                    className="p-2 rounded-lg bg-red-950 text-red-300 hover:bg-red-900 cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ========================================================
-          ABA 4: PONTO ELETRÔNICO MOBILE COM GEOLOCALIZAÇÃO
-          ======================================================== */}
-      {activeTab === 'ponto' && (
-        <div className="space-y-4">
-          {/* CARD DE BATIDA DE PONTO MOBILE */}
-          <div className="bg-gradient-to-br from-[#1E3A8A]/50 to-[#0B1B36] border-2 border-blue-500 rounded-2xl p-5 sm:p-6 text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-blue-900/50">
-              <Clock className="w-8 h-8" />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-xl font-black text-white">Ponto Eletrônico por Geolocalização</h3>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto">
-                Bata seu ponto diretamente pelo celular. O sistema valida automaticamente se você está dentro do raio de{' '}
-                <strong>{coordsOficina.raio}m</strong> da oficina.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              disabled={registrandoPonto}
-              onClick={handleBaterPonto}
-              className="min-h-[50px] px-8 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-black text-base inline-flex items-center gap-2 cursor-pointer shadow-lg shadow-sky-950/40 disabled:opacity-50"
-            >
-              <Navigation className="w-5 h-5 stroke-[2.5]" />
-              <span>{registrandoPonto ? 'Verificando GPS…' : 'Bater Ponto Agora'}</span>
-            </button>
-
-            {pontoFeedback && (
-              <div
-                className={`p-3 rounded-xl border text-xs sm:text-sm font-bold max-w-lg mx-auto ${
-                  pontoFeedback.sucesso
-                    ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200'
-                    : 'bg-red-950/80 border-red-500 text-red-200'
-                }`}
-              >
-                {pontoFeedback.msg}
-              </div>
-            )}
-          </div>
-
-          {/* HISTÓRICO DE PONTOS REGISTRADOS */}
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 space-y-3">
-            <h4 className="text-sm font-bold text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-400" />
-              <span>Últimos Registros de Ponto</span>
-            </h4>
-
-            {pontos.length === 0 ? (
-              <p className="text-xs text-slate-500 py-4 text-center">Nenhum ponto registrado hoje.</p>
-            ) : (
-              <div className="bg-[#071226] rounded-xl border border-[#264577] divide-y divide-[#12274D]">
-                {pontos.slice(0, 10).map((p) => (
-                  <div
-                    key={p.id}
-                    className="p-3 flex items-center justify-between text-xs font-mono tabular-nums"
-                  >
-                    <div>
-                      <strong className="text-white font-sans block">{p.usuario_nome}</strong>
-                      <span className="text-slate-400">
-                        {formatData(p.data)} às {p.hora} &bull; {p.tipo}
-                      </span>
-                    </div>
-
-                    <div className="text-right">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          p.dentro_raio
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
-                            : 'bg-red-950 text-red-300 border border-red-600'
-                        }`}
-                      >
-                        {p.dentro_raio ? 'NO RAIO DA OFICINA' : `FORA (${p.distancia_metros}m)`}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          ABA 5: AVALIAÇÕES DOS CLIENTES (NPS / 5 ESTRELAS)
-          ======================================================== */}
-      {activeTab === 'avaliacoes' && (
-        <div className="space-y-4">
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                <span>Avaliações dos Clientes por Atendimento</span>
-              </h3>
-              <p className="text-xs text-slate-400">
-                Feedback direto dos clientes ao receberem a Ordem de Serviço concluída pelo WhatsApp.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                const url = `${window.location.origin}/?modo=avaliar&osId=EXEMPLO-OS`;
-                window.open(url, '_blank');
-              }}
-              className="min-h-[38px] px-3.5 rounded-xl bg-[#12274D] hover:bg-[#264577] text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer border border-[#3A5C90]"
-            >
-              <Star className="w-4 h-4 fill-amber-400" />
-              <span>Ver Tela Pública de Avaliação</span>
-            </button>
-          </div>
-
-          {/* LISTA DE DEPOIMENTOS & NOTAS */}
-          {avaliacoes.length === 0 ? (
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
-              <Star className="w-8 h-8 text-slate-500 mx-auto" />
-              <p className="text-sm font-bold text-white">Nenhuma avaliação recebida ainda</p>
-              <p className="text-xs text-slate-400">
-                Assim que os clientes clicarem no link do WhatsApp após a retirada do veículo, as notas e elogios aparecerão aqui.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {avaliacoes.map((av) => (
-                <div
-                  key={av.id}
-                  className="bg-[#071226] border border-[#264577] rounded-xl p-4 space-y-2 text-xs"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-amber-400">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`w-4 h-4 ${
-                            star <= av.nota ? 'fill-amber-400' : 'text-slate-600'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-slate-400 font-mono text-[11px]">{formatData(av.data)}</span>
-                  </div>
-
-                  <div>
-                    <strong className="text-white block text-sm">{av.cliente_nome}</strong>
-                    <span className="text-slate-400">
-                      {av.veiculo_modelo} &bull; {av.veiculo_placa} &bull; Mecânico:{' '}
-                      <strong className="text-blue-300">{av.mecanico_nome || 'Equipe'}</strong>
-                    </span>
-                  </div>
-
-                  {av.comentario && (
-                    <p className="text-slate-200 italic bg-[#0B1B36] p-2.5 rounded-lg border border-[#12274D]">
-                      &ldquo;{av.comentario}&rdquo;
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* MODAL: CONVITE POR WHATSAPP & E-MAIL */}
-      {modalConviteAberto && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-emerald-500 rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-emerald-400" />
-                <span>Convidar Colaborador por WhatsApp</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setModalConviteAberto(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs sm:text-sm">
-              <div>
-                <label className="block font-bold text-slate-200 mb-1">Nome do Colaborador</label>
+        {confirmarDescarte}
+        {erro && alertaErro(erro)}
+        <form onSubmit={handleSalvarColaborador} className="space-y-6">
+          <fieldset className="space-y-4">
+            <legend className="mb-3 text-sm font-semibold text-ink">Dados e acesso</legend>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field rotulo="Nome completo *">
+                <input type="text" required value={formNome} onChange={(e) => setFormNome(e.target.value)} className={CLASSE_CAMPO} />
+              </Field>
+              <Field rotulo="E-mail de acesso *">
                 <input
-                  type="text"
-                  value={nomeConvite}
-                  onChange={(e) => setNomeConvite(e.target.value)}
-                  placeholder="Ex: Carlos Mecânico"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                  type="email"
+                  required
+                  autoComplete="off"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  className={CLASSE_CAMPO}
                 />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-200 mb-1">WhatsApp (DDD + Número)</label>
+              </Field>
+              <Field rotulo="Telefone / WhatsApp">
                 <input
                   type="tel"
-                  value={telConvite}
-                  onChange={(e) => setTelConvite(e.target.value)}
-                  placeholder="Ex: 11999998888"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                  inputMode="tel"
+                  value={formTelefone}
+                  onChange={(e) => setFormTelefone(e.target.value)}
+                  className={`${CLASSE_CAMPO} tabular-nums`}
                 />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-200 mb-1">Cargo a Atribuir</label>
-                <select
-                  value={cargoConvite}
-                  onChange={(e) => setCargoConvite(e.target.value as CargoUsuario)}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
-                >
+              </Field>
+              <Field rotulo="Cargo *">
+                <select value={formCargo} onChange={(e) => setFormCargo(e.target.value as CargoUsuario)} className={CLASSE_CAMPO}>
                   {CARGOS_DISPONIVEIS.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.label}
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handleEnviarConviteWhatsApp}
-                  className="w-full min-h-[46px] rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-950/50"
-                >
-                  <Send className="w-4 h-4 stroke-[2.5]" />
-                  <span>Enviar Convite no WhatsApp</span>
-                </button>
-              </div>
+              </Field>
             </div>
-          </div>
-        </div>
-      )}
+            <Field
+              rotulo={colaboradorEmEdicao ? 'Nova senha (deixe vazio para manter)' : 'Senha inicial'}
+              dica="Mínimo 6 caracteres."
+            >
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={formSenha}
+                onChange={(e) => setFormSenha(e.target.value)}
+                className={CLASSE_CAMPO}
+              />
+            </Field>
+          </fieldset>
 
-      {/* MODAL: CADASTRO / EDIÇÃO DE COLABORADOR */}
-      {modalColaboradorAberto && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-3">
-              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-[#38BDF8]" />
-                <span>{colaboradorEmEdicao ? 'Editar Colaborador & RH' : 'Novo Colaborador'}</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setModalColaboradorAberto(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSalvarColaborador} className="space-y-3.5 text-xs sm:text-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Nome Completo *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formNome}
-                    onChange={(e) => setFormNome(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">E-mail de Acesso *</label>
-                  <input
-                    type="email"
-                    required
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Telefone / WhatsApp</label>
-                  <input
-                    type="tel"
-                    value={formTelefone}
-                    onChange={(e) => setFormTelefone(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Cargo *</label>
-                  <select
-                    value={formCargo}
-                    onChange={(e) => setFormCargo(e.target.value as CargoUsuario)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
-                  >
-                    {CARGOS_DISPONIVEIS.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Salário Base (R$)</label>
-                  <input
-                    type="number"
-                    value={formSalario}
-                    onChange={(e) => setFormSalario(e.target.value)}
-                    placeholder="Ex: 2800.00 (opcional)"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Comissão M.O. (%)</label>
-                  <input
-                    type="number"
-                    value={formComissaoServico}
-                    onChange={(e) => setFormComissaoServico(e.target.value)}
-                    placeholder="Ex: 15"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Comissão Peças (%)</label>
-                  <input
-                    type="number"
-                    value={formComissaoPeca}
-                    onChange={(e) => setFormComissaoPeca(e.target.value)}
-                    placeholder="Ex: 5"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Vale Transporte (R$)</label>
-                  <input
-                    type="number"
-                    value={formVT}
-                    onChange={(e) => setFormVT(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Vale Refeição (R$)</label>
-                  <input
-                    type="number"
-                    value={formVR}
-                    onChange={(e) => setFormVR(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-200 mb-1">
-                  {colaboradorEmEdicao ? 'Nova Senha (deixe vazio p/ manter)' : 'Senha Inicial'}
-                </label>
+          <fieldset className="space-y-4 border-t border-line pt-5">
+            <legend className="sr-only">Remuneração</legend>
+            <p aria-hidden="true" className="text-sm font-semibold text-ink">
+              Remuneração
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Field rotulo="Salário base (R$)">
                 <input
-                  type="password"
-                  placeholder="Mínimo 6 caracteres"
-                  value={formSenha}
-                  onChange={(e) => setFormSenha(e.target.value)}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={formSalario}
+                  onChange={(e) => setFormSalario(e.target.value)}
+                  placeholder="Opcional"
+                  className={`${CLASSE_CAMPO} tabular-nums`}
                 />
-              </div>
-
-              <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#12274D]">
-                {colaboradorEmEdicao ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setModalColaboradorAberto(false);
-                      handleExcluirColaborador(colaboradorEmEdicao);
-                    }}
-                    className="min-h-[42px] px-3.5 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-800 text-red-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer mr-auto transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Desativar</span>
-                  </button>
-                ) : <div />}
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setModalColaboradorAberto(false)}
-                    className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="min-h-[42px] px-5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold cursor-pointer"
-                  >
-                    Salvar Colaborador
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: HOLERITE / DEMONSTRATIVO DE PAGAMENTO IMPRIMÍVEL */}
-      {modalHoleriteAberto && colaboradorHolerite && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#0B1B36] border-2 border-blue-500 rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2 print:hidden">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-400" />
-                <span>Demonstrativo de Pagamento (Holerite)</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setModalHoleriteAberto(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              </Field>
+              <Field rotulo="Comissão M.O. (%)">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={formComissaoServico}
+                  onChange={(e) => setFormComissaoServico(e.target.value)}
+                  placeholder="Ex: 15"
+                  className={`${CLASSE_CAMPO} tabular-nums`}
+                />
+              </Field>
+              <Field rotulo="Comissão peças (%)">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={formComissaoPeca}
+                  onChange={(e) => setFormComissaoPeca(e.target.value)}
+                  placeholder="Ex: 5"
+                  className={`${CLASSE_CAMPO} tabular-nums`}
+                />
+              </Field>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Field rotulo="Vale-transporte (R$)">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={formVT}
+                  onChange={(e) => setFormVT(e.target.value)}
+                  placeholder="0,00"
+                  className={`${CLASSE_CAMPO} tabular-nums`}
+                />
+              </Field>
+              <Field rotulo="Vale-refeição (R$)">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={formVR}
+                  onChange={(e) => setFormVR(e.target.value)}
+                  placeholder="0,00"
+                  className={`${CLASSE_CAMPO} tabular-nums`}
+                />
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-medium text-ink">
+                <input
+                  type="checkbox"
+                  checked={formPagaHE}
+                  onChange={(e) => setFormPagaHE(e.target.checked)}
+                  className="h-5 w-5 rounded border-line-strong accent-brand"
+                />
+                Paga hora extra
+              </label>
+              <Field rotulo="Valor da hora extra (R$)">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={formValorHE}
+                  onChange={(e) => setFormValorHE(e.target.value)}
+                  placeholder="0,00"
+                  className={`${CLASSE_CAMPO} tabular-nums`}
+                />
+              </Field>
+            </div>
+          </fieldset>
 
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+            {colaboradorEmEdicao && colaboradorEmEdicao.ativo !== false && (
+              <Button
+                variante="fantasma"
+                icone={UserX}
+                className="sm:mr-auto"
+                onClick={() => {
+                  const alvo = colaboradorEmEdicao;
+                  fecharModalColaborador();
+                  setErroFolha(null);
+                  setColaboradorParaDesativar(alvo);
+                }}
+              >
+                Desativar
+              </Button>
+            )}
+            <Button variante="secundario" onClick={sairDoFormulario} className="sm:ml-auto">
+              Cancelar
+            </Button>
+            <Button type="submit" carregando={salvandoColaborador}>
+              {salvandoColaborador ? 'Salvando…' : 'Salvar colaborador'}
+            </Button>
+          </div>
+        </form>
+      </Folha>
+
+      {/* FOLHA: CONFIRMAR DESATIVAÇÃO (exclusão lógica) */}
+      <Folha
+        aberto={colaboradorParaDesativar !== null}
+        titulo="Desativar colaborador?"
+        aoCancelar={fecharConfirmacao(() => setColaboradorParaDesativar(null))}
+      >
+        {colaboradorParaDesativar && (
+          <>
+            {erroFolha && alertaErro(erroFolha)}
+            <div>
+              <p className="text-sm font-medium text-ink">{colaboradorParaDesativar.nome}</p>
+              <p className="mt-0.5 text-sm text-ink-muted">{rotuloCargo(colaboradorParaDesativar.cargo)}</p>
+              <p className="mt-3 text-sm text-ink-muted">
+                Ele será mantido no histórico, mas sai da lista de ativos e da folha de pagamento. Você pode reativá-lo depois.
+              </p>
+            </div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variante="secundario" disabled={processando} onClick={fecharConfirmacao(() => setColaboradorParaDesativar(null))}>
+                Cancelar
+              </Button>
+              <Button variante="perigo" icone={UserX} carregando={processando} onClick={() => handleExcluirColaborador(colaboradorParaDesativar)}>
+                {processando ? 'Desativando…' : 'Desativar'}
+              </Button>
+            </div>
+          </>
+        )}
+      </Folha>
+
+      {/* FOLHA: CONFIRMAR REATIVAÇÃO */}
+      <Folha
+        aberto={colaboradorParaReativar !== null}
+        titulo="Reativar colaborador?"
+        aoCancelar={fecharConfirmacao(() => setColaboradorParaReativar(null))}
+      >
+        {colaboradorParaReativar && (
+          <>
+            {erroFolha && alertaErro(erroFolha)}
+            <div>
+              <p className="text-sm font-medium text-ink">{colaboradorParaReativar.nome}</p>
+              <p className="mt-0.5 text-sm text-ink-muted">{rotuloCargo(colaboradorParaReativar.cargo)}</p>
+              <p className="mt-3 text-sm text-ink-muted">Ele volta para a lista de ativos e para a folha de pagamento.</p>
+            </div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variante="secundario" disabled={processando} onClick={fecharConfirmacao(() => setColaboradorParaReativar(null))}>
+                Cancelar
+              </Button>
+              <Button icone={RotateCcw} carregando={processando} onClick={() => handleReativarColaborador(colaboradorParaReativar)}>
+                {processando ? 'Reativando…' : 'Reativar'}
+              </Button>
+            </div>
+          </>
+        )}
+      </Folha>
+
+      {/* FOLHA: CONFIRMAR LANÇAMENTO DA FOLHA NO CONTAS A PAGAR */}
+      <Folha
+        aberto={confirmarFolhaAberto}
+        titulo="Lançar folha no Contas a Pagar?"
+        aoCancelar={fecharConfirmacao(() => setConfirmarFolhaAberto(false))}
+      >
+        {erroFolha && alertaErro(erroFolha)}
+        <div>
+          <p className="text-sm text-ink-muted">Folha de {mesFolha}/{anoFolha}</p>
+          <p className="mt-1 text-[1.75rem] font-semibold leading-tight tabular-nums text-ink">{formatBRL(totalFolhaGeral)}</p>
+          <p className="mt-1 text-sm tabular-nums text-ink-muted">
+            Despesa pendente com vencimento em {formatData(dataVencimentoFolha)} · {usuariosAtivos.length}{' '}
+            {usuariosAtivos.length === 1 ? 'colaborador ativo' : 'colaboradores ativos'}
+          </p>
+          <p className="mt-3 text-sm text-ink-muted">
+            Baseada só nos colaboradores ativos com valores cadastrados (salário, VT e VR).
+          </p>
+        </div>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variante="secundario" disabled={processando} onClick={fecharConfirmacao(() => setConfirmarFolhaAberto(false))}>
+            Cancelar
+          </Button>
+          <Button icone={CheckCircle2} carregando={processando} onClick={handleLancarFolhaContasPagar}>
+            {processando ? 'Lançando…' : `Lançar folha de ${formatBRL(totalFolhaGeral)}`}
+          </Button>
+        </div>
+      </Folha>
+
+      {/* FOLHA: CONFIRMAR EXCLUSÃO DE ESCALA */}
+      <Folha
+        aberto={escalaParaExcluir !== null}
+        titulo="Excluir período?"
+        aoCancelar={fecharConfirmacao(() => setEscalaParaExcluir(null))}
+      >
+        {escalaParaExcluir && (
+          <>
+            {erroFolha && alertaErro(erroFolha)}
+            <div>
+              <p className="text-sm font-medium text-ink">
+                {rotuloTipoEscala(escalaParaExcluir.tipo)} · {escalaParaExcluir.usuario_nome}
+              </p>
+              <p className="mt-0.5 text-sm tabular-nums text-ink-muted">
+                {formatData(escalaParaExcluir.data_inicio)} até {formatData(escalaParaExcluir.data_fim)}
+              </p>
+              <p className="mt-3 text-sm text-ink-muted">Esta ação não poderá ser desfeita.</p>
+            </div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variante="secundario" disabled={processando} onClick={fecharConfirmacao(() => setEscalaParaExcluir(null))}>
+                Cancelar
+              </Button>
+              <Button variante="perigo" icone={Trash2} carregando={processando} onClick={() => handleExcluirEscala(escalaParaExcluir)}>
+                {processando ? 'Excluindo…' : 'Excluir período'}
+              </Button>
+            </div>
+          </>
+        )}
+      </Folha>
+
+      {/* FOLHA: CONFIRMAR BATIDA DE PONTO */}
+      <Folha aberto={confirmarPontoAberto} titulo="Registrar ponto agora?" aoCancelar={() => setConfirmarPontoAberto(false)}>
+        <p className="text-sm text-ink-muted">
+          Vamos usar o GPS do aparelho para registrar a entrada de {user?.nome || 'você'} e conferir se está dentro do raio de{' '}
+          {coordsOficina.raio} m da oficina.
+        </p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variante="secundario" onClick={() => setConfirmarPontoAberto(false)}>
+            Cancelar
+          </Button>
+          <Button
+            icone={Navigation}
+            onClick={() => {
+              setConfirmarPontoAberto(false);
+              handleBaterPonto();
+            }}
+          >
+            Registrar ponto
+          </Button>
+        </div>
+      </Folha>
+
+      {/* FOLHA: HOLERITE / DEMONSTRATIVO DE PAGAMENTO IMPRIMÍVEL */}
+      <Folha aberto={modalHoleriteAberto && colaboradorHolerite !== null} titulo="Holerite" aoCancelar={() => setModalHoleriteAberto(false)}>
+        {modalHoleriteAberto && colaboradorHolerite && (
+          <>
+            {/* codemod:ignore-start */}
             {/* ÁREA DO HOLERITE IMPRIMÍVEL */}
             <div
               id="holerite-impressao"
               className="bg-white text-black p-5 rounded-xl border-2 border-black space-y-4 font-mono text-xs select-all"
             >
               <div className="text-center border-b-2 border-black pb-2">
-                <h2 className="text-base font-black uppercase">MECANIFY &bull; OFICINA MECÂNICA</h2>
-                <div className="text-[11px] font-bold">RECIBO DE PAGAMENTO DE SALÁRIO E COMISSÕES</div>
-                <div className="text-[10px]">Mês de Referência: {mesFolhaRef}</div>
+                <h2 className="text-base font-semibold uppercase">MECANIFY &bull; OFICINA MECÂNICA</h2>
+                <div className="text-xs font-semibold">RECIBO DE PAGAMENTO DE SALÁRIO E COMISSÕES</div>
+                <div className="text-xs">Mês de Referência: {mesFolhaRef}</div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 border-b border-black pb-2 text-[11px]">
+              <div className="grid grid-cols-2 gap-2 border-b border-black pb-2 text-xs">
                 <div>
                   <strong>Colaborador:</strong> {colaboradorHolerite.nome}
                 </div>
@@ -1465,13 +1197,13 @@ export function Equipe({ empresaId }: EquipeProps) {
 
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-black text-[10px] uppercase font-bold">
+                  <tr className="border-b border-black text-xs uppercase font-semibold">
                     <th className="py-1">Descrição</th>
                     <th className="py-1 text-right">Proventos (R$)</th>
                     <th className="py-1 text-right">Descontos (R$)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-300">
+                <tbody className="divide-y divide-line">
                   <tr>
                     <td className="py-1">Salário Base Mensal</td>
                     <td className="py-1 text-right">
@@ -1516,7 +1248,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                 </tbody>
               </table>
 
-              <div className="border-t-2 border-black pt-2 flex items-center justify-between text-sm font-black">
+              <div className="border-t-2 border-black pt-2 flex items-center justify-between text-sm font-semibold">
                 <span>VALOR LÍQUIDO A RECEBER:</span>
                 <span className="text-base">
                   {colaboradorHolerite.salario_base && colaboradorHolerite.salario_base > 0
@@ -1534,138 +1266,91 @@ export function Equipe({ empresaId }: EquipeProps) {
                 </span>
               </div>
 
-              <div className="pt-8 border-t border-dashed border-black text-center text-[10px]">
+              <div className="pt-8 border-t border-dashed border-black text-center text-xs">
                 ____________________________________________________
                 <br />
                 Assinatura do Colaborador: {colaboradorHolerite.nome}
               </div>
             </div>
+            {/* codemod:ignore-end */}
 
-            <div className="flex items-center justify-end gap-2 print:hidden pt-2">
-              <button
-                type="button"
-                onClick={() => setModalHoleriteAberto(false)}
-                className="min-h-[40px] px-3.5 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
-              >
+            <div className="flex flex-col-reverse gap-2 print:hidden sm:flex-row sm:justify-end">
+              <Button variante="secundario" onClick={() => setModalHoleriteAberto(false)}>
                 Fechar
-              </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="min-h-[40px] px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Imprimir Holerite</span>
-              </button>
+              </Button>
+              <Button icone={Printer} onClick={() => window.print()}>
+                Imprimir holerite
+              </Button>
             </div>
+          </>
+        )}
+      </Folha>
+
+      {/* FOLHA: AGENDAR ESCALA / FÉRIAS (os campos ficam guardados ao fechar, como antes) */}
+      <Folha aberto={modalEscalaAberto} titulo="Agendar férias ou folga" aoCancelar={() => setModalEscalaAberto(false)}>
+        {erroEscala && alertaErro(erroEscala)}
+        <form onSubmit={handleSalvarEscala} className="space-y-4">
+          <Field rotulo="Colaborador *">
+            <select required value={escalaUsuarioId} onChange={(e) => setEscalaUsuarioId(e.target.value)} className={CLASSE_CAMPO}>
+              <option value="">Selecione o profissional…</option>
+              {usuarios.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.nome} ({rotuloCargo(u.cargo)})
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field rotulo="Tipo de período *">
+            <select
+              value={escalaTipo}
+              onChange={(e) => setEscalaTipo(e.target.value as 'FERIAS' | 'FOLGA' | 'ATESTADO' | 'PLANTAO')}
+              className={CLASSE_CAMPO}
+            >
+              <option value="FERIAS">Férias</option>
+              <option value="FOLGA">Folga / Escala Revezamento</option>
+              <option value="ATESTADO">Atestado Médico / Licença</option>
+              <option value="PLANTAO">Plantão Extra</option>
+            </select>
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field rotulo="Data início *">
+              <input
+                type="date"
+                required
+                value={escalaInicio}
+                onChange={(e) => setEscalaInicio(e.target.value)}
+                className={`${CLASSE_CAMPO} tabular-nums`}
+              />
+            </Field>
+            <Field rotulo="Data fim *">
+              <input
+                type="date"
+                required
+                value={escalaFim}
+                onChange={(e) => setEscalaFim(e.target.value)}
+                className={`${CLASSE_CAMPO} tabular-nums`}
+              />
+            </Field>
           </div>
-        </div>
-      )}
-
-      {/* MODAL: AGENDAR ESCALA / FÉRIAS */}
-      {modalEscalaAberto && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-blue-500 rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-400" />
-                <span>Agendar Férias / Folga de Colaborador</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setModalEscalaAberto(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSalvarEscala} className="space-y-3.5 text-xs sm:text-sm">
-              <div>
-                <label className="block font-bold text-slate-200 mb-1">Colaborador *</label>
-                <select
-                  required
-                  value={escalaUsuarioId}
-                  onChange={(e) => setEscalaUsuarioId(e.target.value)}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
-                >
-                  <option value="">Selecione o profissional…</option>
-                  {usuarios.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nome} ({u.cargo})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-200 mb-1">Tipo de Período *</label>
-                <select
-                  value={escalaTipo}
-                  onChange={(e) => setEscalaTipo(e.target.value as any)}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
-                >
-                  <option value="FERIAS">Férias</option>
-                  <option value="FOLGA">Folga / Escala Revezamento</option>
-                  <option value="ATESTADO">Atestado Médico / Licença</option>
-                  <option value="PLANTAO">Plantão Extra</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Data Início *</label>
-                  <input
-                    type="date"
-                    required
-                    value={escalaInicio}
-                    onChange={(e) => setEscalaInicio(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Data Fim *</label>
-                  <input
-                    type="date"
-                    required
-                    value={escalaFim}
-                    onChange={(e) => setEscalaFim(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-200 mb-1">Observações</label>
-                <input
-                  type="text"
-                  value={escalaObs}
-                  onChange={(e) => setEscalaObs(e.target.value)}
-                  placeholder="Ex: 15 dias de férias aprovadas…"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#12274D]">
-                <button
-                  type="button"
-                  onClick={() => setModalEscalaAberto(false)}
-                  className="min-h-[40px] px-4 rounded-xl bg-[#12274D] text-white font-bold cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="min-h-[40px] px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold cursor-pointer"
-                >
-                  Salvar Período
-                </button>
-              </div>
-            </form>
+          <Field rotulo="Observações">
+            <input
+              type="text"
+              value={escalaObs}
+              onChange={(e) => setEscalaObs(e.target.value)}
+              placeholder="Ex: 15 dias de férias aprovadas…"
+              className={CLASSE_CAMPO}
+            />
+          </Field>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variante="secundario" onClick={() => setModalEscalaAberto(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" carregando={salvandoEscala}>
+              {salvandoEscala ? 'Salvando…' : 'Salvar período'}
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Folha>
     </div>
   );
 }

@@ -1,0 +1,69 @@
+:root {
+  --c-canvas: 241 237 228;
+  --c-surface: 255 255 255;
+  --c-muted: 235 230 219;
+  --c-sunken: 255 255 255;
+  --c-line: 226 220 208;
+  --c-line-strong: 143 135 120;
+  --c-ink: 31 29 26;
+  --c-ink-muted: 92 86 76;
+  --c-ink-subtle: 111 104 93;
+  --c-brand: 242 160 7;
+  --c-brand-hover: 217 142 0;
+  --c-brand-ink: 138 90 0;
+  --c-on-brand: 31 29 26;
+  --c-danger: 180 35 24;
+  --c-success: 22 101 52;
+  --c-warning: 170 64 6;
+  --c-info: 29 95 180;
+  --c-done: 14 112 104;
+  --c-danger-solid: 180 35 24;
+  --c-success-solid: 21 128 61;
+  --c-on-solid: 255 255 255;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.08);
+  color-scheme: light;
+}
+
+.dark {
+  --c-canvas: 17 18 20;
+  --c-surface: 26 27 30;
+  --c-muted: 35 36 40;
+  --c-sunken: 14 15 17;
+  --c-line: 43 45 49;
+  --c-line-strong: 107 111 120;
+  --c-ink: 242 240 235;
+  --c-ink-muted: 180 176 168;
+  --c-ink-subtle: 142 138 130;
+  --c-brand: 245 165 36;
+  --c-brand-hover: 247 181 71;
+  --c-brand-ink: 245 181 68;
+  --c-on-brand: 26 20 7;
+  --c-danger: 249 112 102;
+  --c-success: 74 222 128;
+  --c-warning: 253 176 34;
+  --c-info: 124 180 245;
+  --c-done: 45 212 191;
+  --c-danger-solid: 217 45 32;
+  --c-success-solid: 21 128 61;
+  --c-on-solid: 255 255 255;
+  --shadow-card: none;
+  color-scheme: dark;
+}
+
+:root {
+  accent-color: rgb(var(--c-brand));
+  caret-color: rgb(var(--c-brand-ink));
+  scrollbar-color: rgb(var(--c-line-strong)) rgb(var(--c-canvas));
+  scrollbar-width: thin;
+  -webkit-tap-highlight-color: rgb(var(--c-brand) / 0.2);
+}
+
+::selection {
+  background-color: rgb(var(--c-brand) / 0.35);
+  color: rgb(var(--c-ink));
+}
+
+:focus-visible {
+  outline: 3px solid rgb(var(--c-brand));
+  outline-offset: 2px;
+}

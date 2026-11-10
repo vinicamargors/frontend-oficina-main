@@ -9,19 +9,17 @@ import {
   Plus,
   RefreshCw,
   Download,
-  Barcode,
-  Pencil,
-  Trash2,
-  CheckCircle2,
-  X,
   Printer,
-  TrendingUp,
-  DollarSign,
-  ArrowUpRight,
-  ArrowDownRight,
   FolderPlus,
-  Tag,
+  Trash2,
+  Minus,
+  CheckCircle2,
 } from 'lucide-react';
+import { Button, CLASSE_CAMPO, Field, PageHeader, Panel, Skeleton } from '../components/ui';
+import { Folha } from '../components/Folha';
+import { LinhaItem, COLUNAS_ITEM } from './estoque/LinhaItem';
+import { ChipsCategoria } from './estoque/ChipsCategoria';
+import { categoriaEquivalente, rotuloCategoria, rotulosDasCategorias, saldoApos } from './estoque/auxiliares';
 
 interface EstoqueProps {
   empresaId: string;
@@ -117,6 +115,10 @@ export function Estoque({ empresaId }: EstoqueProps) {
 
   const [mostrarModalCategorias, setMostrarModalCategorias] = useState(false);
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
+  // Categoria com itens aguardando confirmação para reclassificar e excluir
+  const [categoriaParaExcluir, setCategoriaParaExcluir] = useState<string | null>(null);
+  // Saída pendente de confirmação ("Descartar alterações?") quando o formulário da peça tem dados não salvos
+  const [saidaPendente, setSaidaPendente] = useState<(() => void) | null>(null);
 
   // Modais de Cadastro / Edição
   const [modalItemAberto, setModalItemAberto] = useState(false);
@@ -183,14 +185,22 @@ export function Estoque({ empresaId }: EstoqueProps) {
     setTimeout(() => setSucessoMsg(null), 4000);
   };
 
+  // Texto das categorias na tela (acento só nas canônicas; colisões mostram o valor bruto)
+  const rotulosCategoria = useMemo(() => rotulosDasCategorias(categoriasCustom), [categoriasCustom]);
+  const rotuloDe = (raw?: string | null) => rotulosCategoria[(raw || 'PECAS').toUpperCase()] ?? rotuloCategoria(raw);
+
   // Gerenciamento de Categorias
   const handleAdicionarCategoria = (e: React.FormEvent) => {
     e.preventDefault();
     const nomeLimpo = novaCategoriaNome.trim().toUpperCase();
     if (!nomeLimpo) return;
 
-    if (categoriasCustom.includes(nomeLimpo)) {
-      dispararFeedback(`A categoria "${nomeLimpo}" já existe.`);
+    // Equivalente (mesmo texto sem acento/caixa) já existe: não cria outra, só mostra a existente
+    const existente = categoriaEquivalente(categoriasCustom, nomeLimpo);
+    if (existente) {
+      setCategoriaAtiva(existente);
+      setApenasEstoqueBaixo(false);
+      dispararFeedback(`A categoria "${rotuloDe(existente)}" já existe.`);
       setNovaCategoriaNome('');
       return;
     }
@@ -201,19 +211,21 @@ export function Estoque({ empresaId }: EstoqueProps) {
       localStorage.setItem(`autotec_categorias_${empresaId}`, JSON.stringify(atualizadas));
     } catch {}
     setNovaCategoriaNome('');
-    dispararFeedback(`Categoria "${nomeLimpo}" criada com sucesso!`);
+    dispararFeedback(`Categoria "${rotuloDe(nomeLimpo)}" criada com sucesso!`);
   };
 
-  const handleExcluirCategoria = async (catNome: string) => {
+  const handleExcluirCategoria = async (catNome: string, confirmado = false) => {
     const itensUsando = itens.filter(
       (i) => (i.categoria || '').toUpperCase() === catNome.toUpperCase()
     );
 
     if (itensUsando.length > 0) {
-      const confirmar = window.confirm(
-        `Existem ${itensUsando.length} itens usando a categoria "${catNome}". Deseja reclassificá-los para "DIVERSOS" e excluir a categoria?`
-      );
-      if (!confirmar) return;
+      // Pede confirmação na própria folha (antes era window.confirm); a ação em si não muda
+      if (!confirmado) {
+        setCategoriaParaExcluir(catNome);
+        return;
+      }
+      setCategoriaParaExcluir(null);
 
       try {
         for (const item of itensUsando) {
@@ -232,11 +244,12 @@ export function Estoque({ empresaId }: EstoqueProps) {
       localStorage.setItem(`autotec_categorias_${empresaId}`, JSON.stringify(atualizadas));
     } catch {}
     if (categoriaAtiva === catNome) setCategoriaAtiva('TODAS');
-    dispararFeedback(`Categoria "${catNome}" removida.`);
+    dispararFeedback(`Categoria "${rotuloDe(catNome)}" removida.`);
   };
 
   // Abrir Modal de Cadastro / Edição
   const abrirModalCadastro = () => {
+    setErro(null);
     setItemEmEdicao(null);
     setFormNome('');
     setFormCategoria(categoriasCustom[0] || 'PECAS');
@@ -249,6 +262,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
   };
 
   const abrirModalEdicao = (item: EstoqueItem) => {
+    setErro(null);
     setItemEmEdicao(item);
     setFormNome(item.nome);
     setFormCategoria(item.categoria || 'PECAS');
@@ -319,6 +333,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
 
   // Ajuste Rápido de Saldo
   const abrirModalAjuste = (item: EstoqueItem, tipo: 'entrada' | 'saida') => {
+    setErro(null);
     setItemParaAjuste(item);
     setAjusteTipo(tipo);
     setAjusteQtd('1');
@@ -482,758 +497,564 @@ export function Estoque({ empresaId }: EstoqueProps) {
     };
   }, [itens]);
 
+
+  // Contagem por categoria para os chips e para o gerenciador de categorias
+  const contagemPorCategoria = useMemo(() => {
+    const mapa: Record<string, number> = {};
+    for (const i of itens) {
+      const k = (i.categoria || 'PECAS').toUpperCase();
+      mapa[k] = (mapa[k] ?? 0) + 1;
+    }
+    return mapa;
+  }, [itens]);
+
+  const temFiltro = Boolean(busca.trim()) || apenasEstoqueBaixo || categoriaAtiva !== 'TODAS';
+  const limparFiltros = () => {
+    setBusca('');
+    setCategoriaAtiva('TODAS');
+    setApenasEstoqueBaixo(false);
+  };
+
+  // Formulário da peça: com dados digitados, Esc/Cancelar pedem confirmação em vez de descartar em silêncio
+  const itemSujo =
+    modalItemAberto &&
+    (itemEmEdicao
+      ? formNome !== itemEmEdicao.nome ||
+        formCategoria !== (itemEmEdicao.categoria || 'PECAS') ||
+        formCodigo !== (itemEmEdicao.codigo || '') ||
+        formQuantidade !== String(itemEmEdicao.quantidade ?? 0) ||
+        formCusto !== String(itemEmEdicao.custo ?? 0) ||
+        formVenda !== String(itemEmEdicao.venda ?? 0) ||
+        formMinimo !== String(itemEmEdicao.minimo_alerta ?? 5)
+      : formNome !== '' ||
+        formCategoria !== (categoriasCustom[0] || 'PECAS') ||
+        formCodigo !== '' ||
+        formQuantidade !== '0' ||
+        formCusto !== '0.00' ||
+        formVenda !== '0.00' ||
+        formMinimo !== '5');
+
+  useEffect(() => {
+    if (!modalItemAberto) setSaidaPendente(null);
+  }, [modalItemAberto]);
+
+  const fecharModalItem = () => {
+    setSaidaPendente(null);
+    setModalItemAberto(false);
+  };
+  const sairDoFormulario = () => {
+    if (itemSujo) setSaidaPendente(() => fecharModalItem);
+    else fecharModalItem();
+  };
+
+  const alertaErro = (mensagem: string) => (
+    <p role="alert" className="flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
+      <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span>{mensagem}</span>
+    </p>
+  );
+
+  const confirmarDescarte = saidaPendente && (
+    <div
+      role="alert"
+      ref={(el) => el?.scrollIntoView({ block: 'nearest' })}
+      className="space-y-3 rounded-xl bg-warning/15 p-4"
+    >
+      <p className="text-sm font-medium text-ink">Descartar alterações? O que você digitou será perdido.</p>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variante="secundario" onClick={() => setSaidaPendente(null)}>
+          Continuar editando
+        </Button>
+        <Button
+          variante="perigo"
+          onClick={() => {
+            const fechar = saidaPendente;
+            setSaidaPendente(null);
+            fechar();
+          }}
+        >
+          Descartar
+        </Button>
+      </div>
+    </div>
+  );
+
+  const verFinanceiro = canSeeFinanceiro;
+  const qtdAjuste = Math.max(1, parseInt(ajusteQtd, 10) || 1);
+  const saldoDepois = itemParaAjuste ? saldoApos(itemParaAjuste.quantidade ?? 0, ajusteTipo, qtdAjuste) : 0;
+  const ajusteEntrada = ajusteTipo === 'entrada';
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
-      {/* CABEÇALHO DA TELA DE ESTOQUE */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-              <Package className="w-6 h-6 text-[#38BDF8]" aria-hidden="true" />
-              <span>Estoque &amp; Almoxarifado</span>
-            </h1>
-            <span className="px-2 py-0.5 rounded-full bg-[#12274D] border border-[#264577] text-xs font-mono font-bold text-slate-300">
-              {itens.length} itens
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-            Controle ágil de peças, fluidos, componentes e saldo para a bancada da oficina.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={handleExportarCsv}
-            title="Exportar para Excel / CSV"
-            aria-label="Exportar para Excel / CSV"
-            className="min-h-[42px] px-3 py-2 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-200 font-bold text-xs flex items-center gap-2 cursor-pointer"
-          >
-            <Download className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-            <span className="hidden sm:inline">Exportar CSV</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={carregarEstoque}
-            disabled={carregando}
-            title="Atualizar lista de estoque"
-            aria-label="Atualizar estoque"
-            className="min-h-[42px] px-2.5 py-2 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-300 flex items-center justify-center cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${carregando ? 'animate-spin text-[#38BDF8]' : ''}`}
-              aria-hidden="true"
+    <div>
+      <PageHeader
+        titulo="Estoque de Peças"
+        complemento={
+          carregando ? undefined : (
+            <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle">{itens.length}</span>
+          )
+        }
+        abaixo={<span className="hidden sm:inline">Peças, fluidos e componentes, com saldo e alerta de mínimo.</span>}
+        acoes={
+          <>
+            <Button icone={Plus} onClick={abrirModalCadastro}>
+              Nova peça
+            </Button>
+            <Button
+              variante="secundario"
+              onClick={handleExportarCsv}
+              title="Exportar para Excel / CSV"
+              aria-label="Exportar CSV"
+              icone={Download}
+            >
+              <span className="hidden sm:inline">Exportar CSV</span>
+            </Button>
+            <Button
+              variante="secundario"
+              onClick={carregarEstoque}
+              disabled={carregando}
+              title="Atualizar lista de estoque"
+              aria-label="Atualizar estoque"
+              icone={RefreshCw}
             />
-          </button>
+          </>
+        }
+      />
 
-          <button
-            type="button"
-            onClick={abrirModalCadastro}
-            className="min-h-[42px] px-3.5 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs sm:text-sm flex items-center gap-2 cursor-pointer shadow-md shadow-sky-950/40"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" aria-hidden="true" />
-            <span>+ Nova Peça</span>
-          </button>
-        </div>
-      </header>
-
-      {/* FEEDBACK DE SUCESSO / ERRO */}
       <div aria-live="polite">
         {sucessoMsg && (
-          <div className="p-3 rounded-xl bg-emerald-950 border border-emerald-500 text-emerald-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <p role="status" className="mb-4 flex items-center gap-2 rounded-xl bg-success/15 px-4 py-3 text-sm font-medium text-success">
+            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{sucessoMsg}</span>
-          </div>
-        )}
-        {erro && (
-          <div className="p-3 rounded-xl bg-red-950 border border-red-500 text-red-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-            <span>{erro}</span>
-          </div>
+          </p>
         )}
       </div>
+      {erro && !modalItemAberto && !modalAjusteAberto && !itemParaExcluir && <div className="mb-4">{alertaErro(erro)}</div>}
 
-      {/* CARDS DE INDICADORES (CONDICIONAIS POR PERFIL) */}
-      <section
-        aria-label="Indicadores do Estoque"
-        className={`grid ${
-          canSeeFinanceiro
-            ? 'grid-cols-2 lg:grid-cols-4'
-            : 'grid-cols-2'
-        } gap-2 sm:gap-3`}
+      {/* Indicadores: números grandes separados por divisores, sem cards aninhados */}
+      <Panel
+        as="section"
+        aria-label="Indicadores do estoque"
+        className={`mb-4 grid grid-cols-1 divide-y divide-line py-2 lg:py-5 lg:divide-x lg:divide-y-0 ${
+          verFinanceiro ? 'lg:grid-cols-3' : 'lg:grid-cols-1'
+        }`}
       >
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
-            <span>Total de Itens</span>
-            <Package className="w-4 h-4 text-blue-400" aria-hidden="true" />
-          </div>
-          <div className="text-xl sm:text-2xl font-black font-mono text-white mt-1 tabular-nums">
-            {stats.totalItens}
-          </div>
-          <div className="text-[11px] text-slate-400">Produtos no catálogo</div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setApenasEstoqueBaixo((prev) => !prev)}
-          className={`rounded-xl p-3 sm:p-4 text-left flex flex-col justify-between cursor-pointer border-2 transition-colors ${
-            apenasEstoqueBaixo
-              ? 'bg-red-950/80 border-red-500 text-white'
-              : stats.criticos > 0
-              ? 'bg-[#0B1B36] border-red-900/60 hover:border-red-500 text-slate-200'
-              : 'bg-[#0B1B36] border-[#12274D] text-slate-200'
-          }`}
-        >
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className={stats.criticos > 0 ? 'text-red-400' : 'text-slate-400'}>
-              Estoque Crítico
-            </span>
-            <AlertTriangle
-              className={`w-4 h-4 ${
-                stats.criticos > 0 ? 'text-red-400 animate-pulse' : 'text-slate-500'
-              }`}
-              aria-hidden="true"
-            />
-          </div>
-          <div
-            className={`text-xl sm:text-2xl font-black font-mono mt-1 tabular-nums ${
-              stats.criticos > 0 ? 'text-red-400' : 'text-slate-300'
-            }`}
-          >
-            {stats.criticos}
-          </div>
-          <div className="text-[11px] text-slate-400">
-            {apenasEstoqueBaixo ? 'Filtro ativado (clique p/ ver todos)' : 'Qtd ≤ Alerta mínimo'}
-          </div>
-        </button>
-
-        {/* Patrimônio Investido & Potencial de Venda (Apenas DONO, FINANCEIRO e Master) */}
-        {canSeeFinanceiro && (
+        {verFinanceiro && (
           <>
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
-                <span>Capital em Custo</span>
-                <DollarSign className="w-4 h-4 text-amber-400" aria-hidden="true" />
-              </div>
-              <div className="text-lg sm:text-xl font-black font-mono text-white mt-1 tabular-nums">
-                {formatBRL(stats.totalCusto)}
-              </div>
-              <div className="text-[11px] text-slate-400">Patrimônio investido</div>
+            <div className="flex items-baseline justify-between gap-3 py-3 lg:block lg:px-6 lg:py-0 lg:first:pl-1">
+              <p className="text-sm text-ink-muted">Capital em custo</p>
+              <p className="text-xl font-semibold tabular-nums text-ink lg:mt-1 lg:text-3xl">{formatBRL(stats.totalCusto)}</p>
             </div>
-
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
-                <span>Potencial Venda</span>
-                <TrendingUp className="w-4 h-4 text-emerald-400" aria-hidden="true" />
-              </div>
-              <div className="text-lg sm:text-xl font-black font-mono text-emerald-400 mt-1 tabular-nums">
-                {formatBRL(stats.totalVenda)}
-              </div>
-              <div className="text-[11px] text-slate-400">
-                Lucro estimado: {formatBRL(stats.lucroProjetado)}
+            <div className="flex items-baseline justify-between gap-3 py-3 lg:block lg:px-6 lg:py-0">
+              <p className="text-sm text-ink-muted">Potencial de venda</p>
+              <div className="text-right lg:text-left">
+                <p className="text-xl font-semibold tabular-nums text-ink lg:mt-1 lg:text-3xl">{formatBRL(stats.totalVenda)}</p>
+                <p className="text-xs tabular-nums text-ink-muted lg:mt-1">Lucro estimado {formatBRL(stats.lucroProjetado)}</p>
               </div>
             </div>
           </>
         )}
-      </section>
+        <div className="flex items-baseline justify-between gap-3 py-3 lg:block lg:px-6 lg:py-0">
+          <p className="text-sm text-ink-muted">Abaixo do mínimo</p>
+          <p
+            className={`flex items-center gap-2 text-xl font-semibold tabular-nums lg:mt-1 lg:text-3xl ${
+              stats.criticos > 0 ? 'text-danger' : 'text-ink'
+            }`}
+          >
+            {stats.criticos > 0 && <AlertTriangle className="h-5 w-5" aria-hidden="true" />}
+            {stats.criticos}
+            <span className="text-sm font-normal text-ink-muted">{stats.criticos === 1 ? 'item' : 'itens'}</span>
+          </p>
+        </div>
+      </Panel>
 
-      {/* BARRA DE BUSCA REATIVA E FILTROS DE CATEGORIA */}
-      <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 space-y-2.5">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          {/* Campo de Busca Reativa Instantânea */}
-          <search className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <Search className="w-4 h-4" aria-hidden="true" />
-            </div>
+      <search className="mb-4 block space-y-3">
+        <div className="flex gap-3">
+          <div className="relative min-w-0 flex-1">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
+              aria-hidden="true"
+            />
             <input
               type="search"
+              name="busca_estoque"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar peça por nome, código SKU ou categoria…"
+              placeholder="Buscar peça…"
               aria-label="Buscar peça por nome, código SKU ou categoria"
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
-              spellCheck="false"
-              className="w-full min-h-[42px] pl-9 pr-3 bg-[#071226] border border-[#264577] rounded-xl text-white text-xs sm:text-sm placeholder-slate-500 focus:outline-none focus:border-[#38BDF8]"
+              spellCheck={false}
+              className={`${CLASSE_CAMPO} pl-9`}
             />
-          </search>
-
-          <button
-            type="button"
-            onClick={() => setMostrarModalCategorias(true)}
-            className="min-h-[42px] px-3 py-2 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-          >
-            <FolderPlus className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-            <span>Categorias ({categoriasCustom.length})</span>
-          </button>
+          </div>
+          <Button variante="secundario" icone={FolderPlus} onClick={() => setMostrarModalCategorias(true)}>
+            Categorias ({categoriasCustom.length})
+          </Button>
         </div>
+        <ChipsCategoria
+          categorias={categoriasCustom}
+          rotulos={rotulosCategoria}
+          contagens={contagemPorCategoria}
+          total={itens.length}
+          criticos={stats.criticos}
+          categoriaAtiva={categoriaAtiva}
+          apenasCriticos={apenasEstoqueBaixo}
+          aoTodas={() => {
+            setCategoriaAtiva('TODAS');
+            setApenasEstoqueBaixo(false);
+          }}
+          aoCriticos={() => {
+            // chips são de escolha única: "Crítico" mostra todas as categorias com saldo no mínimo
+            setCategoriaAtiva('TODAS');
+            setApenasEstoqueBaixo((v) => !v);
+          }}
+          aoCategoria={(cat) => {
+            setCategoriaAtiva(cat);
+            setApenasEstoqueBaixo(false);
+          }}
+        />
+      </search>
 
-        {/* Abas Horizontais com Scroll Suave de Categorias */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar text-xs">
-          <button
-            type="button"
-            onClick={() => {
-              setCategoriaAtiva('TODAS');
-              setApenasEstoqueBaixo(false);
-            }}
-            className={`px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-pointer transition-colors ${
-              categoriaAtiva === 'TODAS' && !apenasEstoqueBaixo
-                ? 'bg-[#2563EB] text-white'
-                : 'bg-[#071226] text-slate-300 border border-[#264577] hover:bg-[#12274D]'
-            }`}
-          >
-            Todas ({itens.length})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setApenasEstoqueBaixo((v) => !v)}
-            className={`px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-pointer flex items-center gap-1 transition-colors ${
-              apenasEstoqueBaixo
-                ? 'bg-red-600 text-white'
-                : 'bg-[#071226] text-red-300 border border-red-900/60 hover:bg-red-950'
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Crítico ({stats.criticos})</span>
-          </button>
-
-          {categoriasCustom.map((cat) => {
-            const count = itens.filter(
-              (i) => (i.categoria || 'PECAS').toUpperCase() === cat.toUpperCase()
-            ).length;
-            const ativa = categoriaAtiva === cat && !apenasEstoqueBaixo;
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => {
-                  setCategoriaAtiva(cat);
-                  setApenasEstoqueBaixo(false);
-                }}
-                className={`px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-pointer transition-colors ${
-                  ativa
-                    ? 'bg-[#38BDF8] text-[#071226]'
-                    : 'bg-[#071226] text-slate-300 border border-[#264577] hover:bg-[#12274D]'
-                }`}
-              >
-                {cat} ({count})
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* LISTAGEM DENSA & MOBILE-FIRST DOS ITENS DO ESTOQUE */}
       {carregando ? (
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
-          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#38BDF8]" aria-hidden="true" />
-          <p className="text-sm">Carregando catálogo do estoque…</p>
-        </div>
+        <Panel>
+          <Skeleton linhas={5} />
+        </Panel>
       ) : itensFiltrados.length === 0 ? (
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-3">
-          <Package className="w-10 h-10 text-slate-500 mx-auto" aria-hidden="true" />
-          <h3 className="text-base font-bold text-white">Nenhum item encontrado</h3>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
-            {busca || apenasEstoqueBaixo || categoriaAtiva !== 'TODAS'
+        <Panel espaco="lg" className="flex flex-col items-center gap-3 text-center">
+          <Package className="h-10 w-10 text-ink-subtle" strokeWidth={1.5} aria-hidden="true" />
+          <h2 className="text-base font-semibold text-ink">Nenhum item encontrado</h2>
+          <p className="max-w-md text-sm text-ink-muted">
+            {temFiltro
               ? 'Nenhuma peça corresponde aos filtros aplicados. Tente limpar a busca.'
               : 'Seu almoxarifado ainda não possui peças cadastradas. Comece cadastrando sua primeira peça agora.'}
           </p>
-          <button
-            type="button"
-            onClick={abrirModalCadastro}
-            className="min-h-[42px] px-4 py-2 rounded-xl bg-[#38BDF8] text-[#071226] font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" aria-hidden="true" />
-            <span>Cadastrar Peça</span>
-          </button>
-        </div>
+          {temFiltro ? (
+            <Button variante="secundario" onClick={limparFiltros}>
+              Limpar filtros
+            </Button>
+          ) : (
+            <Button variante="secundario" icone={Plus} onClick={abrirModalCadastro}>
+              Cadastrar peça
+            </Button>
+          )}
+        </Panel>
       ) : (
-        <div className="space-y-2">
-          <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
-            {itensFiltrados.map((item) => {
-              const qtd = item.quantidade ?? 0;
-              const min = item.minimo_alerta ?? 5;
-              const isCritico = qtd <= min;
-              const margem =
-                item.custo > 0 ? ((item.venda - item.custo) / item.venda) * 100 : 100;
-
-              return (
-                <article
-                  key={item.id}
-                  className="p-3 sm:px-4 sm:py-3 hover:bg-[#0B1B36]/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
-                >
-                  {/* Linha 1: Identificação da Peça (Nome em largura total no mobile) */}
-                  <div className="min-w-0 sm:flex-1 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#12274D] text-slate-300 border border-[#264577] uppercase shrink-0">
-                        {item.categoria || 'PECAS'}
-                      </span>
-                      {item.codigo && (
-                        <span className="font-mono text-[11px] text-[#38BDF8] bg-sky-950/60 border border-sky-900 px-1.5 py-0.5 rounded shrink-0">
-                          SKU: {item.codigo}
-                        </span>
-                      )}
-                      {isCritico && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-300 border border-red-600 animate-pulse shrink-0">
-                          <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-                          <span>Baixo (mín: {min})</span>
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="text-sm sm:text-base font-bold text-white break-words leading-snug">
-                      {item.nome}
-                    </h3>
-                  </div>
-
-                  {/* Linha 2 (Mobile) / Lado Direito (Desktop): Preços, Saldo e Ações */}
-                  <div className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#12274D]">
-                    {/* Bloco de Preços */}
-                    <div className="flex items-center gap-3 font-mono tabular-nums text-right">
-                      {canSeeFinanceiro && (
-                        <div className="hidden md:block">
-                          <div className="text-[10px] text-slate-400">Custo</div>
-                          <div className="text-xs text-slate-300">{formatBRL(item.custo)}</div>
-                        </div>
-                      )}
-
-                      <div>
-                        <div className="text-[10px] text-slate-400">Venda</div>
-                        <div className="text-sm font-bold text-white">{formatBRL(item.venda)}</div>
-                      </div>
-
-                      {canSeeFinanceiro && item.custo > 0 && (
-                        <div className="hidden lg:block">
-                          <div className="text-[10px] text-emerald-400">Margem</div>
-                          <div className="text-xs font-bold text-emerald-400">
-                            {margem.toFixed(0)}%
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Badge do Saldo em Estoque */}
-                    <div
-                      className={`min-w-[68px] px-2.5 py-1 rounded-lg border text-center font-mono shrink-0 ${
-                        isCritico
-                          ? 'bg-red-950/80 border-red-500 text-red-200'
-                          : 'bg-[#12274D] border-emerald-500/60 text-emerald-300'
-                      }`}
-                    >
-                      <div className="text-[10px] font-bold opacity-80 uppercase leading-none">
-                        Saldo
-                      </div>
-                      <div className="text-sm sm:text-base font-extrabold tabular-nums leading-tight">
-                        {qtd} un.
-                      </div>
-                    </div>
-
-                    {/* Botões Rápidos de Entrada e Saída (+ / -) */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => abrirModalAjuste(item, 'saida')}
-                        disabled={qtd <= 0}
-                        title="Registrar Saída Rápida de Peça"
-                        aria-label={`Registrar Saída de ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-red-950 border border-slate-600 hover:border-red-500 text-slate-200 hover:text-red-300 flex items-center justify-center cursor-pointer disabled:opacity-40 transition-colors"
-                      >
-                        <ArrowDownRight className="w-4 h-4" aria-hidden="true" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => abrirModalAjuste(item, 'entrada')}
-                        title="Registrar Entrada / Chegada de Nota"
-                        aria-label={`Registrar Entrada de ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-emerald-950 border border-slate-600 hover:border-emerald-500 text-slate-200 hover:text-emerald-300 flex items-center justify-center cursor-pointer transition-colors"
-                      >
-                        <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
-                      </button>
-
-                      {/* Botão de Etiqueta com Código de Barras */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setItemEtiqueta(item);
-                          setModalEtiquetaAberto(true);
-                        }}
-                        title="Imprimir Etiqueta com Código de Barras"
-                        aria-label={`Imprimir etiqueta com código de barras para ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-[#38BDF8] flex items-center justify-center cursor-pointer transition-colors"
-                      >
-                        <Barcode className="w-4 h-4" aria-hidden="true" />
-                      </button>
-
-                      {/* Botão de Edição */}
-                      <button
-                        type="button"
-                        onClick={() => abrirModalEdicao(item)}
-                        title="Editar Peça"
-                        aria-label={`Editar ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-amber-300 flex items-center justify-center cursor-pointer transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
-                      </button>
-
-                      {/* Botão de Exclusão */}
-                      <button
-                        type="button"
-                        onClick={() => setItemParaExcluir(item)}
-                        title="Excluir Peça"
-                        aria-label={`Excluir ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-700 text-red-200 flex items-center justify-center cursor-pointer transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+        <Panel espaco="nenhum">
+          <div
+            aria-hidden="true"
+            className={`hidden items-center gap-x-6 pb-2 pl-5 pr-2 pt-4 text-xs text-ink-muted lg:grid ${
+              verFinanceiro ? COLUNAS_ITEM.financeiro : COLUNAS_ITEM.basico
+            }`}
+          >
+            <span>Peça</span>
+            {verFinanceiro && <span className="text-right">Custo</span>}
+            <span className="text-right">Venda</span>
+            {verFinanceiro && <span className="text-right">Margem</span>}
+            <span className="text-right">Saldo</span>
+            <span />
           </div>
-        </div>
+          <ul aria-label="Peças em estoque" className="divide-y divide-line">
+            {itensFiltrados.map((item) => (
+              <LinhaItem
+                key={item.id}
+                item={item}
+                rotuloCategoria={rotuloDe(item.categoria)}
+                verFinanceiro={verFinanceiro}
+                aoAjustar={(tipo) => abrirModalAjuste(item, tipo)}
+                aoEtiqueta={() => {
+                  setItemEtiqueta(item);
+                  setModalEtiquetaAberto(true);
+                }}
+                aoEditar={() => abrirModalEdicao(item)}
+                aoExcluir={() => {
+                  setErro(null);
+                  setItemParaExcluir(item);
+                }}
+              />
+            ))}
+          </ul>
+        </Panel>
       )}
 
-      {/* MODAL 1: CADASTRO / EDIÇÃO DE PEÇA NO ESTOQUE */}
-      {modalItemAberto && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-3">
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <Package className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
-                <span>{itemEmEdicao ? 'Editar Peça / Item' : 'Nova Peça no Estoque'}</span>
-              </h2>
-              <button
-                type="button"
-                onClick={() => setModalItemAberto(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#12274D] cursor-pointer"
-              >
-                <X className="w-5 h-5" aria-hidden="true" />
-              </button>
-            </div>
+      {/* FOLHA 1: CADASTRO / EDIÇÃO DE PEÇA NO ESTOQUE */}
+      <Folha
+        aberto={modalItemAberto}
+        tamanho="lg"
+        fecharNoFundo={false}
+        titulo={itemEmEdicao ? 'Editar peça' : 'Nova peça no estoque'}
+        aoCancelar={sairDoFormulario}
+      >
+        {confirmarDescarte}
+        {erro && alertaErro(erro)}
+        <form onSubmit={handleSalvarItem} className="space-y-5">
+          <Field rotulo="Nome da peça / produto *">
+            <input
+              type="text"
+              required
+              value={formNome}
+              onChange={(e) => setFormNome(e.target.value)}
+              placeholder="Ex: Pastilha de Freio Dianteira Onix 1.0"
+              className={CLASSE_CAMPO}
+            />
+          </Field>
 
-            <form onSubmit={handleSalvarItem} className="space-y-3.5 text-xs sm:text-sm">
-              <div>
-                <label className="block font-bold text-slate-200 mb-1">
-                  Nome da Peça / Produto *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formNome}
-                  onChange={(e) => setFormNome(e.target.value)}
-                  placeholder="Ex: Pastilha de Freio Dianteira Onix 1.0"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">Categoria *</label>
-                  <select
-                    value={formCategoria}
-                    onChange={(e) => setFormCategoria(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
-                  >
-                    {categoriasCustom.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">
-                    Código / SKU / Cód. Barras
-                  </label>
-                  <input
-                    type="text"
-                    value={formCodigo}
-                    onChange={(e) => setFormCodigo(e.target.value)}
-                    placeholder="Ex: ONX-7741"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono uppercase"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">
-                    Quantidade em Saldo *
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    required
-                    value={formQuantidade}
-                    onChange={(e) => setFormQuantidade(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">
-                    Alerta Mínimo (Crítico) *
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    required
-                    value={formMinimo}
-                    onChange={(e) => setFormMinimo(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center"
-                  />
-                </div>
-              </div>
-
-              <div
-                className={`grid ${
-                  canSeeFinanceiro ? 'grid-cols-2' : 'grid-cols-1'
-                } gap-3`}
-              >
-                {canSeeFinanceiro && (
-                  <div>
-                    <label className="block font-bold text-slate-200 mb-1">
-                      Custo Unitário (R$)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      value={formCusto}
-                      onChange={(e) => setFormCusto(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-slate-200 font-mono"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block font-bold text-slate-200 mb-1">
-                    Preço de Venda (R$) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    required
-                    value={formVenda}
-                    onChange={(e) => setFormVenda(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#12274D]">
-                <button
-                  type="button"
-                  onClick={() => setModalItemAberto(false)}
-                  className="min-h-[42px] px-4 rounded-xl bg-[#12274D] hover:bg-[#264577] text-white font-bold cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvandoItem}
-                  className="min-h-[42px] px-5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold cursor-pointer disabled:opacity-50"
-                >
-                  {salvandoItem ? 'Salvando…' : 'Salvar Peça'}
-                </button>
-              </div>
-            </form>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field rotulo="Categoria *">
+              <select value={formCategoria} onChange={(e) => setFormCategoria(e.target.value)} className={CLASSE_CAMPO}>
+                {categoriasCustom.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {rotuloDe(cat)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field rotulo="Código / SKU / cód. de barras">
+              <input
+                type="text"
+                value={formCodigo}
+                onChange={(e) => setFormCodigo(e.target.value)}
+                placeholder="Ex: ONX-7741"
+                className={`${CLASSE_CAMPO} font-mono uppercase`}
+              />
+            </Field>
           </div>
-        </div>
-      )}
 
-      {/* MODAL 2: AJUSTE RÁPIDO DE SALDO (+ ENTRADA / - SAÍDA) */}
-      {modalAjusteAberto && itemParaAjuste && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                {ajusteTipo === 'entrada' ? (
-                  <ArrowUpRight className="w-5 h-5 text-emerald-400" aria-hidden="true" />
-                ) : (
-                  <ArrowDownRight className="w-4 h-4 text-red-400" aria-hidden="true" />
-                )}
-                <span>{ajusteTipo === 'entrada' ? 'Entrada no Estoque' : 'Saída do Estoque'}</span>
-              </h2>
-              <button
-                type="button"
-                onClick={() => setModalAjusteAberto(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" aria-hidden="true" />
-              </button>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field rotulo="Quantidade em saldo *">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                required
+                value={formQuantidade}
+                onChange={(e) => setFormQuantidade(e.target.value)}
+                className={`${CLASSE_CAMPO} tabular-nums`}
+              />
+            </Field>
+            <Field rotulo="Alerta mínimo (crítico) *">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                required
+                value={formMinimo}
+                onChange={(e) => setFormMinimo(e.target.value)}
+                className={`${CLASSE_CAMPO} tabular-nums`}
+              />
+            </Field>
+          </div>
 
-            <div className="bg-[#071226] p-3 rounded-xl border border-[#264577] space-y-1">
-              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                Peça Selecionada
-              </div>
-              <div className="text-sm font-bold text-white">{itemParaAjuste.nome}</div>
-              <div className="text-xs font-mono text-slate-300">
-                Saldo atual: <strong className="text-white">{itemParaAjuste.quantidade} un.</strong>
-              </div>
-            </div>
-
-            <form onSubmit={handleConfirmarAjuste} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1">
-                  Quantidade a {ajusteTipo === 'entrada' ? 'adicionar' : 'dar baixa'}
-                </label>
+          <div className={`grid gap-4 ${canSeeFinanceiro ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {canSeeFinanceiro && (
+              <Field rotulo="Custo unitário (R$)">
                 <input
                   type="number"
-                  min={1}
-                  required
-                  autoFocus
-                  value={ajusteQtd}
-                  onChange={(e) => setAjusteQtd(e.target.value)}
-                  className="w-full min-h-[46px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center text-lg font-bold"
+                  inputMode="decimal"
+                  step="0.01"
+                  min={0}
+                  value={formCusto}
+                  onChange={(e) => setFormCusto(e.target.value)}
+                  placeholder="0.00"
+                  className={`${CLASSE_CAMPO} tabular-nums`}
                 />
-              </div>
+              </Field>
+            )}
+            <Field rotulo="Preço de venda (R$) *">
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0}
+                required
+                value={formVenda}
+                onChange={(e) => setFormVenda(e.target.value)}
+                placeholder="0.00"
+                className={`${CLASSE_CAMPO} tabular-nums`}
+              />
+            </Field>
+          </div>
 
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setModalAjusteAberto(false)}
-                  className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
-                >
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variante="secundario" onClick={sairDoFormulario}>
+              Cancelar
+            </Button>
+            <Button type="submit" carregando={salvandoItem}>
+              {salvandoItem ? 'Salvando…' : 'Salvar peça'}
+            </Button>
+          </div>
+        </form>
+      </Folha>
+
+      {/* FOLHA 2: AJUSTE DE SALDO (ENTRADA / SAÍDA), SEMPRE COM QUANTIDADE E CONFIRMAÇÃO EXPLÍCITAS */}
+      <Folha
+        aberto={modalAjusteAberto && itemParaAjuste !== null}
+        titulo={ajusteEntrada ? 'Entrada no estoque' : 'Saída do estoque'}
+        aoCancelar={() => setModalAjusteAberto(false)}
+      >
+        {itemParaAjuste && (
+          <>
+            {erro && alertaErro(erro)}
+            <div>
+              <p className="text-sm font-medium text-ink">{itemParaAjuste.nome}</p>
+              <p className="mt-0.5 text-sm tabular-nums text-ink-muted">Saldo atual {itemParaAjuste.quantidade} un.</p>
+            </div>
+            <form onSubmit={handleConfirmarAjuste} className="space-y-5">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="ajuste-quantidade" className="text-sm font-medium text-ink">
+                  {`Quantidade a ${ajusteEntrada ? 'adicionar' : 'dar baixa'}`}
+                </label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variante="secundario"
+                    aria-label="Diminuir quantidade"
+                    icone={Minus}
+                    disabled={qtdAjuste <= 1}
+                    onClick={() => setAjusteQtd(String(Math.max(1, qtdAjuste - 1)))}
+                  />
+                  <input
+                    id="ajuste-quantidade"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    required
+                    value={ajusteQtd}
+                    onChange={(e) => setAjusteQtd(e.target.value)}
+                    className={`${CLASSE_CAMPO} text-center text-lg font-semibold tabular-nums`}
+                  />
+                  <Button
+                    variante="secundario"
+                    aria-label="Aumentar quantidade"
+                    icone={Plus}
+                    onClick={() => setAjusteQtd(String(qtdAjuste + 1))}
+                  />
+                </div>
+              </div>
+              <p className={`text-sm tabular-nums ${saldoDepois < 0 ? 'font-medium text-danger' : 'text-ink-muted'}`}>
+                Saldo depois: {saldoDepois} un.
+                {saldoDepois < 0 && ' · Saldo ficará negativo'}
+              </p>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button variante="secundario" onClick={() => setModalAjusteAberto(false)}>
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={ajustando}
-                  className={`min-h-[42px] px-5 rounded-xl text-white font-extrabold text-xs cursor-pointer ${
-                    ajusteTipo === 'entrada'
-                      ? 'bg-emerald-600 hover:bg-emerald-500'
-                      : 'bg-red-600 hover:bg-red-500'
-                  }`}
+                  variante={ajusteEntrada ? 'primario' : 'perigo'}
+                  carregando={ajustando}
                 >
-                  {ajustando
-                    ? 'Salvando…'
-                    : ajusteTipo === 'entrada'
-                    ? 'Confirmar Entrada'
-                    : 'Confirmar Saída'}
-                </button>
+                  {ajusteEntrada
+                    ? `Confirmar entrada de ${qtdAjuste} un.`
+                    : `Confirmar saída de ${qtdAjuste} un.${saldoDepois < 0 ? ' (saldo negativo)' : ''}`}
+                </Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Folha>
 
-      {/* MODAL 3: GERENCIADOR DE CATEGORIAS DA EMPRESA */}
-      {mostrarModalCategorias && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-[#2563EB] rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <FolderPlus className="w-5 h-5 text-blue-400" aria-hidden="true" />
-                <span>Gerenciar Categorias da Oficina</span>
-              </h2>
-              <button
-                type="button"
-                onClick={() => setMostrarModalCategorias(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" aria-hidden="true" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAdicionarCategoria} className="flex items-center gap-2">
+      {/* FOLHA 3: GERENCIADOR DE CATEGORIAS DA EMPRESA */}
+      <Folha
+        aberto={mostrarModalCategorias}
+        titulo="Gerenciar categorias"
+        aoCancelar={() => {
+          setCategoriaParaExcluir(null);
+          setMostrarModalCategorias(false);
+        }}
+      >
+        <form onSubmit={handleAdicionarCategoria} className="flex items-end gap-2">
+          <div className="flex-1">
+            <Field rotulo="Nome da nova categoria">
               <input
                 type="text"
                 required
                 value={novaCategoriaNome}
                 onChange={(e) => setNovaCategoriaNome(e.target.value)}
-                placeholder="Nome da nova categoria (Ex: SUSPENSÃO)…"
-                className="flex-1 min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white text-xs uppercase"
+                placeholder="Ex: Suspensão"
+                className={CLASSE_CAMPO}
               />
-              <button
-                type="submit"
-                className="min-h-[42px] px-4 rounded-xl bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-xs cursor-pointer shrink-0"
-              >
-                + Criar
-              </button>
-            </form>
+            </Field>
+          </div>
+          <Button type="submit" variante="secundario">
+            Criar
+          </Button>
+        </form>
 
-            <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-              {categoriasCustom.map((cat) => {
-                const count = itens.filter(
-                  (i) => (i.categoria || '').toUpperCase() === cat.toUpperCase()
-                ).length;
-                return (
-                  <div
-                    key={cat}
-                    className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between gap-2 text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Tag className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" />
-                      <span className="font-bold text-white">{cat}</span>
-                      <span className="text-slate-400">({count} itens)</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleExcluirCategoria(cat)}
-                      title={`Excluir categoria ${cat}`}
-                      aria-label={`Excluir categoria ${cat}`}
-                      className="p-1 text-red-400 hover:text-red-200 cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" aria-hidden="true" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="pt-2 border-t border-[#12274D] flex justify-end">
-              <button
-                type="button"
-                onClick={() => setMostrarModalCategorias(false)}
-                className="min-h-[38px] px-4 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
-              >
-                Fechar
-              </button>
+        {categoriaParaExcluir && (
+          <div
+            role="alert"
+            ref={(el) => el?.scrollIntoView({ block: 'nearest' })}
+            className="space-y-3 rounded-xl bg-warning/15 p-4"
+          >
+            <p className="text-sm font-medium text-ink">
+              Existem {contagemPorCategoria[categoriaParaExcluir.toUpperCase()] ?? 0} itens usando a categoria "
+              {rotuloDe(categoriaParaExcluir)}". Deseja reclassificá-los para "Diversos" e excluir a categoria?
+            </p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variante="secundario" onClick={() => setCategoriaParaExcluir(null)}>
+                Manter categoria
+              </Button>
+              <Button variante="perigo" onClick={() => handleExcluirCategoria(categoriaParaExcluir, true)}>
+                Reclassificar e excluir
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* MODAL 4: GERADOR DE ETIQUETA COM CÓDIGO DE BARRAS NATIVO (PRINTABLE) */}
-      {modalEtiquetaAberto && itemEtiqueta && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-sm p-4 sm:p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2 print:hidden">
-              <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                <Barcode className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
-                <span>Etiqueta com Código de Barras</span>
-              </h2>
+        <ul className="max-h-72 divide-y divide-line overflow-y-auto">
+          {categoriasCustom.map((cat) => (
+            <li key={cat} className="flex min-h-12 items-center justify-between gap-2">
+              <span className="min-w-0 truncate text-sm font-medium text-ink">
+                {rotuloDe(cat)}{' '}
+                <span className="font-normal tabular-nums text-ink-muted">
+                  ({contagemPorCategoria[cat.toUpperCase()] ?? 0} itens)
+                </span>
+              </span>
               <button
                 type="button"
-                onClick={() => setModalEtiquetaAberto(false)}
-                className="text-slate-400 hover:text-white"
+                onClick={() => handleExcluirCategoria(cat)}
+                title={`Excluir categoria ${rotuloDe(cat)}`}
+                aria-label={`Excluir categoria ${rotuloDe(cat)}`}
+                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-muted hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
-                <X className="w-5 h-5" aria-hidden="true" />
+                <Trash2 size={18} strokeWidth={1.5} aria-hidden="true" />
               </button>
-            </div>
+            </li>
+          ))}
+        </ul>
 
+        <div className="flex justify-end">
+          <Button
+            variante="secundario"
+            onClick={() => {
+              setCategoriaParaExcluir(null);
+              setMostrarModalCategorias(false);
+            }}
+          >
+            Fechar
+          </Button>
+        </div>
+      </Folha>
+
+      {/* FOLHA 4: ETIQUETA COM CÓDIGO DE BARRAS NATIVO (IMPRESSÃO) */}
+      <Folha
+        aberto={modalEtiquetaAberto && itemEtiqueta !== null}
+        titulo="Etiqueta com código de barras"
+        aoCancelar={() => setModalEtiquetaAberto(false)}
+      >
+        {itemEtiqueta && (
+          <>
+            {/* codemod:ignore-start */}
             {/* ÁREA DA ETIQUETA ADESIVA (PADRÃO TÉRMICO / GAVETA) */}
             <div
               id="etiqueta-impressao"
               className="bg-white text-black p-4 rounded-xl shadow-lg border-2 border-black flex flex-col items-center justify-center text-center space-y-2 select-all"
             >
-              <div className="text-[10px] font-black uppercase tracking-wider text-slate-800">
+              <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
                 MECANIFY &bull; ALMOXARIFADO
               </div>
 
-              <div className="text-xs font-black leading-tight uppercase max-w-[240px] text-black">
+              <div className="text-xs font-semibold leading-tight uppercase max-w-[240px] text-black">
                 {itemEtiqueta.nome}
               </div>
 
@@ -1277,83 +1098,61 @@ export function Estoque({ empresaId }: EstoqueProps) {
                   );
                 })()}
 
-                <div className="font-mono text-[11px] font-extrabold tracking-widest mt-1 text-black">
+                <div className="font-mono text-xs font-semibold tracking-widest mt-1 text-black">
                   {(itemEtiqueta.codigo || `AT-${itemEtiqueta.id.slice(0, 8)}`).toUpperCase()}
                 </div>
               </div>
 
               <div className="w-full flex items-center justify-between border-t border-black pt-1 px-1">
-                <span className="text-[10px] font-bold text-slate-700 uppercase">
+                <span className="text-xs font-semibold text-ink-muted uppercase">
                   {itemEtiqueta.categoria || 'PEÇA'}
                 </span>
-                <span className="font-mono text-base font-black text-black">
+                <span className="font-mono text-base font-semibold text-black">
                   {formatBRL(itemEtiqueta.venda)}
                 </span>
               </div>
             </div>
+            {/* codemod:ignore-end */}
 
-            <div className="flex items-center justify-end gap-2 print:hidden pt-2">
-              <button
-                type="button"
-                onClick={() => setModalEtiquetaAberto(false)}
-                className="min-h-[42px] px-3.5 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
-              >
+            <div className="flex flex-col-reverse gap-2 print:hidden sm:flex-row sm:justify-end">
+              <Button variante="secundario" onClick={() => setModalEtiquetaAberto(false)}>
                 Fechar
-              </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="min-h-[42px] px-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-2 cursor-pointer shadow-md"
-              >
-                <Printer className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
-                <span>Imprimir Etiqueta</span>
-              </button>
+              </Button>
+              <Button icone={Printer} onClick={() => window.print()}>
+                Imprimir etiqueta
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Folha>
 
-      {/* MODAL 5: CONFIRMAÇÃO DE EXCLUSÃO */}
-      {itemParaExcluir && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-red-600 rounded-2xl w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-950 border border-red-500 text-red-400 flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5" aria-hidden="true" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">Excluir Peça do Estoque?</h3>
-                <p className="text-xs text-slate-400">Esta ação não poderá ser desfeita.</p>
-              </div>
+      {/* FOLHA 5: CONFIRMAÇÃO DE EXCLUSÃO */}
+      <Folha
+        aberto={itemParaExcluir !== null}
+        titulo="Excluir peça do estoque?"
+        aoCancelar={() => setItemParaExcluir(null)}
+      >
+        {itemParaExcluir && (
+          <>
+            {erro && alertaErro(erro)}
+            <div>
+              <p className="text-sm font-medium text-ink">{itemParaExcluir.nome}</p>
+              <p className="mt-0.5 text-sm tabular-nums text-ink-muted">
+                Saldo {itemParaExcluir.quantidade} un. &bull; Preço {formatBRL(itemParaExcluir.venda)}
+              </p>
+              <p className="mt-3 text-sm text-ink-muted">Esta ação não poderá ser desfeita.</p>
             </div>
-
-            <div className="p-3 bg-[#071226] rounded-xl border border-[#264577]">
-              <div className="text-sm font-bold text-white">{itemParaExcluir.nome}</div>
-              <div className="text-xs text-slate-400 font-mono mt-0.5">
-                Saldo: {itemParaExcluir.quantidade} un. &bull; Preço: {formatBRL(itemParaExcluir.venda)}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setItemParaExcluir(null)}
-                className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
-              >
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variante="secundario" onClick={() => setItemParaExcluir(null)}>
                 Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={excluindo}
-                onClick={handleConfirmarExclusao}
-                className="min-h-[42px] px-4.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs cursor-pointer disabled:opacity-50"
-              >
-                {excluindo ? 'Excluindo…' : 'Sim, Excluir'}
-              </button>
+              </Button>
+              <Button variante="perigo" icone={Trash2} carregando={excluindo} onClick={handleConfirmarExclusao}>
+                {excluindo ? 'Excluindo…' : 'Excluir peça'}
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Folha>
     </div>
   );
 }

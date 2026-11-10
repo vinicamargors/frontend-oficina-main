@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api, OrdenacaoOS } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -16,19 +16,13 @@ import {
 import {
   PlusCircle,
   Search,
-  Wrench,
-  Clock,
-  PackageCheck,
   CheckCircle2,
-  ClipboardList,
   MessageCircle,
   Printer,
   Trash2,
   ArrowLeft,
-  ArrowRight,
   Car,
   UserPlus,
-  DollarSign,
   AlertTriangle,
   RefreshCw,
   Plus,
@@ -43,6 +37,14 @@ import {
   X,
   SlidersHorizontal,
 } from 'lucide-react';
+import { Badge, Button, Field, PageHeader, Panel, PlateChip, Skeleton, StatusBadge, STATUS_OS, Tabs, CLASSE_CAMPO, classesBotao } from '../components/ui';
+import { ConfirmarPagamento } from '../components/ConfirmarPagamento';
+import { ConfirmarEtapa } from '../components/ConfirmarEtapa';
+import { FORMAS_PAGAMENTO } from './ordens/formasPagamento';
+import { ETAPAS_OS, mensagemEtapa } from './ordens/etapas';
+import { LinhaOrdem } from './ordens/LinhaOrdem';
+import { useDebouncedValue } from '../lib/useDebouncedValue';
+import { useMediaQuery } from '../lib/useMediaQuery';
 
 interface OrdensServicoProps {
   empresaId: string;
@@ -55,6 +57,12 @@ interface ItemRascunho extends OSItemCreateInput {
 }
 
 const ITENS_POR_PAGINA = 50;
+
+const ROTULO_TIPO_ITEM: Record<TipoItemOS, string> = {
+  PECA: 'Peça',
+  MAO_OBRA: 'Mão de obra',
+  TERCEIRIZADO: 'Terceirizado',
+};
 
 const formatBRL = (valor?: number | null) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
@@ -76,85 +84,8 @@ const formatDataHora = (iso?: string | null) => {
   }
 };
 
-const STATUS_LIST: {
-  id: StatusOS;
-  label: string;
-  shortLabel: string;
-  nextStatus?: StatusOS;
-  nextLabel?: string;
-  badgeBg: string;
-  badgeBorder: string;
-  badgeText: string;
-  activeBtn: string;
-  icon: typeof Wrench;
-}[] = [
-  {
-    id: 'ORCAMENTO',
-    label: 'Orçamento',
-    shortLabel: 'Orçamento',
-    nextStatus: 'EXECUCAO',
-    nextLabel: 'Aprovar → Execução',
-    badgeBg: 'bg-amber-950',
-    badgeBorder: 'border-amber-500',
-    badgeText: 'text-amber-300',
-    activeBtn: 'bg-amber-500 text-[#071226] border-amber-400',
-    icon: ClipboardList,
-  },
-  {
-    id: 'AGUARDANDO_PECA',
-    label: 'Aguardando Peça',
-    shortLabel: 'Ag. Peça',
-    nextStatus: 'EXECUCAO',
-    nextLabel: 'Peça Chegou → Execução',
-    badgeBg: 'bg-sky-950',
-    badgeBorder: 'border-sky-500',
-    badgeText: 'text-sky-300',
-    activeBtn: 'bg-[#38BDF8] text-[#071226] border-[#38BDF8]',
-    icon: Clock,
-  },
-  {
-    id: 'EXECUCAO',
-    label: 'Em Execução',
-    shortLabel: 'Execução',
-    nextStatus: 'FINALIZADO',
-    nextLabel: 'Concluir Serviço',
-    badgeBg: 'bg-blue-950',
-    badgeBorder: 'border-blue-500',
-    badgeText: 'text-blue-200',
-    activeBtn: 'bg-[#2563EB] text-white border-blue-400',
-    icon: Wrench,
-  },
-  {
-    id: 'FINALIZADO',
-    label: 'Finalizado',
-    shortLabel: 'Finalizado',
-    nextStatus: 'PAGO',
-    nextLabel: 'Receber / Dar Baixa',
-    badgeBg: 'bg-emerald-950',
-    badgeBorder: 'border-emerald-500',
-    badgeText: 'text-emerald-300',
-    activeBtn: 'bg-emerald-500 text-[#071226] border-emerald-400',
-    icon: PackageCheck,
-  },
-  {
-    id: 'PAGO',
-    label: 'Pago / Entregue',
-    shortLabel: 'Pago',
-    badgeBg: 'bg-green-950',
-    badgeBorder: 'border-green-500',
-    badgeText: 'text-green-300',
-    activeBtn: 'bg-green-500 text-[#071226] border-green-400',
-    icon: CheckCircle2,
-  },
-];
-
-const FORMAS_PAGAMENTO = [
-  'PIX',
-  'Cartão de Crédito',
-  'Cartão de Débito',
-  'Dinheiro',
-  'Boleto / Faturado',
-];
+// Formas aceitas na baixa (strings enviadas ao backend); exportadas para reuso.
+export { FORMAS_PAGAMENTO };
 
 export function OrdensServico({
   empresaId,
@@ -177,6 +108,12 @@ export function OrdensServico({
     initialStatusFilter || 'TODAS'
   );
   const [busca, setBusca] = useState('');
+  // O campo responde na hora; a lista e as contagens só leem a busca depois de 300ms sem digitação.
+  const buscaAplicada = useDebouncedValue(busca, 300);
+  // Só a resposta da leitura mais recente é aplicada (evita resposta antiga sobrescrever a nova).
+  const seqLista = useRef(0);
+  const seqContagens = useRef(0);
+  const faixaChipsRef = useRef<HTMLDivElement>(null);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [valorMin, setValorMin] = useState('');
@@ -187,6 +124,13 @@ export function OrdensServico({
   const [totalOrdens, setTotalOrdens] = useState(0);
   const [loadingLista, setLoadingLista] = useState(true);
   const [erroLista, setErroLista] = useState<string | null>(null);
+  // Contagem por etapa para os chips de filtro (mesmos filtros de busca/data/valor, sem o de etapa)
+  const [contagens, setContagens] = useState<Partial<Record<StatusOS | 'TODAS', number>>>({});
+  // Folha obrigatória de forma de pagamento antes de marcar como PAGO
+  const [pagamentoPendente, setPagamentoPendente] = useState<{ osId: string; total: number } | null>(null);
+  // Celular: toda troca de etapa na bancada passa por "Mover para…?" (toque acidental não muda o status)
+  const celular = useMediaQuery('(max-width: 1023px)');
+  const [etapaPendente, setEtapaPendente] = useState<{ osId: string; status: StatusOS } | null>(null);
 
   // Estado da OS aberta na Bancada
   const [selectedOsId, setSelectedOsId] = useState<string | null>(
@@ -207,7 +151,7 @@ export function OrdensServico({
   const [editKm, setEditKm] = useState<string>('');
   const [editProblema, setEditProblema] = useState<string>('');
   const [editMecanicoId, setEditMecanicoId] = useState<string>('');
-  const [editFormaPagamento, setEditFormaPagamento] = useState<string>('PIX');
+  const [, setEditFormaPagamento] = useState<string>('PIX');
   const [statusAutoSave, setStatusAutoSave] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   // Lançamento de Itens em Lote + Busca Reativa de Estoque (Nome e SKU, Qtd > 0)
@@ -271,6 +215,7 @@ export function OrdensServico({
 
   const carregarOrdens = useCallback(async () => {
     if (!empresaId) return;
+    const minha = ++seqLista.current;
     setLoadingLista(true);
     setErroLista(null);
     try {
@@ -279,7 +224,7 @@ export function OrdensServico({
       const res = await api.listarOS({
         empresaId,
         status: statusFiltro === 'TODAS' ? undefined : statusFiltro,
-        search: busca,
+        search: buscaAplicada,
         dataInicio: dataInicio || undefined,
         dataFim: dataFim || undefined,
         valorMin: vMin,
@@ -288,18 +233,20 @@ export function OrdensServico({
         skip: (pagina - 1) * ITENS_POR_PAGINA,
         limit: ITENS_POR_PAGINA,
       });
+      if (minha !== seqLista.current) return;
       setOrdens(res.items || []);
       setTotalOrdens(res.total || 0);
     } catch (err: unknown) {
+      if (minha !== seqLista.current) return;
       const e = err as Error;
       setErroLista(e.message || 'Erro ao carregar Ordens de Serviço.');
     } finally {
-      setLoadingLista(false);
+      if (minha === seqLista.current) setLoadingLista(false);
     }
   }, [
     empresaId,
     statusFiltro,
-    busca,
+    buscaAplicada,
     dataInicio,
     dataFim,
     valorMin,
@@ -313,6 +260,60 @@ export function OrdensServico({
       carregarOrdens();
     }
   }, [view, carregarOrdens]);
+
+  const carregarContagens = useCallback(async () => {
+    if (!empresaId) return;
+    const minha = ++seqContagens.current;
+    const vMin = valorMin.trim() ? Number(valorMin.replace(',', '.')) : null;
+    const vMax = valorMax.trim() ? Number(valorMax.replace(',', '.')) : null;
+    const etapas: (StatusOS | 'TODAS')[] = ['TODAS', ...ETAPAS_OS];
+    const resultados = await Promise.all(
+      etapas.map((st) =>
+        api
+          .listarOS({
+            empresaId,
+            status: st === 'TODAS' ? undefined : st,
+            search: buscaAplicada,
+            dataInicio: dataInicio || undefined,
+            dataFim: dataFim || undefined,
+            valorMin: vMin,
+            valorMax: vMax,
+            skip: 0,
+            limit: 1,
+          })
+          .then((r) => r.total ?? 0)
+          .catch(() => undefined)
+      )
+    );
+    if (minha !== seqContagens.current) return;
+    const mapa: Partial<Record<StatusOS | 'TODAS', number>> = {};
+    etapas.forEach((st, i) => {
+      if (resultados[i] !== undefined) mapa[st] = resultados[i];
+    });
+    setContagens(mapa);
+  }, [empresaId, buscaAplicada, dataInicio, dataFim, valorMin, valorMax]);
+
+  useEffect(() => {
+    if (view === 'lista') {
+      carregarContagens();
+    }
+  }, [view, carregarContagens]);
+
+  // Celular: o chip ativo fica à vista dentro da faixa rolável (só rola a faixa, nunca a página)
+  useEffect(() => {
+    const faixa = faixaChipsRef.current;
+    const ativo = faixa?.querySelector<HTMLElement>('[data-ativo]');
+    if (!faixa || !ativo || faixa.scrollWidth <= faixa.clientWidth) return;
+    const esq = ativo.offsetLeft - faixa.offsetLeft;
+    const dir = esq + ativo.offsetWidth;
+    if (esq < faixa.scrollLeft + 16) faixa.scrollLeft = Math.max(0, esq - 16);
+    else if (dir > faixa.scrollLeft + faixa.clientWidth - 32) faixa.scrollLeft = dir - faixa.clientWidth + 32;
+  }, [statusFiltro, view]);
+
+  // Nova busca aplicada volta à primeira página
+  useEffect(() => {
+    setPagina(1);
+  }, [buscaAplicada]);
 
   const veiculosPorCliente = useMemo(() => {
     const mapa = new Map<string, Veiculo[]>();
@@ -634,6 +635,8 @@ export function OrdensServico({
     novoStatus: StatusOS,
     formaPag?: string
   ) => {
+    // PAGO só com forma de pagamento escolhida (sem padrão silencioso)
+    if (novoStatus === 'PAGO' && !formaPag) return;
     setErroOperacao(null);
     setFeedbackMsg(null);
     try {
@@ -643,25 +646,23 @@ export function OrdensServico({
           ordem: {
             ...dossie.ordem,
             status: novoStatus,
-            ...(novoStatus === 'PAGO'
-              ? { forma_pagamento: formaPag || editFormaPagamento || 'PIX' }
-              : {}),
+            ...(novoStatus === 'PAGO' ? { forma_pagamento: formaPag } : {}),
           },
         });
+        if (novoStatus === 'PAGO' && formaPag) setEditFormaPagamento(formaPag);
       }
 
       await api.atualizarOS(empresaId, osId, {
         status: novoStatus,
-        ...(novoStatus === 'PAGO'
-          ? { forma_pagamento: formaPag || editFormaPagamento || 'PIX' }
-          : {}),
+        ...(novoStatus === 'PAGO' ? { forma_pagamento: formaPag } : {}),
       });
 
       if (view === 'bancada' && selectedOsId === osId) {
         await sincronizarDossieSilencioso(osId);
-        setFeedbackMsg(`Etapa da OS atualizada para ${novoStatus}!`);
+        setFeedbackMsg(mensagemEtapa(novoStatus));
       } else {
-        await carregarOrdens();
+        await Promise.all([carregarOrdens(), carregarContagens()]);
+        setFeedbackMsg(mensagemEtapa(novoStatus));
       }
     } catch (err: unknown) {
       const e = err as Error;
@@ -671,6 +672,40 @@ export function OrdensServico({
       }
     }
   };
+
+  // Mudar para PAGO sempre passa pela folha de confirmação; as outras etapas escrevem direto.
+  const pedirMudancaStatus = (osId: string, novoStatus: StatusOS, total: number) => {
+    if (novoStatus === 'PAGO') {
+      setPagamentoPendente({ osId, total: Number(total || 0) });
+      return;
+    }
+    handleMudarStatus(osId, novoStatus);
+  };
+
+  const folhaEtapa = (
+    <ConfirmarEtapa
+      etapa={etapaPendente?.status ?? null}
+      aoCancelar={() => setEtapaPendente(null)}
+      aoConfirmar={() => {
+        const pendente = etapaPendente;
+        setEtapaPendente(null);
+        if (pendente) handleMudarStatus(pendente.osId, pendente.status);
+      }}
+    />
+  );
+
+  const folhaPagamento = (
+    <ConfirmarPagamento
+      aberto={pagamentoPendente !== null}
+      total={pagamentoPendente?.total ?? 0}
+      aoCancelar={() => setPagamentoPendente(null)}
+      aoConfirmar={(forma) => {
+        const pendente = pagamentoPendente;
+        setPagamentoPendente(null);
+        if (pendente) handleMudarStatus(pendente.osId, 'PAGO', forma);
+      }}
+    />
+  );
 
   const salvarDadosTecnicosSilencioso = async (overrides?: {
     km?: string;
@@ -1034,12 +1069,12 @@ export function OrdensServico({
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4 bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-4 bg-surface border-2 border-line rounded-lg p-5">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-ink">
               Dar Entrada em Veículo (Nova OS)
             </h1>
-            <p className="text-base text-slate-300 mt-1">
+            <p className="text-base text-ink-muted mt-1">
               1º Escolha o cliente (por placa, nome, CPF ou telefone) e 2º selecione o
               veículo dele.
             </p>
@@ -1047,9 +1082,9 @@ export function OrdensServico({
           <button
             type="button"
             onClick={() => setView('lista')}
-            className="min-h-[54px] px-5 py-2.5 rounded-xl bg-[#12274D] hover:bg-[#264577] border-2 border-[#3A5C90] text-white font-bold text-base flex items-center gap-2 cursor-pointer shrink-0"
+            className="min-h-[54px] px-5 py-2.5 rounded-xl bg-surface hover:bg-muted border-2 border-line-strong text-ink font-semibold text-base flex items-center gap-2 cursor-pointer shrink-0"
           >
-            <ArrowLeft className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
+            <ArrowLeft className="w-5 h-5 text-brand-ink" aria-hidden="true" />
             <span>Voltar ao Pátio</span>
           </button>
         </div>
@@ -1057,21 +1092,21 @@ export function OrdensServico({
         {erroOperacao && (
           <div
             aria-live="polite"
-            className="p-4 rounded-xl bg-red-950 border-2 border-red-500 text-red-100 flex items-center gap-3 text-base font-medium"
+            className="p-4 rounded-xl bg-danger/15 border-2 border-danger text-danger flex items-center gap-3 text-base font-medium"
           >
-            <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" aria-hidden="true" />
+            <AlertTriangle className="w-6 h-6 text-danger shrink-0" aria-hidden="true" />
             <span>{erroOperacao}</span>
           </div>
         )}
 
         <form
           onSubmit={handleCriarNovaOS}
-          className="bg-[#0B1B36] border-2 border-[#264577] rounded-2xl p-5 sm:p-7 space-y-6"
+          className="bg-surface border-2 border-line rounded-lg p-5 sm:p-7 space-y-6"
         >
-          <fieldset className="bg-[#071226] border-2 border-[#264577] rounded-2xl p-5 space-y-4">
+          <fieldset className="bg-sunken border-2 border-line rounded-lg p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <legend className="text-xl font-bold text-white flex items-center gap-2">
-                <User className="w-6 h-6 text-[#38BDF8]" aria-hidden="true" />
+              <legend className="text-xl font-semibold text-ink flex items-center gap-2">
+                <User className="w-6 h-6 text-brand-ink" aria-hidden="true" />
                 <span>1. Escolher Cliente</span>
               </legend>
 
@@ -1079,10 +1114,10 @@ export function OrdensServico({
                 <button
                   type="button"
                   onClick={() => setModoClienteOS('BUSCAR')}
-                  className={`min-h-[46px] px-4 py-2 rounded-xl font-bold text-sm cursor-pointer ${
+                  className={`min-h-[46px] px-4 py-2 rounded-xl font-semibold text-sm cursor-pointer ${
                     modoClienteOS === 'BUSCAR'
-                      ? 'bg-[#38BDF8] text-[#071226]'
-                      : 'bg-[#12274D] text-slate-300 hover:bg-[#264577]'
+                      ? 'bg-brand text-on-brand'
+                      : 'bg-surface text-ink-muted hover:bg-muted'
                   }`}
                 >
                   Buscar Cliente ({clientes.length})
@@ -1095,10 +1130,10 @@ export function OrdensServico({
                     setClienteSelecionadoId('');
                     setVeiculoSelecionadoId('');
                   }}
-                  className={`min-h-[46px] px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5 cursor-pointer ${
+                  className={`min-h-[46px] px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-1.5 cursor-pointer ${
                     modoClienteOS === 'NOVO_CLIENTE'
-                      ? 'bg-[#2563EB] text-white'
-                      : 'bg-[#12274D] text-slate-300 hover:bg-[#264577]'
+                      ? 'bg-muted text-ink'
+                      : 'bg-surface text-ink-muted hover:bg-muted'
                   }`}
                 >
                   <UserPlus className="w-4 h-4" aria-hidden="true" />
@@ -1112,13 +1147,13 @@ export function OrdensServico({
                 <div>
                   <label
                     htmlFor="busca-cliente-os"
-                    className="block text-sm font-bold text-slate-200 mb-1.5"
+                    className="block text-sm font-semibold text-ink mb-1.5"
                   >
                     Pesquisar Cliente por Placa do Veículo, Nome, CPF ou Telefone
                   </label>
                   <div className="relative flex items-center">
                     <Search
-                      className="w-5 h-5 text-slate-400 absolute left-4 pointer-events-none"
+                      className="w-5 h-5 text-ink-subtle absolute left-4 pointer-events-none"
                       aria-hidden="true"
                     />
                     <input
@@ -1131,7 +1166,7 @@ export function OrdensServico({
                       autoCapitalize="off"
                       spellCheck={false}
                       placeholder="Comece a digitar nome, telefone, CPF ou placa (ex.: FUK2555)…"
-                      className="w-full min-h-[56px] pl-11 pr-4 py-2.5 bg-[#0B1B36] border-2 border-[#3A5C90] focus:border-[#38BDF8] rounded-xl text-white text-base font-medium"
+                      className="w-full min-h-[56px] pl-11 pr-4 py-2.5 bg-surface border-2 border-line-strong focus:border-brand rounded-xl text-ink text-base font-medium"
                     />
                   </div>
                 </div>
@@ -1140,11 +1175,11 @@ export function OrdensServico({
                   <div
                     role="listbox"
                     aria-label="Clientes encontrados"
-                    className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-xl divide-y divide-[#12274D] max-h-72 overflow-y-auto"
+                    className="bg-surface border-2 border-brand rounded-xl divide-y divide-line max-h-72 overflow-y-auto"
                   >
                     {clientesFiltrados.length === 0 ? (
                       <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <span className="text-sm text-slate-300">
+                        <span className="text-sm text-ink-muted">
                           Nenhum cliente encontrado para &ldquo;{buscaClienteTexto}&rdquo;.
                         </span>
                         <button
@@ -1154,7 +1189,7 @@ export function OrdensServico({
                             setModoClienteOS('NOVO_CLIENTE');
                             setModoVeiculoCliente('NOVO_VEICULO');
                           }}
-                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[#2563EB] text-white font-bold text-xs cursor-pointer shrink-0"
+                          className="min-h-[44px] px-4 py-2 rounded-xl bg-muted text-ink font-semibold text-xs cursor-pointer shrink-0"
                         >
                           + Cadastrar Novo Cliente
                         </button>
@@ -1181,25 +1216,25 @@ export function OrdensServico({
                             role="option"
                             aria-selected={clienteSelecionadoId === cli.id}
                             onClick={() => handleSelecionarClienteNaLista(cli)}
-                            className="w-full px-4 py-3 text-left hover:bg-[#12274D] flex items-center justify-between gap-4 cursor-pointer"
+                            className="w-full px-4 py-3 text-left hover:bg-muted flex items-center justify-between gap-4 cursor-pointer"
                           >
                             <div className="min-w-0 flex-1">
-                              <div className="text-base font-bold text-white truncate">
+                              <div className="text-base font-semibold text-ink truncate">
                                 {cli.nome}{' '}
-                                <span className="text-[#38BDF8] font-mono">
+                                <span className="text-brand-ink font-mono">
                                   - {cli.telefone || 'Sem telefone'}
                                 </span>
                                 {cli.cpf_cnpj && (
-                                  <span className="ml-2 text-xs font-mono text-slate-400">
+                                  <span className="ml-2 text-xs font-mono text-ink-subtle">
                                     ({cli.cpf_cnpj})
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs text-slate-400 mt-0.5 truncate">
+                              <div className="text-xs text-ink-subtle mt-0.5 truncate">
                                 Veículos: {resumoCarros}
                               </div>
                             </div>
-                            <span className="px-2.5 py-1 rounded bg-[#071226] border border-[#264577] text-xs font-bold text-[#38BDF8] shrink-0">
+                            <span className="px-2.5 py-1 rounded bg-sunken border border-line text-xs font-semibold text-brand-ink shrink-0">
                               Escolher
                             </span>
                           </button>
@@ -1210,14 +1245,14 @@ export function OrdensServico({
                 )}
 
                 {clienteSelecionado && (
-                  <div className="bg-[#1E3A8A]/40 border-2 border-[#38BDF8] rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="bg-muted/40 border-2 border-brand rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <div className="text-xs font-bold text-amber-300">
+                      <div className="text-xs font-semibold text-warning">
                         Cliente Selecionado
                       </div>
-                      <div className="text-lg font-bold text-white">
+                      <div className="text-lg font-semibold text-ink">
                         {clienteSelecionado.nome}{' '}
-                        <span className="text-[#38BDF8] font-mono">
+                        <span className="text-brand-ink font-mono">
                           - {clienteSelecionado.telefone || 'Sem telefone'}
                         </span>
                       </div>
@@ -1229,7 +1264,7 @@ export function OrdensServico({
                         setClienteSelecionadoId('');
                         setVeiculoSelecionadoId('');
                       }}
-                      className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-[#0B1B36] hover:bg-[#12274D] border border-[#3A5C90] text-slate-200 font-bold text-xs cursor-pointer"
+                      className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-surface hover:bg-muted border border-line-strong text-ink font-semibold text-xs cursor-pointer"
                     >
                       Trocar Cliente
                     </button>
@@ -1241,7 +1276,7 @@ export function OrdensServico({
                 <div>
                   <label
                     htmlFor="input-cli-nome"
-                    className="block text-sm font-bold text-slate-200 mb-1.5"
+                    className="block text-sm font-semibold text-ink mb-1.5"
                   >
                     Nome do Cliente *
                   </label>
@@ -1253,14 +1288,14 @@ export function OrdensServico({
                     value={novoClienteNome}
                     onChange={(e) => setNovoClienteNome(e.target.value)}
                     placeholder="Ex.: Marcos Oliveira…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white text-base"
+                    className="w-full min-h-[52px] px-4 py-2 bg-surface border-2 border-line rounded-xl text-ink text-base"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="input-cli-fone"
-                    className="block text-sm font-bold text-slate-200 mb-1.5"
+                    className="block text-sm font-semibold text-ink mb-1.5"
                   >
                     WhatsApp / Telefone *
                   </label>
@@ -1273,14 +1308,14 @@ export function OrdensServico({
                     value={novoClienteTelefone}
                     onChange={(e) => setNovoClienteTelefone(e.target.value)}
                     placeholder="(11) 99999-0000…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white font-mono text-base tabular-nums"
+                    className="w-full min-h-[52px] px-4 py-2 bg-surface border-2 border-line rounded-xl text-ink font-mono text-base tabular-nums"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="input-cli-cpf"
-                    className="block text-sm font-bold text-slate-200 mb-1.5"
+                    className="block text-sm font-semibold text-ink mb-1.5"
                   >
                     CPF ou CNPJ (Opcional)
                   </label>
@@ -1293,7 +1328,7 @@ export function OrdensServico({
                     value={novoClienteCpf}
                     onChange={(e) => setNovoClienteCpf(e.target.value)}
                     placeholder="000.000.000-00…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white font-mono text-base tabular-nums"
+                    className="w-full min-h-[52px] px-4 py-2 bg-surface border-2 border-line rounded-xl text-ink font-mono text-base tabular-nums"
                   />
                 </div>
               </div>
@@ -1301,10 +1336,10 @@ export function OrdensServico({
           </fieldset>
 
           {(clienteSelecionado || modoClienteOS === 'NOVO_CLIENTE') && (
-            <fieldset className="bg-[#071226] border-2 border-[#264577] rounded-2xl p-5 space-y-4">
+            <fieldset className="bg-sunken border-2 border-line rounded-lg p-5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <legend className="text-xl font-bold text-white flex items-center gap-2">
-                  <Car className="w-6 h-6 text-[#38BDF8]" aria-hidden="true" />
+                <legend className="text-xl font-semibold text-ink flex items-center gap-2">
+                  <Car className="w-6 h-6 text-brand-ink" aria-hidden="true" />
                   <span>
                     2. Veículo de{' '}
                     {modoClienteOS === 'NOVO_CLIENTE'
@@ -1318,10 +1353,10 @@ export function OrdensServico({
                     <button
                       type="button"
                       onClick={() => setModoVeiculoCliente('DO_CLIENTE')}
-                      className={`min-h-[44px] px-3.5 py-1.5 rounded-xl font-bold text-xs cursor-pointer ${
+                      className={`min-h-[44px] px-3.5 py-1.5 rounded-xl font-semibold text-xs cursor-pointer ${
                         modoVeiculoCliente === 'DO_CLIENTE'
-                          ? 'bg-[#38BDF8] text-[#071226]'
-                          : 'bg-[#12274D] text-slate-300 hover:bg-[#264577]'
+                          ? 'bg-brand text-on-brand'
+                          : 'bg-surface text-ink-muted hover:bg-muted'
                       }`}
                     >
                       Veículos do Cliente ({carrosDoClienteSelecionado.length})
@@ -1332,10 +1367,10 @@ export function OrdensServico({
                         setModoVeiculoCliente('NOVO_VEICULO');
                         setVeiculoSelecionadoId('');
                       }}
-                      className={`min-h-[44px] px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer ${
+                      className={`min-h-[44px] px-3.5 py-1.5 rounded-xl font-semibold text-xs flex items-center gap-1.5 cursor-pointer ${
                         modoVeiculoCliente === 'NOVO_VEICULO'
-                          ? 'bg-[#2563EB] text-white'
-                          : 'bg-[#12274D] text-slate-300 hover:bg-[#264577]'
+                          ? 'bg-muted text-ink'
+                          : 'bg-surface text-ink-muted hover:bg-muted'
                       }`}
                     >
                       <Sparkles className="w-4 h-4" aria-hidden="true" />
@@ -1347,14 +1382,14 @@ export function OrdensServico({
 
               {modoClienteOS === 'BUSCAR' && modoVeiculoCliente === 'DO_CLIENTE' ? (
                 carrosDoClienteSelecionado.length === 0 ? (
-                  <div className="p-4 rounded-xl bg-[#0B1B36] border border-[#264577] flex items-center justify-between gap-4">
-                    <span className="text-sm text-slate-300">
+                  <div className="p-4 rounded-xl bg-surface border border-line flex items-center justify-between gap-4">
+                    <span className="text-sm text-ink-muted">
                       Este cliente ainda não possui veículos cadastrados.
                     </span>
                     <button
                       type="button"
                       onClick={() => setModoVeiculoCliente('NOVO_VEICULO')}
-                      className="min-h-[44px] px-4 py-2 rounded-xl bg-[#2563EB] text-white font-bold text-xs cursor-pointer"
+                      className="min-h-[44px] px-4 py-2 rounded-xl bg-muted text-ink font-semibold text-xs cursor-pointer"
                     >
                       + Cadastrar Veículo pela Placa
                     </button>
@@ -1373,22 +1408,22 @@ export function OrdensServico({
                           }}
                           className={`p-3.5 rounded-xl border-2 text-left flex items-center justify-between gap-4 cursor-pointer ${
                             selecionado
-                              ? 'bg-[#1E3A8A] border-[#38BDF8] text-white'
-                              : 'bg-[#0B1B36] border-[#264577] hover:border-slate-400 text-slate-200'
+                              ? 'bg-muted border-brand text-ink'
+                              : 'bg-surface border-line hover:border-line-strong text-ink'
                           }`}
                         >
                           <div className="flex flex-wrap items-center gap-3 min-w-0">
                             <span
                               translate="no"
-                              className="px-3 py-1 rounded-lg bg-[#071226] border border-[#38BDF8] font-mono text-lg font-bold text-[#38BDF8] uppercase tracking-wider"
+                              className="px-3 py-1 rounded-lg bg-sunken border border-brand font-mono text-lg font-semibold text-brand-ink uppercase tracking-wider"
                             >
                               {v.placa}
                             </span>
                             <div className="min-w-0">
-                              <div className="text-base font-bold text-white truncate">
+                              <div className="text-base font-semibold text-ink truncate">
                                 {v.modelo} {v.marca ? `• ${v.marca}` : ''}
                               </div>
-                              <div className="text-xs text-slate-300 font-mono">
+                              <div className="text-xs text-ink-muted font-mono">
                                 {v.cor ? `Cor: ${v.cor} • ` : ''}
                                 {v.ano ? `Ano: ${v.ano} • ` : ''}
                                 {v.km_atual
@@ -1401,8 +1436,8 @@ export function OrdensServico({
                           <div
                             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
                               selecionado
-                                ? 'bg-[#38BDF8] border-[#38BDF8] text-[#071226]'
-                                : 'border-slate-500'
+                                ? 'bg-brand border-brand text-on-brand'
+                                : 'border-line-strong'
                             }`}
                           >
                             {selecionado && <CheckCircle2 className="w-4 h-4" />}
@@ -1418,7 +1453,7 @@ export function OrdensServico({
                     <div className="sm:col-span-5">
                       <label
                         htmlFor="input-nova-placa"
-                        className="block text-sm font-bold text-slate-200 mb-1.5"
+                        className="block text-sm font-semibold text-ink mb-1.5"
                       >
                         Placa do Veículo
                       </label>
@@ -1433,7 +1468,7 @@ export function OrdensServico({
                         value={novaPlaca}
                         onChange={(e) => setNovaPlaca(e.target.value.toUpperCase())}
                         placeholder="ABC1D23…"
-                        className="w-full min-h-[54px] px-4 py-2.5 bg-[#0B1B36] border-2 border-[#38BDF8] rounded-xl font-mono text-xl font-bold text-white uppercase tracking-widest"
+                        className="w-full min-h-[54px] px-4 py-2.5 bg-surface border-2 border-brand rounded-xl font-mono text-xl font-semibold text-ink uppercase tracking-widest"
                       />
                     </div>
 
@@ -1442,7 +1477,7 @@ export function OrdensServico({
                         type="button"
                         disabled={buscandoPlaca}
                         onClick={handleConsultarPlaca}
-                        className="w-full min-h-[54px] px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-base flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60"
+                        className="w-full min-h-[54px] px-5 py-2.5 rounded-xl bg-muted hover:bg-muted text-ink font-semibold text-base flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60"
                       >
                         <Search className="w-5 h-5" aria-hidden="true" />
                         <span>
@@ -1455,7 +1490,7 @@ export function OrdensServico({
                   </div>
 
                   {avisoPlaca && (
-                    <div className="p-3 rounded-lg bg-[#12274D] border border-[#3A5C90] text-slate-200 text-xs font-medium">
+                    <div className="p-3 rounded-lg bg-surface border border-line-strong text-ink text-xs font-medium">
                       {avisoPlaca}
                     </div>
                   )}
@@ -1464,7 +1499,7 @@ export function OrdensServico({
                     <div className="sm:col-span-2">
                       <label
                         htmlFor="input-novo-modelo"
-                        className="block text-xs font-bold text-slate-200 mb-1"
+                        className="block text-xs font-semibold text-ink mb-1"
                       >
                         Modelo do Carro *
                       </label>
@@ -1476,14 +1511,14 @@ export function OrdensServico({
                         value={novoModelo}
                         onChange={(e) => setNovoModelo(e.target.value)}
                         placeholder="Ex.: Onix 1.0 Turbo…"
-                        className="w-full min-h-[48px] px-3.5 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white text-sm"
+                        className="w-full min-h-[48px] px-3.5 py-2 bg-surface border-2 border-line rounded-xl text-ink text-sm"
                       />
                     </div>
 
                     <div>
                       <label
                         htmlFor="input-nova-marca"
-                        className="block text-xs font-bold text-slate-200 mb-1"
+                        className="block text-xs font-semibold text-ink mb-1"
                       >
                         Marca
                       </label>
@@ -1494,7 +1529,7 @@ export function OrdensServico({
                         value={novaMarca}
                         onChange={(e) => setNovaMarca(e.target.value)}
                         placeholder="Chevrolet…"
-                        className="w-full min-h-[48px] px-3.5 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white text-sm"
+                        className="w-full min-h-[48px] px-3.5 py-2 bg-surface border-2 border-line rounded-xl text-ink text-sm"
                       />
                     </div>
 
@@ -1502,7 +1537,7 @@ export function OrdensServico({
                       <div>
                         <label
                           htmlFor="input-nova-cor"
-                          className="block text-xs font-bold text-slate-200 mb-1"
+                          className="block text-xs font-semibold text-ink mb-1"
                         >
                           Cor
                         </label>
@@ -1513,14 +1548,14 @@ export function OrdensServico({
                           value={novaCor}
                           onChange={(e) => setNovaCor(e.target.value)}
                           placeholder="Prata"
-                          className="w-full min-h-[48px] px-3 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white text-sm"
+                          className="w-full min-h-[48px] px-3 py-2 bg-surface border-2 border-line rounded-xl text-ink text-sm"
                         />
                       </div>
 
                       <div>
                         <label
                           htmlFor="input-novo-ano"
-                          className="block text-xs font-bold text-slate-200 mb-1"
+                          className="block text-xs font-semibold text-ink mb-1"
                         >
                           Ano
                         </label>
@@ -1533,7 +1568,7 @@ export function OrdensServico({
                           value={novoAno}
                           onChange={(e) => setNovoAno(e.target.value.replace(/\D/g, ''))}
                           placeholder="2022"
-                          className="w-full min-h-[48px] px-3 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white font-mono text-sm tabular-nums"
+                          className="w-full min-h-[48px] px-3 py-2 bg-surface border-2 border-line rounded-xl text-ink font-mono text-sm tabular-nums"
                         />
                       </div>
                     </div>
@@ -1547,7 +1582,7 @@ export function OrdensServico({
             <div className="sm:col-span-4">
               <label
                 htmlFor="input-os-km"
-                className="block text-sm font-bold text-white mb-1.5"
+                className="block text-sm font-semibold text-ink mb-1.5"
               >
                 KM Atual no Painel
               </label>
@@ -1560,14 +1595,14 @@ export function OrdensServico({
                 value={novaOsKm}
                 onChange={(e) => setNovaOsKm(e.target.value.replace(/\D/g, ''))}
                 placeholder="Ex.: 84500…"
-                className="w-full min-h-[54px] px-4 py-2.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white font-mono text-lg tabular-nums"
+                className="w-full min-h-[54px] px-4 py-2.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink font-mono text-lg tabular-nums"
               />
             </div>
 
             <div className="sm:col-span-8">
               <label
                 htmlFor="input-os-problema"
-                className="block text-sm font-bold text-white mb-1.5"
+                className="block text-sm font-semibold text-ink mb-1.5"
               >
                 Relato do Problema / Serviço Solicitado
               </label>
@@ -1578,7 +1613,7 @@ export function OrdensServico({
                 value={novaOsProblema}
                 onChange={(e) => setNovaOsProblema(e.target.value)}
                 placeholder="Ex.: Barulho na suspensão dianteira e revisão de freios…"
-                className="w-full min-h-[54px] px-4 py-2.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white text-base"
+                className="w-full min-h-[54px] px-4 py-2.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink text-base"
               />
             </div>
           </div>
@@ -1586,7 +1621,7 @@ export function OrdensServico({
           <button
             type="submit"
             disabled={criandoOS}
-            className="w-full min-h-[60px] px-6 py-3.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-lg flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+            className="w-full min-h-[60px] px-6 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-lg flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
           >
             <PlusCircle className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
             <span>
@@ -1606,9 +1641,32 @@ export function OrdensServico({
   if (view === 'bancada') {
     if (loadingDossie || !dossie) {
       return (
-        <div className="h-80 bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-8 flex items-center justify-center gap-4 text-lg font-bold text-white">
-          <progress aria-label="Carregando bancada" className="loading-spinner" />
-          <span>Carregando Ficha Completa da OS…</span>
+        <div className="space-y-4">
+          {erroOperacao && !loadingDossie ? (
+            <Panel espaco="lg" className="space-y-4">
+              <p role="alert" className="flex items-start gap-3 text-base font-medium text-danger">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+                <span>{erroOperacao}</span>
+              </p>
+              <Button variante="secundario" icone={ArrowLeft} onClick={() => setView('lista')}>
+                Voltar às ordens
+              </Button>
+            </Panel>
+          ) : (
+            <>
+              <Panel>
+                <Skeleton linhas={2} />
+              </Panel>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+                <Panel className="h-72 lg:col-span-8">
+                  <Skeleton linhas={5} />
+                </Panel>
+                <Panel className="h-48 lg:col-span-4">
+                  <Skeleton linhas={3} />
+                </Panel>
+              </div>
+            </>
+          )}
         </div>
       );
     }
@@ -1659,6 +1717,7 @@ export function OrdensServico({
         {/* FOLHA A4 COMPACTA OCULTA NA TELA — VAI DIRETO PARA IMPRESSÃO         */}
         {/* 3 Seções separadas (Peças, Mão de Obra, Terceirizados) + Preto Forte */}
         {/* ==================================================================== */}
+        {/* codemod:ignore-start */}
         <div className="hidden print:block bg-white text-black text-[11px] leading-tight font-sans p-2 space-y-2.5">
           {/* Cabeçalho Compacto */}
           <div className="border-b-2 border-black pb-2 flex items-start justify-between gap-4">
@@ -1889,854 +1948,724 @@ export function OrdensServico({
             </div>
           </div>
         </div>
+        {/* codemod:ignore-end */}
 
         {/* ==================================================================== */}
         {/* INTERFACE DE TELA DA BANCADA (OCULTA NA IMPRESSÃO VIA print:hidden)  */}
         {/* ==================================================================== */}
-        <div className="print:hidden space-y-3 sm:space-y-4">
-          {/* Topo da Bancada Compacto + Excluir OS como Ícone */}
-          <div className="bg-[#0B1B36] border-2 border-[#264577] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setView('lista');
-                    setSelectedOsId(null);
-                  }}
-                  aria-label="Voltar ao pátio"
-                  className="min-h-[38px] sm:min-h-[44px] px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#3A5C90] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shrink-0"
-                >
-                  <ArrowLeft className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-                  <span className="hidden sm:inline">Pátio</span>
-                </button>
+        <div className="print:hidden pb-24 lg:pb-0">
+          {folhaPagamento}
+          {folhaEtapa}
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <Button
+              variante="fantasma"
+              tamanho="sm"
+              icone={ArrowLeft}
+              className="-ml-3"
+              onClick={() => {
+                setView('lista');
+                setSelectedOsId(null);
+                setFeedbackMsg(null);
+                setErroOperacao(null);
+              }}
+            >
+              Voltar às ordens
+            </Button>
+            <Button
+              variante="fantasma"
+              tamanho="sm"
+              aria-label="Cancelar Ordem de Serviço"
+              title="Cancelar / Excluir Ordem de Serviço"
+              aria-expanded={mostrarModalExclusao}
+              onClick={() => setMostrarModalExclusao((v) => !v)}
+              className="w-11 !px-0 text-danger hover:text-danger md:w-8"
+            >
+              <Trash2 size={18} aria-hidden="true" />
+            </Button>
+          </div>
 
-                <span
-                  translate="no"
-                  className="px-2.5 py-1 rounded-lg bg-[#12274D] border border-[#38BDF8] font-mono text-sm sm:text-lg font-extrabold text-white uppercase tracking-wider shrink-0"
-                >
-                  {os.veiculos?.placa || 'SEM-PLACA'}
-                </span>
-
-                <div className="min-w-0">
-                  <h1 className="text-sm sm:text-lg font-extrabold text-white truncate leading-tight">
-                    {os.veiculos?.marca} {os.veiculos?.modelo}
-                  </h1>
-                  <p className="text-xs text-slate-300 truncate">
-                    <strong className="text-white">{os.clientes?.nome || '—'}</strong>
-                    {os.clientes?.telefone ? ` • ${os.clientes.telefone}` : ''}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <PageHeader
+            titulo={[os.veiculos?.marca, os.veiculos?.modelo].filter(Boolean).join(' ') || 'Veículo'}
+            inicio={<PlateChip placa={os.veiculos?.placa || 'SEM-PLACA'} />}
+            complemento={<StatusBadge status={statusAtual} />}
+            abaixo={
+              <>
+                <span className="font-medium text-ink">{os.clientes?.nome || '—'}</span>
+                {os.clientes?.telefone ? (
+                  <span className="tabular-nums"> · {os.clientes.telefone}</span>
+                ) : null}
+              </>
+            }
+            acoes={
+              <>
                 <a
                   href={gerarLinkWhatsAppOrcamento(dossie)}
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Mandar Orçamento no WhatsApp"
-                  title="Mandar no WhatsApp"
-                  className="min-h-[38px] sm:min-h-[44px] px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5"
+                  className={`${classesBotao('secundario')} hidden lg:inline-flex`}
                 >
-                  <MessageCircle className="w-4 h-4" aria-hidden="true" />
-                  <span className="hidden md:inline">WhatsApp</span>
+                  <MessageCircle size={16} aria-hidden="true" />
+                  WhatsApp
                 </a>
-
-                <button
-                  type="button"
+                <Button
+                  variante="secundario"
+                  icone={Printer}
                   onClick={() => window.print()}
-                  aria-label="Imprimir Direto (A4)"
-                  title="Imprimir Direto (A4)"
-                  className="min-h-[38px] sm:min-h-[44px] px-2.5 sm:px-4 py-1.5 rounded-lg sm:rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer"
+                  className="hidden lg:inline-flex"
                 >
-                  <Printer className="w-4 h-4" aria-hidden="true" />
-                  <span className="hidden md:inline">Imprimir (A4)</span>
-                </button>
+                  Imprimir (A4)
+                </Button>
+              </>
+            }
+          />
 
-                <button
-                  type="button"
-                  onClick={() => setMostrarModalExclusao((v) => !v)}
-                  aria-label="Cancelar Ordem de Serviço"
-                  title="Cancelar / Excluir Ordem de Serviço"
-                  className="min-h-[38px] sm:min-h-[44px] px-2.5 py-1.5 rounded-lg sm:rounded-xl bg-red-950 hover:bg-red-900 border border-red-600 text-red-200 flex items-center justify-center cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4" aria-hidden="true" />
-                </button>
+          {/* Confirmação inline de cancelamento quando acionado pela lixeira */}
+          {mostrarModalExclusao && (
+            <form
+              onSubmit={handleConfirmarExclusaoOS}
+              className="mb-4 flex flex-col gap-3 rounded-2xl bg-danger/10 p-4 sm:flex-row sm:items-end"
+            >
+              <div className="flex-1">
+                <Field rotulo="Motivo obrigatório do cancelamento">
+                  <input
+                    id="input-motivo-exclusao"
+                    name="motivo_exclusao"
+                    type="text"
+                    required
+                    value={motivoExclusao}
+                    onChange={(e) => setMotivoExclusao(e.target.value)}
+                    placeholder="Motivo obrigatório do cancelamento da OS…"
+                  />
+                </Field>
               </div>
+              <div className="flex items-center gap-2">
+                <Button variante="secundario" onClick={() => setMostrarModalExclusao(false)}>
+                  Voltar
+                </Button>
+                <Button type="submit" variante="perigo" carregando={excluindoOS}>
+                  {excluindoOS ? 'Cancelando…' : 'Confirmar exclusão'}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {(feedbackMsg || erroOperacao) && (
+            <div className="mb-4 space-y-2">
+              {feedbackMsg && (
+                <p role="status" className="flex items-center gap-2 rounded-xl bg-success/15 px-4 py-3 text-sm font-medium text-success">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{feedbackMsg}</span>
+                </p>
+              )}
+              {erroOperacao && (
+                <p role="alert" className="flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
+                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{erroOperacao}</span>
+                </p>
+              )}
             </div>
+          )}
 
-            {/* Confirmação compacta de cancelamento quando acionado pelo ícone de lixeira */}
-            {mostrarModalExclusao && (
-              <form
-                onSubmit={handleConfirmarExclusaoOS}
-                className="bg-red-950/60 border border-red-500 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-2"
-              >
-                <input
-                  id="input-motivo-exclusao"
-                  name="motivo_exclusao"
-                  type="text"
-                  required
-                  value={motivoExclusao}
-                  onChange={(e) => setMotivoExclusao(e.target.value)}
-                  placeholder="Motivo obrigatório do cancelamento da OS…"
-                  aria-label="Motivo obrigatório do cancelamento"
-                  className="flex-1 min-h-[38px] px-3 py-1.5 bg-[#071226] border border-red-500 rounded-lg text-white text-xs"
-                />
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setMostrarModalExclusao(false)}
-                    className="min-h-[38px] px-3 rounded-lg bg-[#12274D] text-white font-bold text-xs cursor-pointer"
-                  >
-                    Voltar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={excluindoOS}
-                    className="min-h-[38px] px-3.5 rounded-lg bg-red-600 text-white font-bold text-xs cursor-pointer"
-                  >
-                    {excluindoOS ? 'Cancelando…' : 'Confirmar Exclusão'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-
-          <div aria-live="polite">
-            {feedbackMsg && (
-              <div className="p-2.5 rounded-xl bg-emerald-950 border border-emerald-500 text-emerald-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>{feedbackMsg}</span>
-              </div>
-            )}
-            {erroOperacao && (
-              <div className="p-2.5 rounded-xl bg-red-950 border border-red-500 text-red-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
-                <span>{erroOperacao}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Seletor de Etapa da OS Compacto */}
-          <section
-            aria-label="Etapa atual da Ordem de Serviço"
-            className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-2"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-xs sm:text-sm font-bold text-white">
-                Etapa do Serviço
-              </h2>
-              <span className="text-[11px] text-slate-400 font-mono">
-                OS #{os.id.slice(0, 8).toUpperCase()} &bull;{' '}
-                {formatDataHora(os.data_abertura)}
+          {/* Etapas da OS */}
+          <Panel as="section" aria-label="Etapa atual da Ordem de Serviço" className="mb-4 space-y-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h2 className="text-base font-semibold text-ink">Etapa do serviço</h2>
+              <span className="text-xs text-ink-muted">
+                <span className="font-mono">OS #{os.id.slice(0, 8).toUpperCase()}</span> · aberta em{' '}
+                <span className="tabular-nums">{formatDataHora(os.data_abertura)}</span>
               </span>
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2">
-              {STATUS_LIST.map((st) => {
-                const Icon = st.icon;
-                const ativo = statusAtual === st.id;
+            <ol aria-label="Etapas da ordem de serviço" className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {ETAPAS_OS.map((st, i) => {
+                const { rotulo, icone: Icone, classe } = STATUS_OS[st];
+                const ativo = statusAtual === st;
+                const feita = ETAPAS_OS.indexOf(statusAtual) > i;
                 return (
-                  <button
-                    key={st.id}
-                    type="button"
-                    onClick={() => handleMudarStatus(os.id, st.id)}
-                    className={`min-h-[38px] sm:min-h-[46px] px-2 py-1.5 rounded-lg sm:rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
-                      ativo
-                        ? st.activeBtn
-                        : 'bg-[#071226] border-[#264577] text-slate-300 hover:bg-[#12274D]'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                    <span className="truncate">{st.shortLabel}</span>
-                  </button>
+                  <li key={st} className="min-w-0">
+                    <button
+                      type="button"
+                      aria-current={ativo ? 'step' : undefined}
+                      onClick={() =>
+                        st !== 'PAGO' && celular
+                          ? setEtapaPendente({ osId: os.id, status: st })
+                          : pedirMudancaStatus(os.id, st, os.total_geral)
+                      }
+                      className={`flex h-full min-h-11 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-center text-[0.8125rem] font-medium leading-tight sm:flex-row sm:gap-1.5 sm:rounded-full sm:px-3 sm:py-1.5 sm:text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                        ativo
+                          ? classe
+                          : feita
+                          ? 'bg-muted text-ink hover:bg-line'
+                          : 'bg-muted text-ink-muted hover:bg-line hover:text-ink'
+                      }`}
+                    >
+                      {feita ? (
+                        <Check size={16} className="shrink-0" aria-hidden="true" />
+                      ) : (
+                        <Icone size={16} className="shrink-0" aria-hidden="true" />
+                      )}
+                      <span>{rotulo}</span>
+                    </button>
+                  </li>
                 );
               })}
-            </div>
+            </ol>
 
-            {(statusAtual === 'FINALIZADO' || statusAtual === 'PAGO') && (
-              <div className="pt-2.5 border-t border-[#12274D] flex flex-wrap items-center gap-2">
-                <span className="text-sm font-bold text-slate-200">
-                  Forma de Pagamento:
-                </span>
-                {FORMAS_PAGAMENTO.map((fp) => (
-                  <button
-                    key={fp}
-                    type="button"
-                    onClick={() => {
-                      setEditFormaPagamento(fp);
-                      if (statusAtual === 'PAGO') {
+            {statusAtual === 'PAGO' && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="mr-1 text-sm text-ink-muted">Forma de pagamento:</span>
+                {FORMAS_PAGAMENTO.map((fp) => {
+                  // Só destaca a forma gravada; OS paga antiga sem forma não destaca nenhuma.
+                  const atual = os.forma_pagamento === fp;
+                  return (
+                    <button
+                      key={fp}
+                      type="button"
+                      aria-pressed={atual}
+                      onClick={() => {
+                        setEditFormaPagamento(fp);
                         handleMudarStatus(os.id, 'PAGO', fp);
-                      }
-                    }}
-                    className={`min-h-[40px] px-3 py-1.5 rounded-lg font-bold text-xs border cursor-pointer ${
-                      editFormaPagamento === fp
-                        ? 'bg-[#38BDF8] text-[#071226] border-[#38BDF8]'
-                        : 'bg-[#071226] text-slate-300 border-[#264577]'
-                    }`}
-                  >
-                    {fp}
-                  </button>
-                ))}
+                      }}
+                      className={`inline-flex h-9 min-h-11 md:min-h-9 items-center rounded-full px-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                        atual ? 'bg-success/15 text-success' : 'text-ink-muted hover:bg-muted hover:text-ink'
+                      }`}
+                    >
+                      {fp}
+                    </button>
+                  );
+                })}
               </div>
             )}
-          </section>
+          </Panel>
 
           {/* GRID PRINCIPAL DA BANCADA */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-            {/* COLUNA ESQUERDA (8 COL): LANÇAMENTO + TABELA COMPACTA COM SCROLL */}
-            <section className="xl:col-span-8 bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-4">
-              {/* Abas do Tipo de Item a Lançar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[#071226] p-1.5 rounded-xl border border-[#12274D]">
-                {[
-                  { id: 'PECA_ESTOQUE', label: 'Peça do Estoque' },
-                  { id: 'PECA_AVULSA', label: 'Peça Avulsa' },
-                  { id: 'MAO_OBRA', label: 'Mão de Obra' },
-                  { id: 'TERCEIRIZADO', label: 'Terceirizado' },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => {
-                      setModoItem(t.id as typeof modoItem);
-                      setItemEstoqueId('');
-                      setBuscaEstoqueTexto('');
-                      setItemNome('');
-                      setItemCusto('');
-                      setItemVenda('');
-                    }}
-                    className={`min-h-[44px] px-3 py-1.5 rounded-lg font-bold text-xs sm:text-sm cursor-pointer ${
-                      modoItem === t.id
-                        ? 'bg-[#38BDF8] text-[#071226]'
-                        : 'text-slate-300 hover:bg-[#12274D]'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
+            {/* COLUNA ESQUERDA: LANÇAMENTO + ITENS */}
+            <Panel as="section" aria-label="Itens da ordem de serviço" className="space-y-6 lg:col-span-8">
+              <div className="space-y-4">
+                <h2 className="text-base font-semibold text-ink">Lançar item</h2>
+                <Tabs
+                  rotuloGrupo="Tipo de item a lançar"
+                  quebrar
+                  idPainel="painel-lancar-item"
+                  ativo={modoItem}
+                  aoMudar={(id) => {
+                    setModoItem(id as typeof modoItem);
+                    setItemEstoqueId('');
+                    setBuscaEstoqueTexto('');
+                    setItemNome('');
+                    setItemCusto('');
+                    setItemVenda('');
+                  }}
+                  itens={[
+                    { id: 'PECA_ESTOQUE', rotulo: 'Peça do Estoque' },
+                    { id: 'PECA_AVULSA', rotulo: 'Peça Avulsa' },
+                    { id: 'MAO_OBRA', rotulo: 'Mão de Obra' },
+                    { id: 'TERCEIRIZADO', rotulo: 'Terceirizado' },
+                  ]}
+                />
 
-              {/* Formulário de Adição com Busca Reativa de Estoque + Custo p/ Peça/Terceirizado */}
-              <form
-                onSubmit={handleIncluirItemNaFila}
-                className="bg-[#071226] border-2 border-[#264577] rounded-xl p-4 space-y-3"
-              >
-                {modoItem === 'PECA_ESTOQUE' && (
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="busca-peca-estoque"
-                      className="block text-xs font-bold text-slate-200"
-                    >
-                      Pesquisar Peça no Estoque por Nome ou SKU/Código (apenas saldo &gt; 0)
-                    </label>
-                    <div className="relative flex items-center">
-                      <Search
-                        className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none"
-                        aria-hidden="true"
-                      />
-                      <input
-                        id="busca-peca-estoque"
-                        name="busca_estoque"
-                        type="search"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
-                        value={buscaEstoqueTexto}
-                        onChange={(e) => setBuscaEstoqueTexto(e.target.value)}
-                        placeholder="Comece a digitar o nome da peça ou código SKU…"
-                        className="w-full min-h-[46px] pl-10 pr-4 py-2 bg-[#0B1B36] border border-[#3A5C90] focus:border-[#38BDF8] rounded-xl text-white text-sm"
-                      />
-                    </div>
+                {/* Formulário de adição com busca reativa de estoque + custo p/ peça/terceirizado */}
+                <form
+                  id="painel-lancar-item"
+                  role="tabpanel"
+                  aria-labelledby={`aba-${modoItem}`}
+                  onSubmit={handleIncluirItemNaFila}
+                  className="space-y-4"
+                >
+                  {modoItem === 'PECA_ESTOQUE' && (
+                    <div className="space-y-2">
+                      <Field rotulo="Pesquisar peça no estoque por nome ou SKU/código (só com saldo)">
+                        <input
+                          id="busca-peca-estoque"
+                          name="busca_estoque"
+                          type="search"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          spellCheck={false}
+                          value={buscaEstoqueTexto}
+                          onChange={(e) => setBuscaEstoqueTexto(e.target.value)}
+                          placeholder="Comece a digitar o nome da peça ou código SKU…"
+                        />
+                      </Field>
 
-                    {/* Lista Reativa de Estoque (só aparece ao digitar, sem itens zerados) */}
-                    {buscaEstoqueTexto.trim().length > 0 && (
-                      <div
-                        role="listbox"
-                        aria-label="Peças encontradas no estoque"
-                        className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-xl divide-y divide-[#12274D] max-h-56 overflow-y-auto"
-                      >
-                        {pecasEstoqueFiltradas.length === 0 ? (
-                          <div className="p-3 text-xs text-slate-300">
-                            Nenhuma peça com saldo disponível encontrada para &ldquo;
-                            {buscaEstoqueTexto}&rdquo;.
-                          </div>
-                        ) : (
-                          pecasEstoqueFiltradas.slice(0, 30).map((p) => {
-                            const sku =
-                              p.codigo && p.codigo !== 'None' ? p.codigo : null;
-                            return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                role="option"
-                                aria-selected={itemEstoqueId === p.id}
-                                onClick={() => handleSelecionarPecaEstoqueReativa(p)}
-                                className="w-full px-3.5 py-2.5 text-left hover:bg-[#12274D] flex items-center justify-between gap-3 cursor-pointer"
-                              >
-                                <div className="min-w-0">
-                                  <div className="text-sm font-bold text-white truncate">
-                                    {p.nome}
-                                    {sku && (
-                                      <span className="ml-2 px-1.5 py-0.5 rounded bg-[#071226] text-[#38BDF8] font-mono text-[11px]">
-                                        SKU: {sku}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-[11px] text-slate-400 font-mono tabular-nums">
-                                    Saldo: <strong className="text-emerald-400">{p.quantidade} un.</strong>{' '}
-                                    • Custo: {formatBRL(p.custo)} • Venda:{' '}
-                                    <strong className="text-white">{formatBRL(p.venda)}</strong>
-                                  </div>
-                                </div>
-                                <span className="px-2.5 py-1 rounded bg-[#38BDF8] text-[#071226] font-bold text-xs shrink-0">
-                                  Usar
-                                </span>
-                              </button>
-                            );
-                          })
-                        )}
-                      </div>
-                    )}
-
-                    {pecaEstoqueSelecionada && (
-                      <div className="px-3 py-1.5 rounded-lg bg-[#1E3A8A]/40 border border-[#38BDF8] flex items-center justify-between text-xs text-amber-200">
-                        <span>
-                          Selecionado: <strong>{pecaEstoqueSelecionada.nome}</strong> (Saldo:{' '}
-                          {pecaEstoqueSelecionada.quantidade} un.)
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setItemEstoqueId('')}
-                          className="text-slate-300 hover:text-white underline cursor-pointer"
+                      {/* Lista reativa de estoque (só aparece ao digitar, sem itens zerados) */}
+                      {buscaEstoqueTexto.trim().length > 0 && (
+                        <div
+                          role="listbox"
+                          aria-label="Peças encontradas no estoque"
+                          className="max-h-56 divide-y divide-line overflow-y-auto rounded-xl bg-muted"
                         >
-                          Desvincular
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                          {pecasEstoqueFiltradas.length === 0 ? (
+                            <div className="p-3 text-sm text-ink-muted">
+                              Nenhuma peça com saldo disponível encontrada para &ldquo;
+                              {buscaEstoqueTexto}&rdquo;.
+                            </div>
+                          ) : (
+                            pecasEstoqueFiltradas.slice(0, 30).map((p) => {
+                              const sku =
+                                p.codigo && p.codigo !== 'None' ? p.codigo : null;
+                              return (
+                                <button
+                                  key={p.id}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={itemEstoqueId === p.id}
+                                  onClick={() => handleSelecionarPecaEstoqueReativa(p)}
+                                  className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-left hover:bg-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+                                >
+                                  <span className="min-w-0">
+                                    <span className="block truncate text-sm font-medium text-ink">
+                                      {p.nome}
+                                      {sku && (
+                                        <span className="ml-2 font-mono text-xs text-ink-muted">
+                                          SKU: {sku}
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="block text-xs tabular-nums text-ink-muted">
+                                      Saldo: <span className="text-success">{p.quantidade} un.</span>{' '}
+                                      · Custo: {formatBRL(p.custo)} · Venda:{' '}
+                                      <span className="text-ink">{formatBRL(p.venda)}</span>
+                                    </span>
+                                  </span>
+                                  <span className="shrink-0 text-sm font-medium text-brand-ink">Usar</span>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
 
-                {/* Linha de Inputs: Descrição + Qtd/Custo/Venda lado a lado no mobile */}
-                <div className="grid grid-cols-3 sm:grid-cols-12 gap-2 items-end">
-                  <div
-                    className={
-                      modoItem === 'MAO_OBRA'
-                        ? 'col-span-3 sm:col-span-6'
-                        : 'col-span-3 sm:col-span-5'
-                    }
-                  >
-                    <label
-                      htmlFor="input-item-nome"
-                      className="block text-xs font-bold text-slate-200 mb-1"
-                    >
-                      Descrição do Item / Serviço
-                    </label>
-                    <input
-                      id="input-item-nome"
-                      name="nome_item"
-                      type="text"
-                      required
-                      value={itemNome}
-                      onChange={(e) => setItemNome(e.target.value)}
-                      placeholder={
-                        modoItem === 'MAO_OBRA'
-                          ? 'Ex.: Troca de kit embreagem…'
-                          : 'Ex.: Jogo de pastilhas dianteiras…'
-                      }
-                      className="w-full min-h-[40px] px-3 py-1.5 bg-[#0B1B36] border border-[#264577] rounded-lg text-white text-sm"
-                    />
-                  </div>
-
-                  <div className="col-span-1 sm:col-span-2">
-                    <label
-                      htmlFor="input-item-qtd"
-                      className="block text-xs font-bold text-slate-200 mb-1"
-                    >
-                      Qtd
-                    </label>
-                    <input
-                      id="input-item-qtd"
-                      name="quantidade"
-                      type="number"
-                      min={1}
-                      inputMode="numeric"
-                      value={itemQtd}
-                      onChange={(e) => setItemQtd(e.target.value)}
-                      className="w-full min-h-[40px] px-2 py-1.5 bg-[#0B1B36] border border-[#264577] rounded-lg text-white font-mono text-sm text-center tabular-nums"
-                    />
-                  </div>
-
-                  {canSeeFinanceiro && modoItem !== 'MAO_OBRA' && (
-                    <div className="col-span-1 sm:col-span-2">
-                      <label
-                        htmlFor="input-item-custo"
-                        className="block text-xs font-bold text-slate-200 mb-1"
-                      >
-                        Custo (R$)
-                      </label>
-                      <input
-                        id="input-item-custo"
-                        name="custo_unitario"
-                        type="number"
-                        step="0.01"
-                        inputMode="decimal"
-                        value={itemCusto}
-                        onChange={(e) => setItemCusto(e.target.value)}
-                        placeholder="0,00"
-                        className="w-full min-h-[40px] px-2 py-1.5 bg-[#0B1B36] border border-[#264577] rounded-lg text-slate-200 font-mono text-sm tabular-nums"
-                      />
+                      {pecaEstoqueSelecionada && (
+                        <div className="flex items-center justify-between gap-2 rounded-xl bg-brand/10 px-3 py-1 text-sm text-ink">
+                          <span>
+                            Selecionado: <span className="font-medium">{pecaEstoqueSelecionada.nome}</span>{' '}
+                            <span className="tabular-nums text-ink-muted">
+                              (saldo: {pecaEstoqueSelecionada.quantidade} un.)
+                            </span>
+                          </span>
+                          <Button variante="fantasma" tamanho="sm" onClick={() => setItemEstoqueId('')}>
+                            Desvincular
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  <div
-                    className={
-                      !canSeeFinanceiro || modoItem === 'MAO_OBRA'
-                        ? 'col-span-2 sm:col-span-4'
-                        : 'col-span-1 sm:col-span-3'
-                    }
-                  >
-                    <label
-                      htmlFor="input-item-venda"
-                      className="block text-xs font-bold text-slate-200 mb-1"
+                  {/* Descrição + Qtd/Custo/Venda */}
+                  <div className="grid grid-cols-3 items-end gap-3 sm:grid-cols-12">
+                    <div
+                      className={
+                        modoItem === 'MAO_OBRA'
+                          ? 'col-span-3 sm:col-span-6'
+                          : 'col-span-3 sm:col-span-5'
+                      }
                     >
-                      Venda (R$)
-                    </label>
-                    <input
-                      id="input-item-venda"
-                      name="venda_unitario"
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      required
-                      value={itemVenda}
-                      onChange={(e) => setItemVenda(e.target.value)}
-                      placeholder="0,00"
-                      className="w-full min-h-[40px] px-2.5 py-1.5 bg-[#0B1B36] border border-[#264577] rounded-lg text-white font-mono text-sm tabular-nums"
-                    />
+                      <Field rotulo="Descrição do item / serviço">
+                        <input
+                          id="input-item-nome"
+                          name="nome_item"
+                          type="text"
+                          required
+                          value={itemNome}
+                          onChange={(e) => setItemNome(e.target.value)}
+                          placeholder={
+                            modoItem === 'MAO_OBRA'
+                              ? 'Ex.: Troca de kit embreagem…'
+                              : 'Ex.: Jogo de pastilhas dianteiras…'
+                          }
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="col-span-1 sm:col-span-2">
+                      <Field rotulo="Qtd">
+                        <input
+                          id="input-item-qtd"
+                          name="quantidade"
+                          type="number"
+                          min={1}
+                          inputMode="numeric"
+                          value={itemQtd}
+                          onChange={(e) => setItemQtd(e.target.value)}
+                          className={`${CLASSE_CAMPO} text-center tabular-nums`}
+                        />
+                      </Field>
+                    </div>
+
+                    {canSeeFinanceiro && modoItem !== 'MAO_OBRA' && (
+                      <div className="col-span-1 sm:col-span-2">
+                        <Field rotulo="Custo (R$)">
+                          <input
+                            id="input-item-custo"
+                            name="custo_unitario"
+                            type="number"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={itemCusto}
+                            onChange={(e) => setItemCusto(e.target.value)}
+                            placeholder="0,00"
+                            className={`${CLASSE_CAMPO} tabular-nums`}
+                          />
+                        </Field>
+                      </div>
+                    )}
+
+                    <div
+                      className={
+                        !canSeeFinanceiro || modoItem === 'MAO_OBRA'
+                          ? 'col-span-2 sm:col-span-4'
+                          : 'col-span-1 sm:col-span-3'
+                      }
+                    >
+                      <Field rotulo="Venda (R$)">
+                        <input
+                          id="input-item-venda"
+                          name="venda_unitario"
+                          type="number"
+                          step="0.01"
+                          inputMode="decimal"
+                          required
+                          value={itemVenda}
+                          onChange={(e) => setItemVenda(e.target.value)}
+                          placeholder="0,00"
+                          className={`${CLASSE_CAMPO} tabular-nums`}
+                        />
+                      </Field>
+                    </div>
                   </div>
-                </div>
 
-                <button
-                  type="submit"
-                  className="w-full min-h-[42px] px-4 py-1.5 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#38BDF8] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-                  <span>Incluir na Fila de Lançamento</span>
-                </button>
-              </form>
+                  <Button type="submit" variante="secundario" icone={Plus} className="w-full">
+                    Incluir na fila de lançamento
+                  </Button>
+                </form>
 
-              {/* FILA DE ITENS PRONTOS PARA LANÇAR DE UMA SÓ VEZ */}
-              {itensPendentes.length > 0 && (
-                <div className="bg-amber-950/40 border-2 border-[#38BDF8] rounded-xl p-3.5 space-y-3">
-                  <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-amber-300">
-                    <span className="flex items-center gap-1.5">
-                      <Layers className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-                      Fila para Lançar ({itensPendentes.length})
-                    </span>
-                    <span className="font-mono text-white tabular-nums">
-                      Subtotal Lote: {formatBRL(subtotalPendentes)}
-                    </span>
-                  </div>
+                {/* FILA DE ITENS PRONTOS PARA LANÇAR DE UMA SÓ VEZ */}
+                {itensPendentes.length > 0 && (
+                  <div className="space-y-3 rounded-xl bg-muted p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="flex items-center gap-2 font-medium text-ink">
+                        <Layers className="h-4 w-4 text-brand-ink" aria-hidden="true" />
+                        Fila para lançar ({itensPendentes.length})
+                      </span>
+                      <span className="tabular-nums text-ink-muted">
+                        Subtotal do lote: <span className="font-medium text-ink">{formatBRL(subtotalPendentes)}</span>
+                      </span>
+                    </div>
 
-                  <div className="divide-y divide-[#12274D] max-h-44 overflow-y-auto bg-[#071226] rounded-lg border border-[#264577]">
-                    {itensPendentes.map((item) => (
-                      <div
-                        key={item.tempId}
-                        className="px-2.5 sm:px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 text-xs"
-                      >
-                        <div className="min-w-0 sm:flex-1 flex items-center gap-2">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 shrink-0">
-                            {item.tipo}
+                    <ul className="max-h-44 divide-y divide-line overflow-y-auto">
+                      {itensPendentes.map((item) => (
+                        <li key={item.tempId} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 text-sm">
+                          <span className="flex min-w-0 flex-1 items-center gap-2">
+                            <Badge className="shrink-0">{ROTULO_TIPO_ITEM[item.tipo]}</Badge>
+                            <span className="min-w-0 break-words font-medium text-ink">{item.nome_item}</span>
                           </span>
-                          <span className="font-bold text-white break-words sm:truncate">
-                            {item.nome_item}
-                          </span>
-                        </div>
-                        <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 shrink-0 font-mono tabular-nums">
-                          {canSeeFinanceiro && item.tipo !== 'MAO_OBRA' ? (
-                            <span className="text-slate-400 text-[11px]">
-                              Custo: {formatBRL(item.custo_unitario)}
+                          <span className="flex items-center gap-2 tabular-nums">
+                            {canSeeFinanceiro && item.tipo !== 'MAO_OBRA' && (
+                              <span className="text-xs text-ink-muted">
+                                Custo: {formatBRL(item.custo_unitario)}
+                              </span>
+                            )}
+                            <span className="text-ink">
+                              {item.quantidade}× {formatBRL(item.venda_unitario)} ={' '}
+                              <span className="font-medium">{formatBRL(item.quantidade * item.venda_unitario)}</span>
                             </span>
-                          ) : (
-                            <span />
-                          )}
-                          <div className="flex items-center gap-2">
-                            <span className="text-white font-bold">
-                              {item.quantidade}x {formatBRL(item.venda_unitario)} ={' '}
-                              {formatBRL(item.quantidade * item.venda_unitario)}
-                            </span>
-                            <button
-                              type="button"
+                            <Button
+                              variante="fantasma"
+                              tamanho="sm"
+                              aria-label={`Remover ${item.nome_item} da fila`}
+                              className="w-11 !px-0 text-danger hover:text-danger md:w-8"
                               onClick={() =>
                                 setItensPendentes((prev) =>
                                   prev.filter((i) => i.tempId !== item.tempId)
                                 )
                               }
-                              aria-label={`Remover ${item.nome_item} da fila`}
-                              className="p-1 text-red-400 hover:text-red-200 cursor-pointer"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                              <Trash2 size={16} aria-hidden="true" />
+                            </Button>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
 
-                  <button
-                    type="button"
-                    disabled={lancandoLote}
-                    onClick={handleLancarTodosItensNaOS}
-                    className="w-full min-h-[50px] px-4 py-2.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-                  >
-                    <CheckCircle2 className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
-                    <span>
+                    <Button
+                      className="w-full"
+                      icone={CheckCircle2}
+                      carregando={lancandoLote}
+                      onClick={handleLancarTodosItensNaOS}
+                    >
                       {lancandoLote
                         ? 'Lançando lote na OS…'
-                        : `Lançar Todos os ${itensPendentes.length} Itens na OS (${formatBRL(
+                        : `Lançar todos os ${itensPendentes.length} itens na OS (${formatBRL(
                             subtotalPendentes
                           )})`}
-                    </span>
-                  </button>
-                </div>
-              )}
-
-              {/* LISTA COMPACTA COM SCROLL PARA 100+ ITENS E EDIÇÃO INLINE */}
-              <div className="space-y-2.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap gap-1.5">
-                    {(
-                      [
-                        { id: 'TODOS', label: `Todos (${dossie.itens.length})` },
-                        { id: 'PECA', label: `Peças (${pecasImp.length})` },
-                        { id: 'MAO_OBRA', label: `Mão de Obra (${servicosImp.length})` },
-                        {
-                          id: 'TERCEIRIZADO',
-                          label: `Terceirizado (${terceirizadosImp.length})`,
-                        },
-                      ] as const
-                    ).map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setAbaItensLancados(tab.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
-                          abaItensLancados === tab.id
-                            ? 'bg-[#2563EB] text-white'
-                            : 'bg-[#071226] text-slate-300 border border-[#264577]'
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {dossie.itens.length > 5 && (
-                    <input
-                      type="search"
-                      value={buscaItemLancado}
-                      onChange={(e) => setBuscaItemLancado(e.target.value)}
-                      placeholder="Filtrar item lançado…"
-                      className="min-h-[34px] px-3 py-1 rounded-lg bg-[#071226] border border-[#264577] text-white text-xs"
-                    />
-                  )}
-                </div>
-
-                {itensLancadosFiltrados.length === 0 ? (
-                  <div className="bg-[#071226] border border-[#12274D] rounded-xl p-5 text-center text-slate-400 text-sm">
-                    Nenhum item lançado nesta categoria.
-                  </div>
-                ) : (
-                  <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D] max-h-[460px] overflow-y-auto">
-                    {itensLancadosFiltrados.map((item) => {
-                      const emEdicao = editandoItemId === item.id;
-                      const lucroItem =
-                        item.tipo === 'MAO_OBRA'
-                          ? item.quantidade * item.venda_unitario
-                          : item.quantidade *
-                            (item.venda_unitario - Number(item.custo_unitario || 0));
-
-                      if (emEdicao) {
-                        return (
-                          <div key={item.id} className="p-3 bg-[#12274D]/60 space-y-2">
-                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-                              <div className="sm:col-span-4">
-                                <label className="block text-[10px] font-bold text-slate-300">
-                                  Descrição
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editItemNome}
-                                  onChange={(e) => setEditItemNome(e.target.value)}
-                                  className="w-full px-2.5 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white text-xs"
-                                />
-                              </div>
-
-                              <div className="sm:col-span-2">
-                                <label className="block text-[10px] font-bold text-slate-300">
-                                  Tipo
-                                </label>
-                                <select
-                                  value={editItemTipo}
-                                  onChange={(e) =>
-                                    setEditItemTipo(e.target.value as TipoItemOS)
-                                  }
-                                  className="w-full px-2 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white text-xs"
-                                >
-                                  <option value="PECA">Peça</option>
-                                  <option value="MAO_OBRA">Mão de Obra</option>
-                                  <option value="TERCEIRIZADO">Terceirizado</option>
-                                </select>
-                              </div>
-
-                              <div className="sm:col-span-1">
-                                <label className="block text-[10px] font-bold text-slate-300">
-                                  Qtd
-                                </label>
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={editItemQtd}
-                                  onChange={(e) => setEditItemQtd(e.target.value)}
-                                  className="w-full px-1.5 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white font-mono text-xs text-center"
-                                />
-                              </div>
-
-                              {canSeeFinanceiro && editItemTipo !== 'MAO_OBRA' && (
-                                <div className="sm:col-span-2">
-                                  <label className="block text-[10px] font-bold text-slate-300">
-                                    Custo Unit.
-                                  </label>
-                                  <input
-                                    type="number"
-                                    step="0.01"
-                                    value={editItemCusto}
-                                    onChange={(e) => setEditItemCusto(e.target.value)}
-                                    className="w-full px-2 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white font-mono text-xs"
-                                  />
-                                </div>
-                              )}
-
-                              <div className="sm:col-span-2">
-                                <label className="block text-[10px] font-bold text-slate-300">
-                                  Venda Unit.
-                                </label>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={editItemVenda}
-                                  onChange={(e) => setEditItemVenda(e.target.value)}
-                                  className="w-full px-2 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white font-mono text-xs"
-                                />
-                              </div>
-
-                              <div className="sm:col-span-1 flex items-center gap-1 justify-end">
-                                <button
-                                  type="button"
-                                  disabled={salvandoItemEditado}
-                                  onClick={() => handleSalvarEdicaoItem(item.id)}
-                                  title="Salvar edição"
-                                  className="p-2 rounded bg-emerald-600 text-white cursor-pointer"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setEditandoItemId(null)}
-                                  title="Cancelar"
-                                  className="p-2 rounded bg-slate-700 text-white cursor-pointer"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div
-                          key={item.id}
-                          className="px-2.5 sm:px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 hover:bg-[#0B1B36]/70 text-xs"
-                        >
-                          <div className="min-w-0 sm:flex-1 flex items-center gap-2">
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${
-                                item.tipo === 'MAO_OBRA'
-                                  ? 'bg-blue-950 text-blue-300 border border-blue-500'
-                                  : item.tipo === 'TERCEIRIZADO'
-                                  ? 'bg-purple-950 text-purple-300 border border-purple-500'
-                                  : 'bg-amber-950 text-amber-300 border border-amber-500'
-                              }`}
-                            >
-                              {item.tipo === 'MAO_OBRA'
-                                ? 'M. OBRA'
-                                : item.tipo === 'TERCEIRIZADO'
-                                ? 'TERC.'
-                                : 'PEÇA'}
-                            </span>
-                            <span className="font-bold text-xs sm:text-sm text-white leading-snug break-words sm:truncate">
-                              {item.nome_item}
-                            </span>
-                          </div>
-
-                          <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 shrink-0 font-mono tabular-nums">
-                            <div className="flex items-center gap-2">
-                              {canSeeFinanceiro && item.tipo !== 'MAO_OBRA' && (
-                                <span className="hidden md:inline text-[11px] text-slate-400">
-                                  Custo: {formatBRL(item.custo_unitario)} • Lucro:{' '}
-                                  <strong className="text-emerald-400">
-                                    {formatBRL(lucroItem)}
-                                  </strong>
-                                </span>
-                              )}
-                              <span className="text-slate-300 text-[11px] sm:text-xs">
-                                {formatBRL(item.venda_unitario)}{' '}
-                                <span className="text-slate-500 sm:hidden">un.</span>
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 sm:gap-2">
-                              <div className="flex items-center gap-1 bg-[#0B1B36] border border-[#264577] rounded-lg px-1 py-0.5">
-                                <button
-                                  type="button"
-                                  disabled={item.quantidade <= 1}
-                                  onClick={() =>
-                                    handleAlterarQtdItem(item.id, item.quantidade - 1)
-                                  }
-                                  aria-label={`Diminuir quantidade de ${item.nome_item}`}
-                                  className="w-6 h-6 rounded bg-[#12274D] text-white flex items-center justify-center disabled:opacity-40 cursor-pointer"
-                                >
-                                  <Minus className="w-3.5 h-3.5" />
-                                </button>
-                                <span className="w-5 sm:w-6 text-center font-bold text-white">
-                                  {item.quantidade}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleAlterarQtdItem(item.id, item.quantidade + 1)
-                                  }
-                                  aria-label={`Aumentar quantidade de ${item.nome_item}`}
-                                  className="w-6 h-6 rounded bg-[#12274D] text-white flex items-center justify-center cursor-pointer"
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-
-                              <strong className="text-xs sm:text-sm text-white min-w-[74px] sm:w-24 text-right">
-                                {formatBRL(item.quantidade * item.venda_unitario)}
-                              </strong>
-
-                              <button
-                                type="button"
-                                aria-label={`Editar ${item.nome_item}`}
-                                onClick={() => iniciarEdicaoItem(item)}
-                                className="p-1.5 rounded-lg bg-[#12274D] hover:bg-[#264577] text-amber-300 cursor-pointer"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-
-                              <button
-                                type="button"
-                                aria-label={`Remover ${item.nome_item}`}
-                                onClick={() => handleRemoverItem(item.id)}
-                                className="p-1.5 rounded-lg bg-red-950 hover:bg-red-900 text-red-200 cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    </Button>
                   </div>
                 )}
               </div>
-            </section>
 
-            {/* COLUNA DIREITA (4 COL): RESUMO FINANCEIRO COMPACTO + FICHA TÉCNICA */}
-            <div className="xl:col-span-4 space-y-3.5 sm:space-y-4">
-              <section className="bg-[#1E3A8A] border-2 border-[#38BDF8] rounded-xl sm:rounded-2xl p-3.5 sm:p-4 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-bold text-blue-100">
-                    Resumo Financeiro da OS
-                  </span>
-                  <DollarSign className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+              {/* ITENS LANÇADOS: LISTA COM DIVISORES, ROLAGEM INTERNA SÓ NO DESKTOP, EDIÇÃO INLINE */}
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold text-ink">Itens lançados</h2>
+                  {dossie.itens.length > 5 && (
+                    <input
+                      type="search"
+                      aria-label="Filtrar item lançado"
+                      value={buscaItemLancado}
+                      onChange={(e) => setBuscaItemLancado(e.target.value)}
+                      placeholder="Filtrar item lançado…"
+                      className={`${CLASSE_CAMPO} sm:w-56`}
+                    />
+                  )}
+                </div>
+                <Tabs
+                  rotuloGrupo="Filtrar itens lançados por tipo"
+                  quebrar
+                  idPainel="painel-itens-lancados"
+                  ativo={`itens-${abaItensLancados}`}
+                  aoMudar={(id) => setAbaItensLancados(id.replace('itens-', '') as typeof abaItensLancados)}
+                  itens={[
+                    { id: 'itens-TODOS', rotulo: `Todos (${dossie.itens.length})` },
+                    { id: 'itens-PECA', rotulo: `Peças (${pecasImp.length})` },
+                    { id: 'itens-MAO_OBRA', rotulo: `Mão de Obra (${servicosImp.length})` },
+                    { id: 'itens-TERCEIRIZADO', rotulo: `Terceirizado (${terceirizadosImp.length})` },
+                  ]}
+                />
+
+                <div id="painel-itens-lancados" role="tabpanel" aria-labelledby={`aba-itens-${abaItensLancados}`}>
+                  {itensLancadosFiltrados.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-ink-muted">
+                      Nenhum item lançado nesta categoria.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-line lg:max-h-[460px] lg:overflow-y-auto">
+                      {itensLancadosFiltrados.map((item) => {
+                        const emEdicao = editandoItemId === item.id;
+                        const lucroItem =
+                          item.tipo === 'MAO_OBRA'
+                            ? item.quantidade * item.venda_unitario
+                            : item.quantidade *
+                              (item.venda_unitario - Number(item.custo_unitario || 0));
+
+                        if (emEdicao) {
+                          return (
+                            <li key={item.id} className="space-y-3 py-3">
+                              <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-12">
+                                <div className="col-span-2 sm:col-span-4">
+                                  <Field rotulo="Descrição">
+                                    <input
+                                      type="text"
+                                      value={editItemNome}
+                                      onChange={(e) => setEditItemNome(e.target.value)}
+                                    />
+                                  </Field>
+                                </div>
+
+                                <div className="col-span-2 sm:col-span-3">
+                                  <Field rotulo="Tipo">
+                                    <select
+                                      value={editItemTipo}
+                                      onChange={(e) =>
+                                        setEditItemTipo(e.target.value as TipoItemOS)
+                                      }
+                                    >
+                                      <option value="PECA">Peça</option>
+                                      <option value="MAO_OBRA">Mão de Obra</option>
+                                      <option value="TERCEIRIZADO">Terceirizado</option>
+                                    </select>
+                                  </Field>
+                                </div>
+
+                                <div className="sm:col-span-1">
+                                  <Field rotulo="Qtd">
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      value={editItemQtd}
+                                      onChange={(e) => setEditItemQtd(e.target.value)}
+                                      className={`${CLASSE_CAMPO} px-1 text-center tabular-nums`}
+                                    />
+                                  </Field>
+                                </div>
+
+                                {canSeeFinanceiro && editItemTipo !== 'MAO_OBRA' && (
+                                  <div className="sm:col-span-2">
+                                    <Field rotulo="Custo unit.">
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        value={editItemCusto}
+                                        onChange={(e) => setEditItemCusto(e.target.value)}
+                                        className={`${CLASSE_CAMPO} tabular-nums`}
+                                      />
+                                    </Field>
+                                  </div>
+                                )}
+
+                                <div className="sm:col-span-2">
+                                  <Field rotulo="Venda unit.">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={editItemVenda}
+                                      onChange={(e) => setEditItemVenda(e.target.value)}
+                                      className={`${CLASSE_CAMPO} tabular-nums`}
+                                    />
+                                  </Field>
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <Button variante="fantasma" icone={X} onClick={() => setEditandoItemId(null)}>
+                                  Cancelar
+                                </Button>
+                                <Button
+                                  variante="secundario"
+                                  icone={Check}
+                                  carregando={salvandoItemEditado}
+                                  onClick={() => handleSalvarEdicaoItem(item.id)}
+                                >
+                                  Salvar edição
+                                </Button>
+                              </div>
+                            </li>
+                          );
+                        }
+
+                        return (
+                          <li
+                            key={item.id}
+                            className="flex flex-wrap items-center gap-x-2 gap-y-2 py-3 sm:flex-nowrap sm:gap-x-3"
+                          >
+                            <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
+                              <div className="flex items-center gap-2">
+                                <Badge className="shrink-0">{ROTULO_TIPO_ITEM[item.tipo]}</Badge>
+                                <span className="min-w-0 break-words text-sm font-medium text-ink sm:truncate">
+                                  {item.nome_item}
+                                </span>
+                              </div>
+                              <div className="mt-1 text-xs tabular-nums text-ink-muted">
+                                {formatBRL(item.venda_unitario)} un.
+                                {canSeeFinanceiro && item.tipo !== 'MAO_OBRA' && (
+                                  <>
+                                    {' '}· custo {formatBRL(item.custo_unitario)} · lucro{' '}
+                                    <span className="text-success">{formatBRL(lucroItem)}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center rounded-lg bg-muted">
+                              <button
+                                type="button"
+                                disabled={item.quantidade <= 1}
+                                onClick={() =>
+                                  handleAlterarQtdItem(item.id, item.quantidade - 1)
+                                }
+                                aria-label={`Diminuir quantidade de ${item.nome_item}`}
+                                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-ink hover:bg-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-40 md:h-8 md:w-8"
+                              >
+                                <Minus size={14} aria-hidden="true" />
+                              </button>
+                              <span className="w-7 text-center text-sm font-medium tabular-nums text-ink">
+                                {item.quantidade}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleAlterarQtdItem(item.id, item.quantidade + 1)
+                                }
+                                aria-label={`Aumentar quantidade de ${item.nome_item}`}
+                                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-ink hover:bg-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand md:h-8 md:w-8"
+                              >
+                                <Plus size={14} aria-hidden="true" />
+                              </button>
+                            </div>
+
+                            <span className="ml-auto min-w-[5.5rem] text-right text-sm font-semibold tabular-nums text-ink sm:ml-0">
+                              {formatBRL(item.quantidade * item.venda_unitario)}
+                            </span>
+
+                            <span className="flex items-center">
+                              <Button
+                                variante="fantasma"
+                                tamanho="sm"
+                                aria-label={`Editar ${item.nome_item}`}
+                                className="w-11 !px-0 md:w-8"
+                                onClick={() => iniciarEdicaoItem(item)}
+                              >
+                                <Pencil size={16} aria-hidden="true" />
+                              </Button>
+                              <Button
+                                variante="fantasma"
+                                tamanho="sm"
+                                aria-label={`Remover ${item.nome_item}`}
+                                className="w-11 !px-0 text-danger hover:text-danger md:w-8"
+                                onClick={() => handleRemoverItem(item.id)}
+                              >
+                                <Trash2 size={16} aria-hidden="true" />
+                              </Button>
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </Panel>
+
+            {/* COLUNA DIREITA (≥1024) / ABAIXO DOS ITENS (CELULAR): RESUMO + FICHA TÉCNICA */}
+            <div className="space-y-4 lg:col-span-4">
+              <Panel as="section" aria-labelledby="titulo-resumo-os" className="space-y-4">
+                <div>
+                  <h2 id="titulo-resumo-os" className="text-sm text-ink-muted">
+                    Total da ordem
+                  </h2>
+                  <p className="text-[2rem] font-semibold leading-tight tabular-nums text-ink">
+                    {formatBRL(os.total_geral)}
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs font-mono tabular-nums">
-                  <div className="bg-[#172554] rounded-lg p-2">
-                    <div className="text-blue-200 font-sans font-bold text-[11px]">
-                      Peças / Terc.
-                    </div>
-                    <div className="text-sm sm:text-base font-bold text-white mt-0.5">
-                      {formatBRL(os.total_pecas)}
-                    </div>
+                <dl className="divide-y divide-line text-sm">
+                  <div className="flex items-center justify-between gap-3 py-2">
+                    <dt className="text-ink-muted">Peças / Terc.</dt>
+                    <dd className="font-medium tabular-nums text-ink">{formatBRL(os.total_pecas)}</dd>
                   </div>
-                  <div className="bg-[#172554] rounded-lg p-2">
-                    <div className="text-blue-200 font-sans font-bold text-[11px]">
-                      Mão de Obra
-                    </div>
-                    <div className="text-sm sm:text-base font-bold text-white mt-0.5">
-                      {formatBRL(os.total_mao_obra)}
-                    </div>
+                  <div className="flex items-center justify-between gap-3 py-2">
+                    <dt className="text-ink-muted">Mão de Obra</dt>
+                    <dd className="font-medium tabular-nums text-ink">{formatBRL(os.total_mao_obra)}</dd>
                   </div>
                   {canSeeFinanceiro && (
                     <>
-                      <div className="bg-[#172554] rounded-lg p-2">
-                        <div className="text-blue-200 font-sans font-bold text-[11px]">
-                          Custo Peças
-                        </div>
-                        <div className="text-xs sm:text-sm font-bold text-slate-300 mt-0.5">
-                          {formatBRL(custoTotalOS)}
-                        </div>
+                      <div className="flex items-center justify-between gap-3 py-2">
+                        <dt className="text-ink-muted">Custo Peças</dt>
+                        <dd className="font-medium tabular-nums text-ink">{formatBRL(custoTotalOS)}</dd>
                       </div>
-                      <div className="bg-[#172554] rounded-lg p-2">
-                        <div className="text-emerald-300 font-sans font-bold text-[11px]">
-                          Lucro Líquido
-                        </div>
-                        <div className="text-xs sm:text-sm font-bold text-emerald-300 mt-0.5">
-                          {formatBRL(lucroTotalOS)}
-                        </div>
+                      <div className="flex items-center justify-between gap-3 py-2">
+                        <dt className="text-ink-muted">Lucro Líquido</dt>
+                        <dd className="font-semibold tabular-nums text-success">{formatBRL(lucroTotalOS)}</dd>
                       </div>
                     </>
                   )}
-                </div>
+                </dl>
+              </Panel>
 
-                <div className="bg-[#071226] border-2 border-[#38BDF8] rounded-xl p-2.5 sm:p-3 flex items-center justify-between">
-                  <span className="text-sm font-bold text-white">TOTAL GERAL</span>
-                  <span className="text-lg sm:text-2xl font-extrabold font-mono text-[#38BDF8] tabular-nums">
-                    {formatBRL(os.total_geral)}
-                  </span>
-                </div>
-              </section>
-
-              <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3.5 sm:p-4 space-y-2.5">
+              <Panel as="section" aria-labelledby="titulo-ficha-tecnica" className="space-y-4">
                 <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-sm font-bold text-white">
+                  <h2 id="titulo-ficha-tecnica" className="text-base font-semibold text-ink">
                     Ficha Técnica &amp; Diagnóstico
                   </h2>
-                  {statusAutoSave === 'saving' && (
-                    <span className="text-[11px] font-bold text-amber-300">
-                      Salvando…
-                    </span>
-                  )}
-                  {statusAutoSave === 'saved' && (
-                    <span className="text-[11px] font-bold text-emerald-400">
-                      Salvo
-                    </span>
-                  )}
+                  <span aria-live="polite" className="text-xs font-medium">
+                    {statusAutoSave === 'saving' && <span className="text-ink-muted">Salvando…</span>}
+                    {statusAutoSave === 'saved' && <span className="text-success">Salvo</span>}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label
-                      htmlFor="edit-km"
-                      className="block text-[11px] font-bold text-slate-200 mb-1"
-                    >
-                      KM Atual
-                    </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field rotulo="KM Atual">
                     <input
                       id="edit-km"
                       name="km_atual"
@@ -2745,17 +2674,11 @@ export function OrdensServico({
                       value={editKm}
                       onChange={(e) => setEditKm(e.target.value.replace(/\D/g, ''))}
                       onBlur={() => salvarDadosTecnicosSilencioso()}
-                      className="w-full min-h-[38px] px-2.5 py-1.5 bg-[#071226] border border-[#264577] rounded-lg text-white font-mono text-xs sm:text-sm tabular-nums"
+                      className={`${CLASSE_CAMPO} tabular-nums`}
                     />
-                  </div>
+                  </Field>
 
-                  <div>
-                    <label
-                      htmlFor="edit-mecanico"
-                      className="block text-[11px] font-bold text-slate-200 mb-1"
-                    >
-                      Mecânico Responsável
-                    </label>
+                  <Field rotulo="Mecânico Responsável">
                     <select
                       id="edit-mecanico"
                       name="mecanico_responsavel_id"
@@ -2765,7 +2688,6 @@ export function OrdensServico({
                         setEditMecanicoId(novoMec);
                         salvarDadosTecnicosSilencioso({ mecanicoId: novoMec });
                       }}
-                      className="w-full min-h-[38px] px-2 py-1.5 bg-[#071226] border border-[#264577] rounded-lg text-white text-xs"
                     >
                       <option value="">Selecione…</option>
                       {mecanicos.map((m) => (
@@ -2774,29 +2696,44 @@ export function OrdensServico({
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </Field>
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="edit-problema"
-                    className="block text-[11px] font-bold text-slate-200 mb-1"
-                  >
-                    Relato do Problema / Diagnóstico
-                  </label>
+                <Field rotulo="Relato do Problema / Diagnóstico">
                   <textarea
                     id="edit-problema"
                     name="descricao_problema"
-                    rows={2}
+                    rows={3}
                     value={editProblema}
                     onChange={(e) => setEditProblema(e.target.value)}
                     onBlur={() => salvarDadosTecnicosSilencioso()}
-                    className="w-full p-2.5 bg-[#071226] border border-[#264577] rounded-lg text-white text-xs sm:text-sm resize-y"
+                    className="w-full resize-y rounded-lg border border-line-strong bg-sunken p-3 text-sm text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   />
-                </div>
-              </section>
+                </Field>
+              </Panel>
             </div>
           </div>
+
+          {/* CELULAR: WhatsApp e Imprimir numa barra fixa logo acima da navegação inferior do app */}
+          <section
+            aria-label="Ações da ordem de serviço"
+            className="fixed inset-x-0 z-40 flex gap-2 bg-surface px-4 py-2 lg:hidden"
+            style={{ bottom: 'calc(61px + max(0.25rem, env(safe-area-inset-bottom)))' }}
+          >
+            <a
+              href={gerarLinkWhatsAppOrcamento(dossie)}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Mandar Orçamento no WhatsApp"
+              className={`${classesBotao('secundario')} flex-1`}
+            >
+              <MessageCircle size={16} aria-hidden="true" />
+              WhatsApp
+            </a>
+            <Button variante="secundario" icone={Printer} onClick={() => window.print()} className="flex-1">
+              Imprimir (A4)
+            </Button>
+          </section>
         </div>
       </div>
     );
@@ -2808,7 +2745,7 @@ export function OrdensServico({
   const totalPaginas = Math.max(1, Math.ceil(totalOrdens / ITENS_POR_PAGINA));
   const inicioRegistro =
     totalOrdens === 0 ? 0 : (pagina - 1) * ITENS_POR_PAGINA + 1;
-  const fimRegistro = Math.min(totalOrdens, pagina * ITENS_POR_PAGINA);
+  const fimRegistro = totalOrdens === 0 ? 0 : Math.min(totalOrdens, inicioRegistro + ordens.length - 1);
 
   const qtdFiltrosAtivos =
     (statusFiltro !== 'TODAS' ? 1 : 0) +
@@ -2816,36 +2753,67 @@ export function OrdensServico({
     (valorMin || valorMax ? 1 : 0) +
     (ordenacao !== 'data_desc' ? 1 : 0);
 
+  const limparFiltros = () => {
+    setStatusFiltro('TODAS');
+    setDataInicio('');
+    setDataFim('');
+    setValorMin('');
+    setValorMax('');
+    setOrdenacao('data_desc');
+    setPagina(1);
+  };
+
+  const qtdFiltrosExtras = qtdFiltrosAtivos - (statusFiltro !== 'TODAS' ? 1 : 0);
+
   return (
-    <div className="space-y-3 sm:space-y-4">
-      {/* Cabeçalho Compacto + Botão Nova OS */}
-      <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-2.5">
-        <div className="min-w-0">
-          <h1 className="text-lg sm:text-2xl font-extrabold text-white leading-tight truncate">
-            Ordens de Serviço ({totalOrdens})
-          </h1>
-          <p className="hidden sm:block text-sm text-slate-300 mt-0.5">
-            Toque em um veículo para abrir a bancada, lançar peças ou enviar orçamento.
-          </p>
+    <div>
+      {folhaPagamento}
+      <PageHeader
+        titulo="Ordens de Serviço"
+        complemento={
+          <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle">{totalOrdens}</span>
+        }
+        acoes={
+          <>
+            <Button
+              variante="fantasma"
+              icone={RefreshCw}
+              onClick={() => {
+                carregarOrdens();
+                carregarContagens();
+              }}
+              aria-label="Atualizar lista de Ordens de Serviço"
+            >
+              Atualizar
+            </Button>
+            <Button onClick={abrirTelaNovaOS}>Nova ordem de serviço</Button>
+          </>
+        }
+      />
+
+      {(feedbackMsg || erroOperacao) && (
+        <div className="mb-4 space-y-2">
+          {feedbackMsg && (
+            <p role="status" className="flex items-center gap-2 rounded-xl bg-success/15 px-4 py-3 text-sm font-medium text-success">
+              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{feedbackMsg}</span>
+            </p>
+          )}
+          {erroOperacao && (
+            <p role="alert" className="flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{erroOperacao}</span>
+            </p>
+          )}
         </div>
+      )}
 
-        <button
-          type="button"
-          onClick={abrirTelaNovaOS}
-          className="min-h-[40px] sm:min-h-[48px] px-3.5 sm:px-5 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs sm:text-base flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shrink-0"
-        >
-          <PlusCircle className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" aria-hidden="true" />
-          <span className="sm:hidden">+ Nova OS</span>
-          <span className="hidden sm:inline">Dar Entrada em Veículo (Nova OS)</span>
-        </button>
-      </div>
-
-      {/* Barra de Busca em 1 única linha + Botão de Filtros + Ícone Atualizar */}
-      <search className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 space-y-3">
+      {/* Busca + filtros extras (datas, valor, ordenação) */}
+      <search className="mb-4 block space-y-4">
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 flex items-center">
+          <div className="relative flex-1">
             <Search
-              className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
               aria-hidden="true"
             />
             <input
@@ -2856,442 +2824,257 @@ export function OrdensServico({
               autoCapitalize="off"
               spellCheck={false}
               value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
-                setPagina(1);
-              }}
+              onChange={(e) => setBusca(e.target.value)}
               placeholder="Placa, cliente ou defeito…"
-              className="w-full min-h-[40px] sm:min-h-[46px] pl-9 pr-3 py-1.5 bg-[#071226] border border-[#264577] focus:border-[#38BDF8] rounded-lg sm:rounded-xl text-white text-sm"
+              className={`${CLASSE_CAMPO} pl-9`}
             />
           </div>
-
-          <button
-            type="button"
+          <Button
+            variante={mostrarFiltros || qtdFiltrosExtras > 0 ? 'secundario' : 'fantasma'}
+            icone={SlidersHorizontal}
             aria-expanded={mostrarFiltros}
-            aria-label="Filtros e Ordenação"
+            aria-controls="filtros-extras-os"
             onClick={() => setMostrarFiltros((v) => !v)}
-            className={`min-h-[40px] sm:min-h-[46px] px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${
-              mostrarFiltros || qtdFiltrosAtivos > 0
-                ? 'bg-[#1E3A8A] border-[#38BDF8] text-white'
-                : 'bg-[#071226] border-[#264577] text-slate-200 hover:bg-[#12274D]'
-            }`}
           >
-            <SlidersHorizontal className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-            <span className="hidden sm:inline">Filtros &amp; Ordenação</span>
-            <span className="sm:hidden">Filtros</span>
-            {qtdFiltrosAtivos > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-[#38BDF8] text-[#071226] text-[10px] font-extrabold">
-                {qtdFiltrosAtivos}
+            Filtros
+            {qtdFiltrosExtras > 0 && (
+              <span className="rounded-full bg-brand px-1.5 text-xs font-medium tabular-nums text-on-brand">
+                {qtdFiltrosExtras}
               </span>
             )}
-          </button>
-
-          <button
-            type="button"
-            onClick={carregarOrdens}
-            aria-label="Atualizar lista de Ordens de Serviço"
-            title="Atualizar"
-            className="min-h-[40px] sm:min-h-[46px] px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-          >
-            <RefreshCw className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-            <span className="hidden md:inline">Atualizar</span>
-          </button>
+          </Button>
         </div>
 
-        {/* FAIXA RECOLHÍVEL DE FILTROS (STATUS, DATA, VALOR E ORDENAÇÃO) */}
-        {mostrarFiltros && (
-          <div className="pt-3 border-t border-[#12274D] space-y-4">
-            {/* Etapa / Status */}
-            <div>
-              <span className="block text-xs font-bold text-slate-300 mb-2">
-                Filtrar por Etapa / Status
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStatusFiltro('TODAS');
-                    setPagina(1);
-                  }}
-                  className={`min-h-[44px] px-3 py-2 rounded-xl font-bold text-xs sm:text-sm border cursor-pointer ${
-                    statusFiltro === 'TODAS'
-                      ? 'bg-[#38BDF8] text-[#071226] border-[#38BDF8]'
-                      : 'bg-[#071226] text-slate-300 border-[#264577]'
+        {/* Chips de etapa: sempre visíveis, com contagem; quebram linha em vez de rolar */}
+        {/* Chips de etapa com contagem. Celular: uma linha só, rolagem só dentro da faixa (sem barra, com
+            esmaecido na borda); desktop: quebram linha como antes. */}
+        <div
+          ref={faixaChipsRef}
+          role="group"
+          aria-label="Filtrar por etapa"
+          className="-mx-4 flex snap-x scroll-px-4 gap-1 overflow-x-auto px-4 [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] [scrollbar-width:none] md:-mx-8 md:scroll-px-8 md:px-8 lg:mx-0 lg:flex-wrap lg:gap-2 lg:overflow-visible lg:px-0 lg:[mask-image:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {(['TODAS', ...ETAPAS_OS] as const).map((id) => {
+            const ativo = statusFiltro === id;
+            const rotulo = id === 'TODAS' ? 'Todas' : STATUS_OS[id].rotulo;
+            const qtd = contagens[id];
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={ativo}
+                data-ativo={ativo || undefined}
+                onClick={() => {
+                  setStatusFiltro(id);
+                  setPagina(1);
+                }}
+                className="group inline-flex min-h-11 shrink-0 snap-start items-center rounded-full focus-visible:outline-none lg:min-h-9"
+              >
+                <span
+                  className={`inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-sm font-medium transition-colors group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-brand sm:px-3.5 ${
+                    ativo ? 'bg-surface text-ink shadow-card dark:bg-line' : 'text-ink-muted group-hover:bg-muted group-hover:text-ink'
                   }`}
                 >
-                  Todas as Etapas
-                </button>
-                {STATUS_LIST.map((st) => {
-                  const Icon = st.icon;
-                  const ativo = statusFiltro === st.id;
-                  return (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => {
-                        setStatusFiltro(st.id);
-                        setPagina(1);
-                      }}
-                      className={`min-h-[44px] px-3 py-2 rounded-xl font-bold text-xs sm:text-sm border flex items-center justify-center gap-1.5 cursor-pointer ${
-                        ativo
-                          ? st.activeBtn
-                          : 'bg-[#071226] text-slate-300 border-[#264577]'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      <span className="truncate">{st.shortLabel}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                  {rotulo}
+                  {qtd !== undefined && (
+                    <span className={`tabular-nums ${ativo ? 'text-ink-muted' : 'text-ink-subtle'}`}>{qtd}</span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-            {/* Período de Data + Faixa de Valor + Ordenação */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
-              <div>
-                <label
-                  htmlFor="filtro-data-inicio"
-                  className="block text-xs font-bold text-slate-300 mb-1"
-                >
-                  Data Inicial
-                </label>
-                <input
-                  id="filtro-data-inicio"
-                  type="date"
-                  value={dataInicio}
-                  onChange={(e) => {
-                    setDataInicio(e.target.value);
-                    setPagina(1);
-                  }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white text-sm"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="filtro-data-fim"
-                  className="block text-xs font-bold text-slate-300 mb-1"
-                >
-                  Data Final
-                </label>
-                <input
-                  id="filtro-data-fim"
-                  type="date"
-                  value={dataFim}
-                  onChange={(e) => {
-                    setDataFim(e.target.value);
-                    setPagina(1);
-                  }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white text-sm"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="filtro-valor-min"
-                  className="block text-xs font-bold text-slate-300 mb-1"
-                >
-                  Valor Mínimo (R$)
-                </label>
-                <input
-                  id="filtro-valor-min"
-                  type="number"
-                  step="10"
-                  placeholder="0,00"
-                  value={valorMin}
-                  onChange={(e) => {
-                    setValorMin(e.target.value);
-                    setPagina(1);
-                  }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-mono text-sm"
-                />
+        {mostrarFiltros && (
+          <div id="filtros-extras-os">
+            <Panel className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <Field rotulo="Data inicial">
+                  <input
+                    id="filtro-data-inicio"
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => {
+                      setDataInicio(e.target.value);
+                      setPagina(1);
+                    }}
+                  />
+                </Field>
+                <Field rotulo="Data final">
+                  <input
+                    id="filtro-data-fim"
+                    type="date"
+                    value={dataFim}
+                    onChange={(e) => {
+                      setDataFim(e.target.value);
+                      setPagina(1);
+                    }}
+                  />
+                </Field>
+                <Field rotulo="Valor mínimo (R$)">
+                  <input
+                    id="filtro-valor-min"
+                    type="number"
+                    step="10"
+                    placeholder="0,00"
+                    value={valorMin}
+                    onChange={(e) => {
+                      setValorMin(e.target.value);
+                      setPagina(1);
+                    }}
+                    className={`${CLASSE_CAMPO} tabular-nums`}
+                  />
+                </Field>
+                <Field rotulo="Valor máximo (R$)">
+                  <input
+                    id="filtro-valor-max"
+                    type="number"
+                    step="10"
+                    placeholder="Sem limite"
+                    value={valorMax}
+                    onChange={(e) => {
+                      setValorMax(e.target.value);
+                      setPagina(1);
+                    }}
+                    className={`${CLASSE_CAMPO} tabular-nums`}
+                  />
+                </Field>
+                <Field rotulo="Ordenar por">
+                  <select
+                    id="filtro-ordenacao"
+                    value={ordenacao}
+                    onChange={(e) => {
+                      setOrdenacao(e.target.value as OrdenacaoOS);
+                      setPagina(1);
+                    }}
+                  >
+                    <option value="data_desc">Mais recentes primeiro</option>
+                    <option value="data_asc">Mais antigas primeiro</option>
+                    <option value="valor_desc">Maior valor (R$)</option>
+                    <option value="valor_asc">Menor valor (R$)</option>
+                  </select>
+                </Field>
               </div>
 
-              <div>
-                <label
-                  htmlFor="filtro-valor-max"
-                  className="block text-xs font-bold text-slate-300 mb-1"
-                >
-                  Valor Máximo (R$)
-                </label>
-                <input
-                  id="filtro-valor-max"
-                  type="number"
-                  step="10"
-                  placeholder="Sem limite"
-                  value={valorMax}
-                  onChange={(e) => {
-                    setValorMax(e.target.value);
-                    setPagina(1);
-                  }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-mono text-sm"
-                />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="mr-1 text-sm text-ink-muted">Período rápido:</span>
+                  <Button variante="fantasma" tamanho="sm" onClick={() => aplicarAtalhoPeriodo(0)}>
+                    Hoje
+                  </Button>
+                  <Button variante="fantasma" tamanho="sm" onClick={() => aplicarAtalhoPeriodo(7)}>
+                    Últimos 7 dias
+                  </Button>
+                  <Button variante="fantasma" tamanho="sm" onClick={() => aplicarAtalhoPeriodo(30)}>
+                    Últimos 30 dias
+                  </Button>
+                </div>
+                {qtdFiltrosAtivos > 0 && (
+                  <Button variante="fantasma" tamanho="sm" icone={X} onClick={limparFiltros}>
+                    Limpar todos os filtros
+                  </Button>
+                )}
               </div>
-
-              <div>
-                <label
-                  htmlFor="filtro-ordenacao"
-                  className="block text-xs font-bold text-slate-300 mb-1"
-                >
-                  Ordenar por
-                </label>
-                <select
-                  id="filtro-ordenacao"
-                  value={ordenacao}
-                  onChange={(e) => {
-                    setOrdenacao(e.target.value as OrdenacaoOS);
-                    setPagina(1);
-                  }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white text-sm font-semibold"
-                >
-                  <option value="data_desc">Mais recentes primeiro</option>
-                  <option value="data_asc">Mais antigas primeiro</option>
-                  <option value="valor_desc">Maior valor (R$)</option>
-                  <option value="valor_asc">Menor valor (R$)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Atalhos Rápidos de Data + Limpar Filtros */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-slate-400">Período rápido:</span>
-                <button
-                  type="button"
-                  onClick={() => aplicarAtalhoPeriodo(0)}
-                  className="px-3 py-1 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-xs font-bold text-slate-200 cursor-pointer"
-                >
-                  Hoje
-                </button>
-                <button
-                  type="button"
-                  onClick={() => aplicarAtalhoPeriodo(7)}
-                  className="px-3 py-1 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-xs font-bold text-slate-200 cursor-pointer"
-                >
-                  Últimos 7 dias
-                </button>
-                <button
-                  type="button"
-                  onClick={() => aplicarAtalhoPeriodo(30)}
-                  className="px-3 py-1 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-xs font-bold text-slate-200 cursor-pointer"
-                >
-                  Últimos 30 dias
-                </button>
-              </div>
-
-              {qtdFiltrosAtivos > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStatusFiltro('TODAS');
-                    setDataInicio('');
-                    setDataFim('');
-                    setValorMin('');
-                    setValorMax('');
-                    setOrdenacao('data_desc');
-                    setPagina(1);
-                  }}
-                  className="px-3.5 py-1.5 rounded-lg bg-red-950 border border-red-500 text-xs font-bold text-red-200 cursor-pointer"
-                >
-                  Limpar Todos os Filtros
-                </button>
-              )}
-            </div>
+            </Panel>
           </div>
         )}
       </search>
 
-      {/* Lista de Cards de OS */}
       {loadingLista ? (
-        <div className="h-56 bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-8 flex items-center justify-center gap-3 text-base font-bold text-slate-200">
-          <progress aria-label="Carregando" className="loading-spinner" />
-          <span>Carregando veículos do pátio…</span>
-        </div>
+        <Panel>
+          <Skeleton linhas={6} />
+        </Panel>
       ) : erroLista ? (
-        <div className="bg-red-950 border-2 border-red-500 rounded-2xl p-6 text-red-100 space-y-3">
-          <p className="text-base font-bold">{erroLista}</p>
-          <button
-            type="button"
-            onClick={carregarOrdens}
-            className="min-h-[48px] px-5 py-2 rounded-xl bg-[#38BDF8] text-[#071226] font-bold"
-          >
-            Tentar Novamente
-          </button>
-        </div>
+        <Panel espaco="lg" className="space-y-4">
+          <p role="alert" className="flex items-start gap-3 text-base font-medium text-danger">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+            <span>{erroLista}</span>
+          </p>
+          <Button icone={RefreshCw} onClick={carregarOrdens}>
+            Tentar novamente
+          </Button>
+        </Panel>
       ) : ordens.length === 0 ? (
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-8 text-center space-y-3">
-          <Car className="w-12 h-12 text-slate-500 mx-auto" aria-hidden="true" />
-          <h2 className="text-xl font-bold text-white">
-            Nenhuma Ordem de Serviço encontrada neste filtro
+        <Panel espaco="lg" className="space-y-3">
+          <h2 className="text-lg font-semibold text-ink">
+            {qtdFiltrosAtivos > 0 || busca
+              ? 'Nenhuma ordem de serviço encontrada neste filtro'
+              : 'Nenhuma ordem de serviço ainda'}
           </h2>
-        </div>
+          {qtdFiltrosAtivos > 0 || busca ? (
+            <Button
+              variante="secundario"
+              onClick={() => {
+                limparFiltros();
+                setBusca('');
+              }}
+            >
+              Limpar busca e filtros
+            </Button>
+          ) : (
+            <p className="text-sm text-ink-muted">
+              Dê entrada em um veículo com &ldquo;Nova ordem de serviço&rdquo; e ele aparece aqui.
+            </p>
+          )}
+        </Panel>
       ) : (
-        <div className="space-y-2 sm:space-y-2.5">
-          {ordens.map((os) => {
-            const stMeta =
-              STATUS_LIST.find((s) => s.id === os.status) || STATUS_LIST[0];
-            const StIcon = stMeta.icon;
-            const placa = os.veiculos?.placa || 'SEM-PLACA';
-            const modelo = os.veiculos?.modelo || 'Veículo';
-            const clienteNome = os.clientes?.nome || 'Cliente';
-            const fone = (os.clientes?.telefone || '').replace(/\D/g, '');
-
-            return (
-              <article
-                key={os.id}
-                className="bg-[#0B1B36] border border-[#264577] hover:border-[#38BDF8] rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5"
-              >
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
-                      <span
-                        translate="no"
-                        className="px-2 py-0.5 rounded bg-[#071226] border border-slate-500 font-mono text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider shrink-0"
-                      >
-                        {placa}
-                      </span>
-                      <span className="text-sm sm:text-base font-extrabold text-white truncate">
-                        {modelo}
-                      </span>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border font-bold text-[10px] sm:text-xs ${stMeta.badgeBg} ${stMeta.badgeBorder} ${stMeta.badgeText}`}
-                      >
-                        <StIcon className="w-3 h-3 shrink-0" aria-hidden="true" />
-                        <span>{stMeta.label}</span>
-                      </span>
-                    </div>
-
-                    <span className="lg:hidden font-mono text-sm sm:text-base font-extrabold text-[#38BDF8] tabular-nums shrink-0">
-                      {formatBRL(os.total_geral)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 text-xs text-slate-300">
-                    <div className="min-w-0 truncate">
-                      <strong className="text-white">{clienteNome}</strong> &bull;{' '}
-                      <span className="text-slate-400 tabular-nums">
-                        {formatDataHora(os.data_abertura)}
-                      </span>
-                      {os.descricao_problema && (
-                        <span className="text-amber-200 ml-2">
-                          • {os.descricao_problema}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Ações compactas na mesma linha no mobile */}
-                    <div className="flex lg:hidden items-center gap-1.5 shrink-0">
-                      {fone && (
-                        <a
-                          href={`https://wa.me/55${fone}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          aria-label={`WhatsApp de ${clienteNome}`}
-                          className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0"
-                        >
-                          <MessageCircle className="w-4 h-4" aria-hidden="true" />
-                        </a>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => abrirBancadaOS(os.id)}
-                        className="h-8 px-2.5 rounded-lg bg-[#38BDF8] text-[#071226] font-extrabold text-xs flex items-center gap-1 cursor-pointer shrink-0"
-                      >
-                        <Wrench className="w-3.5 h-3.5 stroke-[2.3]" aria-hidden="true" />
-                        <span>Abrir</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Ações Desktop */}
-                <div className="hidden lg:flex items-center gap-2 shrink-0">
-                  <div className="bg-[#071226] border border-[#264577] rounded-xl px-3 py-1.5 text-right">
-                    <div className="text-[10px] font-bold text-slate-400">Total OS</div>
-                    <div className="font-mono text-base font-bold text-[#38BDF8] tabular-nums">
-                      {formatBRL(os.total_geral)}
-                    </div>
-                  </div>
-
-                  {stMeta.nextStatus && (
-                    <button
-                      type="button"
-                      onClick={() => handleMudarStatus(os.id, stMeta.nextStatus!)}
-                      className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>{stMeta.nextLabel}</span>
-                      <ArrowRight className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-                    </button>
-                  )}
-
-                  {fone && (
-                    <a
-                      href={`https://wa.me/55${fone}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`WhatsApp de ${clienteNome}`}
-                      title="WhatsApp"
-                      className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5"
-                    >
-                      <MessageCircle className="w-4 h-4" aria-hidden="true" />
-                    </a>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => abrirBancadaOS(os.id)}
-                    className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Wrench className="w-4 h-4 stroke-[2.3]" aria-hidden="true" />
-                    <span>Abrir OS</span>
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+        <div className="space-y-4">
+          <Panel espaco="nenhum" className="overflow-hidden">
+            <ul aria-label="Ordens de serviço" className="divide-y divide-line">
+              {ordens.map((os) => (
+                <LinhaOrdem
+                  key={os.id}
+                  os={os}
+                  aoAbrir={() => abrirBancadaOS(os.id)}
+                  aoAvancar={(proximo) => pedirMudancaStatus(os.id, proximo, os.total_geral)}
+                />
+              ))}
+            </ul>
+          </Panel>
 
           {totalOrdens > ITENS_POR_PAGINA && (
             <nav
               aria-label="Paginação de Ordens de Serviço"
-              className="bg-[#0B1B36] border-2 border-[#264577] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3"
+              className="flex flex-col items-center justify-between gap-3 sm:flex-row"
             >
-              <div className="text-sm text-slate-300 font-mono tabular-nums">
-                Mostrando <strong className="text-white">{inicioRegistro}</strong> a{' '}
-                <strong className="text-white">{fimRegistro}</strong> de{' '}
-                <strong className="text-[#38BDF8]">{totalOrdens}</strong> OS
-              </div>
+              <p className="text-sm tabular-nums text-ink-muted">
+                Mostrando{' '}
+                <span className="font-medium text-ink">
+                  {inicioRegistro}–{fimRegistro}
+                </span>{' '}
+                de <span className="font-medium text-ink">{totalOrdens}</span>
+              </p>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
+                <Button
+                  variante="secundario"
+                  icone={ChevronLeft}
+                  aria-label="Página anterior"
+                  className="!min-h-11"
                   disabled={pagina <= 1}
                   onClick={() => {
                     setPagina((p) => Math.max(1, p - 1));
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="min-h-[46px] px-3.5 py-2 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#3A5C90] text-white font-bold text-sm flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
                 >
-                  <ChevronLeft className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-                  <span>Anterior</span>
-                </button>
-
-                <span className="min-h-[46px] px-3.5 py-2 rounded-xl bg-[#12274D] border border-[#38BDF8] text-white font-mono font-bold text-sm flex items-center tabular-nums">
-                  Página {pagina} de {totalPaginas}
+                  Anterior
+                </Button>
+                <span className="px-2 text-sm tabular-nums text-ink-muted">
+                  {pagina} de {totalPaginas}
                 </span>
-
-                <button
-                  type="button"
+                <Button
+                  variante="secundario"
+                  aria-label="Próxima página"
+                  className="!min-h-11"
                   disabled={pagina >= totalPaginas}
                   onClick={() => {
                     setPagina((p) => Math.min(totalPaginas, p + 1));
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="min-h-[46px] px-3.5 py-2 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#3A5C90] text-white font-bold text-sm flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
                 >
-                  <span>Próxima</span>
-                  <ChevronRight className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-                </button>
+                  Próxima
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                </Button>
               </div>
             </nav>
           )}

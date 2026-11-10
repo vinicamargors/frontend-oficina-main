@@ -2,25 +2,41 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
 import { Cliente, StatusOS, UltimaOS, Usuario, Veiculo } from '../types';
 import {
-  Users,
-  Car,
-  Search,
-  Plus,
-  Edit2,
-  Phone,
-  MessageCircle,
-  ClipboardList,
-  Wrench,
-  CheckCircle2,
   AlertTriangle,
-  X,
-  FileText,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Car,
   ExternalLink,
-  History,
+  Plus,
+  Search,
   Sparkles,
+  Users,
 } from 'lucide-react';
+import {
+  Button,
+  CLASSE_CAMPO,
+  Field,
+  PageHeader,
+  Panel,
+  PlateChip,
+  Skeleton,
+  StatusBadge,
+  STATUS_OS,
+  Tabs,
+} from '../components/ui';
+import { Folha } from '../components/Folha';
+import { LinhaCliente } from './clientes/LinhaCliente';
+import { LinhaVeiculo } from './clientes/LinhaVeiculo';
+import {
+  PAGE_SIZE,
+  agruparPor,
+  faixaDaPagina,
+  filtrarClientes,
+  filtrarVeiculos,
+  formatarDataCurta,
+  formatarMoeda,
+} from './clientes/auxiliares';
 
 interface ClientesVeiculosProps {
   empresaId: string;
@@ -41,68 +57,6 @@ interface NovoVeiculoRascunho {
   msgPlaca?: string;
 }
 
-const PAGE_SIZE = 50;
-
-const STATUS_META: Record<
-  StatusOS,
-  { label: string; badgeBg: string; badgeText: string }
-> = {
-  ORCAMENTO: {
-    label: 'Orçamento',
-    badgeBg: 'bg-amber-500/20 border-amber-500',
-    badgeText: 'text-amber-300',
-  },
-  AGUARDANDO_PECA: {
-    label: 'Aguardando Peça',
-    badgeBg: 'bg-sky-500/20 border-sky-500',
-    badgeText: 'text-sky-300',
-  },
-  EXECUCAO: {
-    label: 'Em Execução',
-    badgeBg: 'bg-blue-500/20 border-blue-500',
-    badgeText: 'text-blue-300',
-  },
-  FINALIZADO: {
-    label: 'Finalizado / Pronto',
-    badgeBg: 'bg-emerald-500/20 border-emerald-500',
-    badgeText: 'text-emerald-300',
-  },
-  PAGO: {
-    label: 'Pago & Entregue',
-    badgeBg: 'bg-teal-500/20 border-teal-500',
-    badgeText: 'text-teal-300',
-  },
-};
-
-function formatarMoeda(valor: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(valor || 0);
-}
-
-function formatarDataCurta(iso?: string | null): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(d);
-}
-
-function montarLinkWhatsApp(telefone?: string | null, nomeCliente?: string, placa?: string): string | null {
-  if (!telefone) return null;
-  const digitos = telefone.replace(/\D/g, '');
-  if (digitos.length < 10) return null;
-  const foneComDdi = digitos.startsWith('55') && digitos.length >= 12 ? digitos : `55${digitos}`;
-  const saudacao = nomeCliente
-    ? `Olá ${nomeCliente.split(' ')[0]}, tudo bem? Aqui é da oficina sobre${placa ? ` o veículo ${placa}` : ' seu atendimento'}.`
-    : 'Olá, tudo bem? Aqui é da oficina.';
-  return `https://wa.me/${foneComDdi}?text=${encodeURIComponent(saudacao)}`;
-}
-
 function criarRascunhoVeiculoVazio(): NovoVeiculoRascunho {
   return {
     tempId: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -116,6 +70,9 @@ function criarRascunhoVeiculoVazio(): NovoVeiculoRascunho {
   };
 }
 
+const CLASSE_TEXTAREA =
+  'min-h-24 w-full rounded-lg border border-line-strong bg-sunken p-3 text-sm text-ink placeholder:text-ink-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
+
 export function ClientesVeiculos({
   empresaId,
   initialViewMode = 'clientes',
@@ -124,6 +81,9 @@ export function ClientesVeiculos({
   const [viewMode, setViewMode] = useState<'clientes' | 'veiculos'>(initialViewMode);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
+  // Saída pendente de confirmação ("Descartar alterações?") quando uma folha de formulário tem dados não salvos
+  const [saidaPendente, setSaidaPendente] = useState<(() => void) | null>(null);
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
@@ -217,14 +177,7 @@ export function ClientesVeiculos({
   };
 
   // Mapas auxiliares rápidos
-  const veiculosPorCliente = useMemo(() => {
-    const map: Record<string, Veiculo[]> = {};
-    for (const v of veiculos) {
-      if (!map[v.cliente_id]) map[v.cliente_id] = [];
-      map[v.cliente_id].push(v);
-    }
-    return map;
-  }, [veiculos]);
+  const veiculosPorCliente = useMemo(() => agruparPor(veiculos, (v) => v.cliente_id), [veiculos]);
 
   const clientePorId = useMemo(() => {
     const map: Record<string, Cliente> = {};
@@ -234,91 +187,28 @@ export function ClientesVeiculos({
     return map;
   }, [clientes]);
 
-  const osPorVeiculo = useMemo(() => {
-    const map: Record<string, UltimaOS[]> = {};
-    for (const os of historicoGeralOS) {
-      const vid = os.veiculo_id;
-      if (vid) {
-        if (!map[vid]) map[vid] = [];
-        map[vid].push(os);
-      }
-    }
-    return map;
-  }, [historicoGeralOS]);
+  const osPorVeiculo = useMemo(() => agruparPor(historicoGeralOS, (os) => os.veiculo_id), [historicoGeralOS]);
 
-  const osPorCliente = useMemo(() => {
-    const map: Record<string, UltimaOS[]> = {};
-    for (const os of historicoGeralOS) {
-      const cid = os.cliente_id;
-      if (cid) {
-        if (!map[cid]) map[cid] = [];
-        map[cid].push(os);
-      }
-    }
-    return map;
-  }, [historicoGeralOS]);
+  const osPorCliente = useMemo(() => agruparPor(historicoGeralOS, (os) => os.cliente_id), [historicoGeralOS]);
 
   // Filtro unificado por Nome, Telefone, CPF/CNPJ, Placa ou Modelo
-  const clientesFiltrados = useMemo(() => {
-    const termo = searchTerm.trim().toLowerCase();
-    if (!termo) return clientes;
-    const termoAlfanum = termo.replace(/[^a-z0-9]/g, '');
+  const clientesFiltrados = useMemo(
+    () => filtrarClientes(clientes, veiculosPorCliente, searchTerm),
+    [clientes, veiculosPorCliente, searchTerm]
+  );
 
-    return clientes.filter((c) => {
-      const nomeMatch = c.nome.toLowerCase().includes(termo);
-      const telLimpo = (c.telefone || '').replace(/\D/g, '');
-      const cpfLimpo = (c.cpf_cnpj || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const telMatch =
-        (c.telefone || '').toLowerCase().includes(termo) ||
-        (termoAlfanum.length >= 3 && telLimpo.includes(termoAlfanum));
-      const cpfMatch =
-        (c.cpf_cnpj || '').toLowerCase().includes(termo) ||
-        (termoAlfanum.length >= 3 && cpfLimpo.includes(termoAlfanum));
-
-      const carros = veiculosPorCliente[c.id] || [];
-      const carroMatch = carros.some((v) => {
-        const placaLower = v.placa.toLowerCase();
-        const placaLimpa = placaLower.replace(/[^a-z0-9]/g, '');
-        return (
-          placaLower.includes(termo) ||
-          (termoAlfanum.length >= 2 && placaLimpa.includes(termoAlfanum)) ||
-          (v.modelo || '').toLowerCase().includes(termo) ||
-          (v.marca || '').toLowerCase().includes(termo)
-        );
-      });
-
-      return nomeMatch || telMatch || cpfMatch || carroMatch;
-    });
-  }, [clientes, veiculosPorCliente, searchTerm]);
-
-  const veiculosFiltrados = useMemo(() => {
-    const termo = searchTerm.trim().toLowerCase();
-    if (!termo) return veiculos;
-    const termoAlfanum = termo.replace(/[^a-z0-9]/g, '');
-
-    return veiculos.filter((v) => {
-      const placaLower = v.placa.toLowerCase();
-      const placaLimpa = placaLower.replace(/[^a-z0-9]/g, '');
-      const modeloMatch = (v.modelo || '').toLowerCase().includes(termo);
-      const marcaMatch = (v.marca || '').toLowerCase().includes(termo);
-      const dono = clientePorId[v.cliente_id];
-      const nomeDono = (dono?.nome || v.clientes?.nome || '').toLowerCase();
-      const telDono = (dono?.telefone || v.clientes?.telefone || '').replace(/\D/g, '');
-
-      return (
-        placaLower.includes(termo) ||
-        (termoAlfanum.length >= 2 && placaLimpa.includes(termoAlfanum)) ||
-        modeloMatch ||
-        marcaMatch ||
-        nomeDono.includes(termo) ||
-        (termoAlfanum.length >= 3 && telDono.includes(termoAlfanum))
-      );
-    });
-  }, [veiculos, clientePorId, searchTerm]);
+  const veiculosFiltrados = useMemo(
+    () => filtrarVeiculos(veiculos, clientePorId, searchTerm),
+    [veiculos, clientePorId, searchTerm]
+  );
 
   const totalItems =
     viewMode === 'clientes' ? clientesFiltrados.length : veiculosFiltrados.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const { inicio: inicioRegistro, fim: fimRegistro, totalPaginas: totalPages } = faixaDaPagina(
+    currentPage,
+    totalItems,
+    PAGE_SIZE
+  );
 
   const clientesPaginados = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -329,6 +219,14 @@ export function ClientesVeiculos({
     const start = (currentPage - 1) * PAGE_SIZE;
     return veiculosFiltrados.slice(start, start + PAGE_SIZE);
   }, [veiculosFiltrados, currentPage]);
+
+  const alternarExpandido = (id: string) =>
+    setExpandidos((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
 
   // Abertura da Ficha de Novo Cliente + Veículos
   const abrirFichaNovoCliente = () => {
@@ -601,118 +499,133 @@ export function ClientesVeiculos({
       setCriandoOsRapida(false);
     }
   };
+  const fichaSuja =
+    cliNome !== (clienteEmEdicao?.nome || '') ||
+    cliTelefone !== (clienteEmEdicao?.telefone || '') ||
+    cliCpfCnpj !== (clienteEmEdicao?.cpf_cnpj || '') ||
+    cliEndereco !== (clienteEmEdicao?.endereco || '') ||
+    novosVeiculosRascunho.some((r) => r.placa || r.modelo || r.marca || r.cor || r.ano || r.km_atual);
+  const veiculoSujo =
+    veiculoEmEdicao !== null &&
+    (editVeiPlaca !== (veiculoEmEdicao.placa || '') ||
+      editVeiModelo !== (veiculoEmEdicao.modelo || '') ||
+      editVeiMarca !== (veiculoEmEdicao.marca || '') ||
+      editVeiCor !== (veiculoEmEdicao.cor || '') ||
+      editVeiAno !== (veiculoEmEdicao.ano ? String(veiculoEmEdicao.ano) : '') ||
+      editVeiKm !== (veiculoEmEdicao.km_atual != null ? String(veiculoEmEdicao.km_atual) : '') ||
+      editVeiChassi !== (veiculoEmEdicao.chassi || ''));
+  const osSuja =
+    novaOsRapida !== null &&
+    (osDescricao.trim() !== '' ||
+      osMecanicoId !== '' ||
+      osKmAtual !== (novaOsRapida.veiculo.km_atual ? String(novaOsRapida.veiculo.km_atual) : ''));
+
+  useEffect(() => {
+    if (!fichaAberta && !veiculoEmEdicao && !novaOsRapida) setSaidaPendente(null);
+  }, [fichaAberta, veiculoEmEdicao, novaOsRapida]);
+
+  // Esc, voltar do Android e Cancelar: com dados digitados, pede confirmação em vez de descartar em silêncio
+  const sairDaFolha = (sujo: boolean, fechar: () => void) => {
+    if (sujo) setSaidaPendente(() => fechar);
+    else fechar();
+  };
+  const fecharFicha = () => {
+    setSaidaPendente(null);
+    setFichaAberta(false);
+  };
+  const fecharEdicaoVeiculo = () => {
+    setSaidaPendente(null);
+    setVeiculoEmEdicao(null);
+  };
+  const fecharOsRapida = () => {
+    setSaidaPendente(null);
+    setNovaOsRapida(null);
+  };
+
+  const confirmarDescarte = saidaPendente && (
+    <div
+      role="alert"
+      ref={(el) => el?.scrollIntoView({ block: 'nearest' })}
+      className="space-y-3 rounded-xl bg-warning/15 p-4"
+    >
+      <p className="text-sm font-medium text-ink">Descartar alterações? O que você digitou será perdido.</p>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variante="secundario" onClick={() => setSaidaPendente(null)}>
+          Continuar editando
+        </Button>
+        <Button
+          variante="perigo"
+          onClick={() => {
+            const fechar = saidaPendente;
+            setSaidaPendente(null);
+            fechar();
+          }}
+        >
+          Descartar
+        </Button>
+      </div>
+    </div>
+  );
+
+  const alertaErro = (mensagem: string) => (
+    <p role="alert" className="flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
+      <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span>{mensagem}</span>
+    </p>
+  );
+
+  const botaoPlaca = (buscando: boolean | undefined, aoClicar: () => void) => (
+    <Button variante="secundario" icone={Sparkles} disabled={buscando} onClick={aoClicar} className="shrink-0">
+      {buscando ? 'Buscando…' : 'Buscar Placa'}
+    </Button>
+  );
+
+  const vazio = !loading && totalItems === 0;
+  const semBusca = searchTerm.trim() === '';
+  const rotuloPagina = viewMode === 'clientes' ? 'clientes' : 'veículos';
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      {/* CABEÇALHO UNIFICADO COMPACTO DE CLIENTES & VEÍCULOS */}
-      <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h1 className="text-lg sm:text-2xl font-extrabold text-white leading-tight">
-              Clientes &amp; Veículos
-            </h1>
-            <p className="text-xs text-slate-400">
-              {clientes.length} clientes &bull; {veiculos.length} veículos
-            </p>
-          </div>
+    <div>
+      <PageHeader
+        titulo="Clientes & Veículos"
+        complemento={
+          loading ? undefined : (
+            <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle">{clientes.length}</span>
+          )
+        }
+        abaixo={loading ? undefined : <span className="tabular-nums">{veiculos.length} veículos cadastrados</span>}
+        acoes={
+          <Button icone={Plus} onClick={abrirFichaNovoCliente}>
+            Novo cliente
+          </Button>
+        }
+      />
 
-          <button
-            type="button"
-            onClick={abrirFichaNovoCliente}
-            className="sm:hidden min-h-[38px] px-3 py-1.5 rounded-xl bg-[#38BDF8] text-[#071226] font-extrabold text-xs flex items-center gap-1 cursor-pointer shrink-0"
-          >
-            <Plus className="w-4 h-4 stroke-[2.8]" aria-hidden="true" />
-            <span>+ Novo</span>
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between sm:justify-end gap-2">
-          {/* Alternador Rápido: Por Clientes vs Por Placas/Veículos */}
-          <div
-            role="group"
-            aria-label="Modo de visualização"
-            className="flex-1 sm:flex-initial bg-[#071226] p-1 rounded-xl border border-[#264577] grid grid-cols-2 sm:flex items-center gap-1"
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setViewMode('clientes');
-                setCurrentPage(1);
-              }}
-              className={`min-h-[36px] sm:min-h-[40px] px-3 py-1 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
-                viewMode === 'clientes'
-                  ? 'bg-[#38BDF8] text-[#071226]'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Clientes ({clientes.length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setViewMode('veiculos');
-                setCurrentPage(1);
-              }}
-              className={`min-h-[36px] sm:min-h-[40px] px-3 py-1 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
-                viewMode === 'veiculos'
-                  ? 'bg-[#38BDF8] text-[#071226]'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Car className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Placas ({veiculos.length})</span>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={abrirFichaNovoCliente}
-            className="hidden sm:flex min-h-[44px] px-4 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm items-center justify-center gap-2 cursor-pointer"
-          >
-            <Plus className="w-5 h-5 stroke-[2.8]" aria-hidden="true" />
-            <span>+ Novo Cliente &amp; Veículo</span>
-          </button>
-        </div>
-      </div>
-
-      {/* FEEDBACKS */}
       {feedbackSucesso && (
-        <div
+        <p
           role="status"
-          aria-live="polite"
-          className="bg-emerald-950/90 border border-emerald-500 rounded-xl p-2.5 flex items-center justify-between gap-2 text-emerald-100 text-xs sm:text-sm font-bold"
+          className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-success/15 px-4 py-3 text-sm font-medium text-success"
         >
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" />
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{feedbackSucesso}</span>
-          </div>
+          </span>
           <button
             type="button"
             onClick={() => setFeedbackSucesso('')}
-            className="text-xs underline cursor-pointer"
+            className="min-h-11 cursor-pointer px-2 text-sm underline"
           >
             Fechar
           </button>
-        </div>
+        </p>
       )}
 
-      {erro && !fichaAberta && !veiculoEmEdicao && !novaOsRapida && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          className="bg-red-950/90 border border-red-500 rounded-xl p-2.5 flex items-center gap-2 text-red-100 text-xs sm:text-sm font-bold"
-        >
-          <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
-          <span>{erro}</span>
-        </div>
-      )}
+      {erro && !fichaAberta && !veiculoEmEdicao && !novaOsRapida && <div className="mb-4">{alertaErro(erro)}</div>}
 
-      {/* BARRA DE PESQUISA UNIFICADA COMPACTA (<search>) */}
-      <search className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-2.5 sm:p-3">
+      <search className="mb-4 block space-y-4">
         <div className="relative">
           <Search
-            className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
             aria-hidden="true"
           />
           <input
@@ -727,1181 +640,644 @@ export function ClientesVeiculos({
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
-            placeholder="Placa, nome do cliente, WhatsApp, CPF ou modelo…"
+            placeholder="Placa, nome, WhatsApp, CPF ou modelo…"
             aria-label="Pesquisar por placa, cliente, telefone, CPF ou modelo"
-            className="w-full min-h-[40px] sm:min-h-[46px] pl-10 pr-20 py-1.5 rounded-lg sm:rounded-xl bg-[#071226] border border-[#264577] focus:border-[#38BDF8] text-white text-sm font-medium"
+            className={`${CLASSE_CAMPO} pl-9`}
           />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchTerm('');
-                setCurrentPage(1);
-              }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded bg-[#12274D] hover:bg-[#264577] text-xs font-bold text-slate-200 cursor-pointer"
-            >
-              Limpar
-            </button>
-          )}
         </div>
+        <Tabs
+          rotuloGrupo="Modo de visualização"
+          idPainel="painel-clientes-veiculos"
+          ativo={viewMode}
+          aoMudar={(id) => {
+            setViewMode(id as 'clientes' | 'veiculos');
+            setCurrentPage(1);
+          }}
+          itens={[
+            { id: 'clientes', rotulo: `Clientes · ${clientes.length}`, icone: Users },
+            { id: 'veiculos', rotulo: `Placas · ${veiculos.length}`, icone: Car },
+          ]}
+        />
       </search>
 
-      {/* CONTEÚDO PRINCIPAL: LISTA POR CLIENTES OU POR PLACAS */}
-      {loading ? (
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 flex flex-col items-center justify-center gap-2">
-          <progress aria-label="Carregando clientes e veículos" className="loading-spinner" />
-          <p className="text-slate-300 text-sm font-bold">Carregando clientes e frota…</p>
-        </div>
-      ) : viewMode === 'clientes' ? (
-        clientesPaginados.length === 0 ? (
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center space-y-3">
-            <Users className="w-10 h-10 text-slate-500 mx-auto" aria-hidden="true" />
-            <div className="space-y-1">
-              <h2 className="text-base sm:text-lg font-bold text-white">
-                Nenhum cliente encontrado
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={abrirFichaNovoCliente}
-              className="min-h-[42px] px-4 py-2 rounded-xl bg-[#38BDF8] text-[#071226] font-extrabold text-xs sm:text-sm inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" aria-hidden="true" />
-              <span>Cadastrar Cliente &amp; Veículo</span>
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {clientesPaginados.map((cli) => {
-              const carros = veiculosPorCliente[cli.id] || [];
-              const osDoCliente = osPorCliente[cli.id] || [];
-              const zapUrl = montarLinkWhatsApp(cli.telefone, cli.nome);
-
-              return (
-                <article
-                  key={cli.id}
-                  className="bg-[#0B1B36] border border-[#12274D] hover:border-[#264577] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-2.5 transition-colors"
-                >
-                  {/* Linha Superior do Cliente Compacta */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <h2 className="text-sm sm:text-lg font-extrabold text-white truncate">
-                          {cli.nome}
-                        </h2>
-                        <span className="px-2 py-0.5 rounded bg-[#1E3A8A] text-blue-100 text-[10px] sm:text-xs font-bold shrink-0">
-                          {carros.length} {carros.length === 1 ? 'carro' : 'carros'}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-300 mt-0.5">
-                        <span className="inline-flex items-center gap-1 font-semibold text-slate-200">
-                          <Phone className="w-3 h-3 text-[#38BDF8]" aria-hidden="true" />
-                          <span>{cli.telefone || 'Sem fone'}</span>
-                        </span>
-                        {cli.cpf_cnpj && (
-                          <span className="hidden sm:inline-flex items-center gap-1 text-slate-400">
-                            <FileText className="w-3 h-3" aria-hidden="true" />
-                            <span>{cli.cpf_cnpj}</span>
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Ações Rápidas do Cliente (Ícones no Mobile, Texto no Desktop) */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {zapUrl && (
-                        <a
-                          href={zapUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`WhatsApp de ${cli.nome}`}
-                          title="Chamar no WhatsApp"
-                          className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs inline-flex items-center justify-center gap-1.5"
-                        >
-                          <MessageCircle className="w-4 h-4" aria-hidden="true" />
-                          <span className="hidden md:inline">WhatsApp</span>
-                        </a>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => abrirHistoricoCliente(cli)}
-                        aria-label={`Histórico de ${cli.nome}`}
-                        title="Histórico de OS do Cliente"
-                        className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-200 font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <ClipboardList className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
-                        <span className="hidden md:inline">Histórico</span>
-                        <span className="text-[11px] font-mono">({osDoCliente.length})</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => abrirFichaEditarCliente(cli, true)}
-                        aria-label={`Adicionar veículo para ${cli.nome}`}
-                        title="Adicionar Veículo"
-                        className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-[#1E3A8A] hover:bg-blue-800 border border-blue-500 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
-                        <Car className="w-3.5 h-3.5 sm:hidden" aria-hidden="true" />
-                        <span className="hidden sm:inline">+ Veículo</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => abrirFichaEditarCliente(cli, false)}
-                        aria-label={`Editar ficha de ${cli.nome}`}
-                        title="Editar Ficha do Cliente"
-                        className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#3A5C90] text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Edit2 className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
-                        <span className="hidden md:inline">Editar</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Lista Compacta dos Veículos do Cliente */}
-                  {carros.length === 0 ? (
-                    <div className="bg-[#071226] border border-dashed border-[#264577] rounded-lg px-3 py-2 flex items-center justify-between gap-2">
-                      <span className="text-xs text-slate-400">
-                        Sem veículo vinculado.
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => abrirFichaEditarCliente(cli, true)}
-                        className="px-2.5 py-1 rounded bg-[#38BDF8] text-[#071226] font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                        <span>+ Veículo</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-                      {carros.map((v) => {
-                        const osDoCarro = osPorVeiculo[v.id] || [];
-                        return (
-                          <div
-                            key={v.id}
-                            className="bg-[#071226] border border-[#12274D] hover:border-[#3A5C90] rounded-lg px-2.5 py-2 flex items-center justify-between gap-2"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="px-2 py-0.5 rounded bg-[#1E3A8A] border border-blue-400 text-white font-mono font-extrabold text-xs tracking-wider shrink-0">
-                                  {v.placa}
-                                </span>
-                                <span className="text-xs sm:text-sm font-extrabold text-white truncate">
-                                  {v.modelo}
-                                </span>
-                              </div>
-                              <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 truncate">
-                                {v.marca && <span>{v.marca}</span>}
-                                {v.cor && <span>• {v.cor}</span>}
-                                {v.km_atual != null && (
-                                  <span className="inline-flex items-center gap-0.5 text-slate-300 font-semibold">
-                                    • {Number(v.km_atual).toLocaleString('pt-BR')} km
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => abrirHistoricoVeiculo(v, cli)}
-                                title={`Histórico (${osDoCarro.length} OS)`}
-                                aria-label={`Histórico do veículo ${v.placa}`}
-                                className="h-8 px-2 rounded-lg bg-[#0B1B36] hover:bg-[#12274D] border border-[#264577] text-slate-200 font-bold text-xs flex items-center gap-1 cursor-pointer"
-                              >
-                                <History className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" />
-                                <span className="font-mono text-[11px]">{osDoCarro.length}</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => abrirModalEditarVeiculo(v)}
-                                title="Editar dados do veículo"
-                                aria-label={`Editar veículo ${v.placa}`}
-                                className="h-8 w-8 rounded-lg bg-[#0B1B36] hover:bg-[#12274D] border border-[#264577] text-slate-200 flex items-center justify-center cursor-pointer"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => iniciarNovaOsParaVeiculo(v, cli)}
-                                className="h-8 px-2.5 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-1 cursor-pointer"
-                              >
-                                <Wrench className="w-3.5 h-3.5 stroke-[2.5]" aria-hidden="true" />
-                                <span>+ OS</span>
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-          </div>
-        )
-      ) : (
-        /* VISÃO DIRETA POR PLACAS / VEÍCULOS COMPACTA */
-        veiculosPaginados.length === 0 ? (
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center space-y-2">
-            <Car className="w-10 h-10 text-slate-500 mx-auto" aria-hidden="true" />
-            <h2 className="text-base sm:text-lg font-bold text-white">
-              Nenhum veículo encontrado
+      <div role="tabpanel" id="painel-clientes-veiculos" aria-labelledby={`aba-${viewMode}`}>
+        {loading ? (
+          <Panel>
+            <Skeleton linhas={6} />
+          </Panel>
+        ) : vazio ? (
+          <Panel espaco="lg" className="space-y-2">
+            <h2 className="text-lg font-semibold text-ink">
+              {semBusca
+                ? viewMode === 'clientes'
+                  ? 'Nenhum cliente cadastrado'
+                  : 'Nenhum veículo cadastrado'
+                : viewMode === 'clientes'
+                  ? 'Nenhum cliente encontrado'
+                  : 'Nenhum veículo encontrado'}
             </h2>
-          </div>
+            <p className="text-sm text-ink-muted">
+              {semBusca
+                ? 'Use “Novo cliente” para cadastrar o primeiro cliente com seus veículos.'
+                : 'Confira a grafia ou busque por outra placa, nome ou telefone.'}
+            </p>
+            {!semBusca && (
+              <Button
+                variante="secundario"
+                onClick={() => {
+                  setSearchTerm('');
+                  setCurrentPage(1);
+                }}
+              >
+                Limpar busca
+              </Button>
+            )}
+          </Panel>
+        ) : viewMode === 'clientes' ? (
+          <Panel as="ul" espaco="nenhum" aria-label="Clientes" className="divide-y divide-line">
+            {clientesPaginados.map((cli) => (
+              <LinhaCliente
+                key={cli.id}
+                cliente={cli}
+                carros={veiculosPorCliente[cli.id] || []}
+                osPorVeiculo={osPorVeiculo}
+                totalOS={(osPorCliente[cli.id] || []).length}
+                expandido={expandidos.has(cli.id)}
+                aoAlternar={() => alternarExpandido(cli.id)}
+                aoEditar={() => abrirFichaEditarCliente(cli, false)}
+                aoAdicionarVeiculo={() => abrirFichaEditarCliente(cli, true)}
+                aoHistorico={() => abrirHistoricoCliente(cli)}
+                aoHistoricoVeiculo={(v) => abrirHistoricoVeiculo(v, cli)}
+                aoEditarVeiculo={abrirModalEditarVeiculo}
+                aoAbrirOS={(v) => iniciarNovaOsParaVeiculo(v, cli)}
+              />
+            ))}
+          </Panel>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
+          <Panel as="ul" espaco="nenhum" aria-label="Veículos" className="divide-y divide-line">
             {veiculosPaginados.map((v) => {
               const dono = clientePorId[v.cliente_id];
-              const nomeDono = dono?.nome || v.clientes?.nome || 'Cliente';
-              const telDono = dono?.telefone || v.clientes?.telefone || '';
-              const zapUrl = montarLinkWhatsApp(telDono, nomeDono, v.placa);
-              const osDoCarro = osPorVeiculo[v.id] || [];
-
               return (
-                <article
+                <LinhaVeiculo
                   key={v.id}
-                  className="bg-[#0B1B36] border border-[#12274D] hover:border-[#3A5C90] rounded-xl p-3 flex flex-col justify-between gap-2.5"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded bg-[#1E3A8A] border border-blue-400 text-white font-mono font-extrabold text-sm tracking-wider shrink-0">
-                          {v.placa}
-                        </span>
-                        <h2 className="text-sm sm:text-base font-extrabold text-white truncate">
-                          {v.modelo}
-                        </h2>
-                      </div>
-                      <div className="text-xs text-slate-400 flex flex-wrap items-center gap-2 mt-1">
-                        <strong className="text-slate-200">{nomeDono}</strong>
-                        {telDono && <span>• {telDono}</span>}
-                        {v.km_atual != null && (
-                          <span>• {Number(v.km_atual).toLocaleString('pt-BR')} km</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1 shrink-0">
-                      {zapUrl && (
-                        <a
-                          href={zapUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`WhatsApp de ${nomeDono}`}
-                          className="h-8 w-8 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white flex items-center justify-center"
-                        >
-                          <MessageCircle className="w-4 h-4" aria-hidden="true" />
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => abrirModalEditarVeiculo(v)}
-                        aria-label={`Editar veículo ${v.placa}`}
-                        className="h-8 w-8 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-200 flex items-center justify-center cursor-pointer"
-                      >
-                        <Edit2 className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#12274D]">
-                    <button
-                      type="button"
-                      onClick={() => abrirHistoricoVeiculo(v, dono)}
-                      className="flex-1 h-8 px-2.5 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <History className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" />
-                      <span>Histórico ({osDoCarro.length})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => iniciarNovaOsParaVeiculo(v, dono)}
-                      className="flex-1 h-8 px-2.5 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <Wrench className="w-3.5 h-3.5 stroke-[2.5]" aria-hidden="true" />
-                      <span>+ Abrir OS</span>
-                    </button>
-                  </div>
-                </article>
+                  veiculo={v}
+                  nomeDono={dono?.nome || v.clientes?.nome || 'Cliente'}
+                  telDono={dono?.telefone || v.clientes?.telefone || ''}
+                  qtdOS={(osPorVeiculo[v.id] || []).length}
+                  aoHistorico={() => abrirHistoricoVeiculo(v, dono)}
+                  aoEditar={() => abrirModalEditarVeiculo(v)}
+                  aoAbrirOS={() => iniciarNovaOsParaVeiculo(v, dono)}
+                />
               );
             })}
-          </div>
-        )
-      )}
+          </Panel>
+        )}
+      </div>
 
-      {/* PAGINAÇÃO */}
       {totalPages > 1 && (
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm text-slate-300 font-semibold">
-            Página <strong className="text-white">{currentPage}</strong> de{' '}
-            <strong className="text-white">{totalPages}</strong> ({totalItems} registros)
-          </span>
+        <nav
+          aria-label={`Paginação de ${rotuloPagina}`}
+          className="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row"
+        >
+          <p className="text-sm tabular-nums text-ink-muted">
+            Mostrando{' '}
+            <span className="font-medium text-ink">
+              {inicioRegistro}–{fimRegistro}
+            </span>{' '}
+            de <span className="font-medium text-ink">{totalItems}</span>
+          </p>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variante="secundario"
+              icone={ChevronLeft}
+              aria-label="Página anterior"
+              className="!min-h-11"
               disabled={currentPage <= 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="min-h-[44px] px-4 py-2 rounded-xl bg-[#071226] border border-[#264577] disabled:opacity-40 text-white font-bold text-sm inline-flex items-center gap-1.5 cursor-pointer"
+              onClick={() => {
+                setCurrentPage((p) => Math.max(1, p - 1));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
-              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-              <span>Anterior</span>
-            </button>
-            <button
-              type="button"
+              Anterior
+            </Button>
+            <span className="px-2 text-sm tabular-nums text-ink-muted">
+              {currentPage} de {totalPages}
+            </span>
+            <Button
+              variante="secundario"
+              aria-label="Próxima página"
+              className="!min-h-11"
               disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="min-h-[44px] px-4 py-2 rounded-xl bg-[#071226] border border-[#264577] disabled:opacity-40 text-white font-bold text-sm inline-flex items-center gap-1.5 cursor-pointer"
+              onClick={() => {
+                setCurrentPage((p) => Math.min(totalPages, p + 1));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
-              <span>Próxima</span>
-              <ChevronRight className="w-4 h-4" aria-hidden="true" />
-            </button>
+              Próxima
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </Button>
           </div>
-        </div>
+        </nav>
       )}
 
-      {/* MODAL 1: FICHA DO CLIENTE + MÚLTIPLOS VEÍCULOS (CRIAR OU EDITAR) */}
-      {fichaAberta && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="titulo-modal-ficha-cliente"
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
-        >
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto p-5 sm:p-6 space-y-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#12274D]">
-              <div>
-                <h2
-                  id="titulo-modal-ficha-cliente"
-                  className="text-xl sm:text-2xl font-extrabold text-white"
-                >
-                  {clienteEmEdicao
-                    ? `Ficha de ${clienteEmEdicao.nome}`
-                    : 'Novo Cliente & Veículo(s)'}
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                  Cadastre ou atualize os dados do cliente e vincule quantos veículos precisar.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setFichaAberta(false)}
-                aria-label="Fechar ficha"
-                className="p-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-300 hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" aria-hidden="true" />
-              </button>
+      {/* FOLHA 1: FICHA DO CLIENTE + MÚLTIPLOS VEÍCULOS (CRIAR OU EDITAR) */}
+      <Folha
+        aberto={fichaAberta}
+        tamanho="lg"
+        fecharNoFundo={false}
+        titulo={clienteEmEdicao ? `Ficha de ${clienteEmEdicao.nome}` : 'Novo cliente e veículos'}
+        aoCancelar={() => sairDaFolha(fichaSuja, fecharFicha)}
+      >
+        <p className="-mt-3 text-sm text-ink-muted">
+          Cadastre ou atualize os dados do cliente e vincule quantos veículos precisar.
+        </p>
+        {confirmarDescarte}
+        {erro && alertaErro(erro)}
+        <form onSubmit={handleSalvarFichaCliente} className="space-y-6">
+          <fieldset className="space-y-4">
+            <legend className="mb-3 text-base font-semibold text-ink">Dados do cliente</legend>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field rotulo="Nome Completo *">
+                <input
+                  id="cli-nome"
+                  name="nome"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  value={cliNome}
+                  onChange={(e) => setCliNome(e.target.value)}
+                  placeholder="Ex: João Carlos da Silva"
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
+              <Field rotulo="WhatsApp / Telefone *">
+                <input
+                  id="cli-telefone"
+                  name="telefone"
+                  type="tel"
+                  inputMode="tel"
+                  required
+                  autoComplete="tel"
+                  value={cliTelefone}
+                  onChange={(e) => setCliTelefone(e.target.value)}
+                  placeholder="(11) 99999-9999"
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
+              <Field rotulo="CPF ou CNPJ (opcional)">
+                <input
+                  id="cli-cpf-cnpj"
+                  name="cpf_cnpj"
+                  type="text"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  value={cliCpfCnpj}
+                  onChange={(e) => setCliCpfCnpj(e.target.value)}
+                  placeholder="000.000.000-00"
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
+              <Field rotulo="Endereço (opcional)">
+                <input
+                  id="cli-endereco"
+                  name="endereco"
+                  type="text"
+                  autoComplete="street-address"
+                  value={cliEndereco}
+                  onChange={(e) => setCliEndereco(e.target.value)}
+                  placeholder="Rua, Número, Bairro, Cidade"
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
             </div>
+          </fieldset>
 
-            {erro && (
-              <div
-                role="alert"
-                className="bg-red-950 border border-red-500 rounded-xl p-3 text-sm text-red-100 font-bold flex items-center gap-2"
-              >
-                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" aria-hidden="true" />
-                <span>{erro}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSalvarFichaCliente} className="space-y-6">
-              {/* Dados do Cliente */}
-              <fieldset className="space-y-3">
-                <legend className="text-sm font-extrabold uppercase tracking-wider text-[#38BDF8]">
-                  1. Dados do Cliente
-                </legend>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label
-                      htmlFor="cli-nome"
-                      className="block text-xs font-bold text-slate-200 mb-1"
-                    >
-                      Nome Completo *
-                    </label>
-                    <input
-                      id="cli-nome"
-                      name="nome"
-                      type="text"
-                      required
-                      autoComplete="name"
-                      value={cliNome}
-                      onChange={(e) => setCliNome(e.target.value)}
-                      placeholder="Ex: João Carlos da Silva"
-                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="cli-telefone"
-                      className="block text-xs font-bold text-slate-200 mb-1"
-                    >
-                      WhatsApp / Telefone *
-                    </label>
-                    <input
-                      id="cli-telefone"
-                      name="telefone"
-                      type="tel"
-                      inputMode="tel"
-                      required
-                      autoComplete="tel"
-                      value={cliTelefone}
-                      onChange={(e) => setCliTelefone(e.target.value)}
-                      placeholder="(11) 99999-9999"
-                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="cli-cpf-cnpj"
-                      className="block text-xs font-bold text-slate-200 mb-1"
-                    >
-                      CPF ou CNPJ (opcional)
-                    </label>
-                    <input
-                      id="cli-cpf-cnpj"
-                      name="cpf_cnpj"
-                      type="text"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck={false}
-                      value={cliCpfCnpj}
-                      onChange={(e) => setCliCpfCnpj(e.target.value)}
-                      placeholder="000.000.000-00"
-                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="cli-endereco"
-                      className="block text-xs font-bold text-slate-200 mb-1"
-                    >
-                      Endereço (opcional)
-                    </label>
-                    <input
-                      id="cli-endereco"
-                      name="endereco"
-                      type="text"
-                      autoComplete="street-address"
-                      value={cliEndereco}
-                      onChange={(e) => setCliEndereco(e.target.value)}
-                      placeholder="Rua, Número, Bairro, Cidade"
-                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                    />
-                  </div>
-                </div>
-              </fieldset>
-
-              {/* Veículos já cadastrados deste cliente (quando está editando) */}
-              {clienteEmEdicao && (veiculosPorCliente[clienteEmEdicao.id] || []).length > 0 && (
-                <div className="space-y-2.5">
-                  <div className="text-sm font-extrabold uppercase tracking-wider text-blue-300">
-                    Veículos Já Vinculados ({(veiculosPorCliente[clienteEmEdicao.id] || []).length})
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {(veiculosPorCliente[clienteEmEdicao.id] || []).map((v) => (
-                      <div
-                        key={v.id}
-                        className="bg-[#071226] border border-[#264577] rounded-xl p-3 flex items-center justify-between gap-2"
-                      >
-                        <div className="min-w-0">
-                          <span className="px-2 py-0.5 rounded bg-[#1E3A8A] text-white font-mono font-bold text-xs">
-                            {v.placa}
-                          </span>
-                          <div className="text-sm font-bold text-white truncate mt-1">
-                            {v.modelo} {v.marca ? `• ${v.marca}` : ''}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFichaAberta(false);
-                            abrirModalEditarVeiculo(v);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-[#0B1B36] hover:bg-[#12274D] border border-[#3A5C90] text-xs font-bold text-slate-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
-                        >
-                          <Edit2 className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
-                          <span>Editar Carro</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Novos Veículos a Adicionar na Ficha */}
-              <fieldset className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <legend className="text-sm font-extrabold uppercase tracking-wider text-[#38BDF8]">
-                    {clienteEmEdicao
-                      ? '2. Adicionar Novo(s) Veículo(s) a este Cliente'
-                      : '2. Veículo(s) do Cliente'}
-                  </legend>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setNovosVeiculosRascunho((prev) => [
-                        ...prev,
-                        criarRascunhoVeiculoVazio(),
-                      ])
-                    }
-                    className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-800 border border-blue-400 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-                    <span>+ Adicionar Outro Veículo</span>
-                  </button>
-                </div>
-
-                {novosVeiculosRascunho.length === 0 ? (
-                  <p className="text-xs text-slate-400">
-                    Clique em &ldquo;+ Adicionar Outro Veículo&rdquo; acima se quiser cadastrar um carro novo para este cliente agora.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {novosVeiculosRascunho.map((rasc, idx) => (
-                      <div
-                        key={rasc.tempId}
-                        className="bg-[#071226] border-2 border-[#264577] rounded-xl p-4 space-y-3"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-extrabold uppercase text-blue-300">
-                            Novo Veículo #{idx + 1}
-                          </span>
-                          {(novosVeiculosRascunho.length > 1 || clienteEmEdicao) && (
-                            <button
-                              type="button"
-                              onClick={() => removerRascunhoVeiculo(rasc.tempId)}
-                              className="text-xs text-red-400 hover:underline font-bold cursor-pointer"
-                            >
-                              Remover este veículo
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                          <div className="sm:col-span-5">
-                            <label
-                              htmlFor={`placa-${rasc.tempId}`}
-                              className="block text-xs font-bold text-slate-300 mb-1"
-                            >
-                              Placa (com busca automática) *
-                            </label>
-                            <div className="flex gap-2">
-                              <input
-                                id={`placa-${rasc.tempId}`}
-                                name={`placa_${idx}`}
-                                type="text"
-                                autoCorrect="off"
-                                autoCapitalize="characters"
-                                spellCheck={false}
-                                maxLength={8}
-                                value={rasc.placa}
-                                onChange={(e) =>
-                                  atualizarRascunhoVeiculo(rasc.tempId, {
-                                    placa: e.target.value.toUpperCase(),
-                                  })
-                                }
-                                placeholder="ABC1D23"
-                                className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-mono font-bold uppercase text-base"
-                              />
-                              <button
-                                type="button"
-                                disabled={rasc.buscandoPlaca}
-                                onClick={() =>
-                                  consultarPlacaNoRascunho(rasc.tempId, rasc.placa)
-                                }
-                                className="min-h-[46px] px-3 py-2 rounded-xl bg-[#1E3A8A] hover:bg-blue-800 border border-blue-400 text-white font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
-                              >
-                                <Sparkles className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
-                                <span>
-                                  {rasc.buscandoPlaca ? 'Buscando…' : 'Buscar Placa'}
-                                </span>
-                              </button>
-                            </div>
-                            {rasc.msgPlaca && (
-                              <span className="block text-[11px] text-amber-300 font-semibold mt-1">
-                                {rasc.msgPlaca}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="sm:col-span-4">
-                            <label
-                              htmlFor={`modelo-${rasc.tempId}`}
-                              className="block text-xs font-bold text-slate-300 mb-1"
-                            >
-                              Modelo *
-                            </label>
-                            <input
-                              id={`modelo-${rasc.tempId}`}
-                              name={`modelo_${idx}`}
-                              type="text"
-                              value={rasc.modelo}
-                              onChange={(e) =>
-                                atualizarRascunhoVeiculo(rasc.tempId, {
-                                  modelo: e.target.value,
-                                })
-                              }
-                              placeholder="Ex: Onix 1.0 Turbo"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
-                            />
-                          </div>
-
-                          <div className="sm:col-span-3">
-                            <label
-                              htmlFor={`marca-${rasc.tempId}`}
-                              className="block text-xs font-bold text-slate-300 mb-1"
-                            >
-                              Marca / Montadora
-                            </label>
-                            <input
-                              id={`marca-${rasc.tempId}`}
-                              name={`marca_${idx}`}
-                              type="text"
-                              value={rasc.marca}
-                              onChange={(e) =>
-                                atualizarRascunhoVeiculo(rasc.tempId, {
-                                  marca: e.target.value,
-                                })
-                              }
-                              placeholder="Ex: Chevrolet"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
-                            />
-                          </div>
-
-                          <div className="sm:col-span-4">
-                            <label
-                              htmlFor={`cor-${rasc.tempId}`}
-                              className="block text-xs font-bold text-slate-300 mb-1"
-                            >
-                              Cor
-                            </label>
-                            <input
-                              id={`cor-${rasc.tempId}`}
-                              name={`cor_${idx}`}
-                              type="text"
-                              value={rasc.cor}
-                              onChange={(e) =>
-                                atualizarRascunhoVeiculo(rasc.tempId, {
-                                  cor: e.target.value,
-                                })
-                              }
-                              placeholder="Prata / Branco"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
-                            />
-                          </div>
-
-                          <div className="sm:col-span-4">
-                            <label
-                              htmlFor={`ano-${rasc.tempId}`}
-                              className="block text-xs font-bold text-slate-300 mb-1"
-                            >
-                              Ano
-                            </label>
-                            <input
-                              id={`ano-${rasc.tempId}`}
-                              name={`ano_${idx}`}
-                              type="text"
-                              inputMode="numeric"
-                              maxLength={4}
-                              value={rasc.ano}
-                              onChange={(e) =>
-                                atualizarRascunhoVeiculo(rasc.tempId, {
-                                  ano: e.target.value.replace(/\D/g, ''),
-                                })
-                              }
-                              placeholder="2022"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
-                            />
-                          </div>
-
-                          <div className="sm:col-span-4">
-                            <label
-                              htmlFor={`km-${rasc.tempId}`}
-                              className="block text-xs font-bold text-slate-300 mb-1"
-                            >
-                              KM Atual
-                            </label>
-                            <input
-                              id={`km-${rasc.tempId}`}
-                              name={`km_${idx}`}
-                              type="text"
-                              inputMode="numeric"
-                              value={rasc.km_atual}
-                              onChange={(e) =>
-                                atualizarRascunhoVeiculo(rasc.tempId, {
-                                  km_atual: e.target.value.replace(/\D/g, ''),
-                                })
-                              }
-                              placeholder="85000"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </fieldset>
-
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-[#12274D]">
-                <button
-                  type="button"
-                  onClick={() => setFichaAberta(false)}
-                  className="min-h-[50px] px-5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-slate-200 font-bold text-base cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvandoFicha}
-                  className="min-h-[50px] px-6 py-2.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-base cursor-pointer"
-                >
-                  {salvandoFicha ? 'Salvando Ficha…' : 'Salvar Ficha Completa'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: EDITAR VEÍCULO EXISTENTE */}
-      {veiculoEmEdicao && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="titulo-modal-editar-veiculo"
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto"
-        >
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-xl p-5 sm:p-6 space-y-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#12274D]">
-              <div>
-                <h2
-                  id="titulo-modal-editar-veiculo"
-                  className="text-xl font-extrabold text-white"
-                >
-                  Editar Veículo — {veiculoEmEdicao.placa}
-                </h2>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  Atualize placa, modelo, cor, ano ou quilometragem do veículo.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setVeiculoEmEdicao(null)}
-                aria-label="Fechar edição de veículo"
-                className="p-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-300 hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" aria-hidden="true" />
-              </button>
-            </div>
-
-            {erro && (
-              <div
-                role="alert"
-                className="bg-red-950 border border-red-500 rounded-xl p-3 text-sm text-red-100 font-bold"
-              >
-                {erro}
-              </div>
-            )}
-
-            <form onSubmit={handleSalvarEdicaoVeiculo} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                <div className="sm:col-span-6">
-                  <label
-                    htmlFor="edit-vei-placa"
-                    className="block text-xs font-bold text-slate-200 mb-1"
-                  >
-                    Placa *
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      id="edit-vei-placa"
-                      name="placa"
-                      type="text"
-                      required
-                      autoCorrect="off"
-                      autoCapitalize="characters"
-                      spellCheck={false}
-                      maxLength={8}
-                      value={editVeiPlaca}
-                      onChange={(e) => setEditVeiPlaca(e.target.value.toUpperCase())}
-                      className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-mono font-bold uppercase text-base"
-                    />
-                    <button
-                      type="button"
-                      disabled={buscandoPlacaEdit}
-                      onClick={handleConsultarPlacaEdit}
-                      className="min-h-[48px] px-3 py-2 rounded-xl bg-[#1E3A8A] border border-blue-400 text-white font-bold text-xs shrink-0 cursor-pointer"
-                    >
-                      {buscandoPlacaEdit ? 'Buscando…' : 'Buscar Placa'}
-                    </button>
-                  </div>
-                  {msgPlacaEdit && (
-                    <span className="block text-[11px] text-amber-300 font-semibold mt-1">
-                      {msgPlacaEdit}
+          {clienteEmEdicao && (veiculosPorCliente[clienteEmEdicao.id] || []).length > 0 && (
+            <div>
+              <h3 className="mb-1 text-base font-semibold text-ink">
+                Veículos já vinculados{' '}
+                <span className="tabular-nums text-ink-subtle">
+                  {(veiculosPorCliente[clienteEmEdicao.id] || []).length}
+                </span>
+              </h3>
+              <ul className="divide-y divide-line">
+                {(veiculosPorCliente[clienteEmEdicao.id] || []).map((v) => (
+                  <li key={v.id} className="flex items-center gap-3 py-2">
+                    <PlateChip placa={v.placa} />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+                      {v.modelo}
+                      {v.marca ? ` · ${v.marca}` : ''}
                     </span>
-                  )}
-                </div>
+                    <Button
+                      variante="fantasma"
+                      tamanho="sm"
+                      onClick={() =>
+                        sairDaFolha(fichaSuja, () => {
+                          fecharFicha();
+                          abrirModalEditarVeiculo(v);
+                        })
+                      }
+                    >
+                      Editar carro
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-                <div className="sm:col-span-6">
-                  <label
-                    htmlFor="edit-vei-modelo"
-                    className="block text-xs font-bold text-slate-200 mb-1"
-                  >
-                    Modelo *
-                  </label>
-                  <input
-                    id="edit-vei-modelo"
-                    name="modelo"
-                    type="text"
-                    required
-                    value={editVeiModelo}
-                    onChange={(e) => setEditVeiModelo(e.target.value)}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                  />
-                </div>
-
-                <div className="sm:col-span-4">
-                  <label
-                    htmlFor="edit-vei-marca"
-                    className="block text-xs font-bold text-slate-200 mb-1"
-                  >
-                    Marca
-                  </label>
-                  <input
-                    id="edit-vei-marca"
-                    name="marca"
-                    type="text"
-                    value={editVeiMarca}
-                    onChange={(e) => setEditVeiMarca(e.target.value)}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                  />
-                </div>
-
-                <div className="sm:col-span-4">
-                  <label
-                    htmlFor="edit-vei-cor"
-                    className="block text-xs font-bold text-slate-200 mb-1"
-                  >
-                    Cor
-                  </label>
-                  <input
-                    id="edit-vei-cor"
-                    name="cor"
-                    type="text"
-                    value={editVeiCor}
-                    onChange={(e) => setEditVeiCor(e.target.value)}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                  />
-                </div>
-
-                <div className="sm:col-span-4">
-                  <label
-                    htmlFor="edit-vei-ano"
-                    className="block text-xs font-bold text-slate-200 mb-1"
-                  >
-                    Ano
-                  </label>
-                  <input
-                    id="edit-vei-ano"
-                    name="ano"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={4}
-                    value={editVeiAno}
-                    onChange={(e) => setEditVeiAno(e.target.value.replace(/\D/g, ''))}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                  />
-                </div>
-
-                <div className="sm:col-span-6">
-                  <label
-                    htmlFor="edit-vei-km"
-                    className="block text-xs font-bold text-slate-200 mb-1"
-                  >
-                    KM Atual
-                  </label>
-                  <input
-                    id="edit-vei-km"
-                    name="km_atual"
-                    type="text"
-                    inputMode="numeric"
-                    value={editVeiKm}
-                    onChange={(e) => setEditVeiKm(e.target.value.replace(/\D/g, ''))}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                  />
-                </div>
-
-                <div className="sm:col-span-6">
-                  <label
-                    htmlFor="edit-vei-chassi"
-                    className="block text-xs font-bold text-slate-200 mb-1"
-                  >
-                    Chassi (opcional)
-                  </label>
-                  <input
-                    id="edit-vei-chassi"
-                    name="chassi"
-                    type="text"
-                    autoCorrect="off"
-                    autoCapitalize="characters"
-                    spellCheck={false}
-                    value={editVeiChassi}
-                    onChange={(e) => setEditVeiChassi(e.target.value.toUpperCase())}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-mono text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#12274D]">
-                <button
-                  type="button"
-                  onClick={() => setVeiculoEmEdicao(null)}
-                  className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-slate-200 font-bold text-sm cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvandoVeiculoEdit}
-                  className="min-h-[48px] px-6 py-2.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm cursor-pointer"
-                >
-                  {salvandoVeiculoEdit ? 'Salvando…' : 'Salvar Alterações'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: HISTÓRICO DE ORDENS DE SERVIÇO DO VEÍCULO OU CLIENTE */}
-      {historicoModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="titulo-modal-historico-os"
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto"
-        >
-          <div className="bg-[#0B1B36] border-2 border-[#2563EB] rounded-2xl w-full max-w-2xl max-h-[88vh] flex flex-col p-5 sm:p-6 gap-4 shadow-2xl">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#12274D]">
-              <div>
-                <h2
-                  id="titulo-modal-historico-os"
-                  className="text-xl font-extrabold text-white"
-                >
-                  {historicoModal.titulo}
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                  {historicoModal.subtitulo}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setHistoricoModal(null)}
-                aria-label="Fechar histórico"
-                className="p-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-300 hover:text-white cursor-pointer"
+          <fieldset>
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <legend className="text-base font-semibold text-ink">
+                {clienteEmEdicao ? 'Novos veículos deste cliente' : 'Veículos do cliente'}
+              </legend>
+              <Button
+                variante="secundario"
+                tamanho="sm"
+                icone={Plus}
+                onClick={() => setNovosVeiculosRascunho((prev) => [...prev, criarRascunhoVeiculoVazio()])}
+                className="shrink-0 whitespace-nowrap"
               >
-                <X className="w-5 h-5" aria-hidden="true" />
-              </button>
+                Adicionar outro veículo
+              </Button>
             </div>
 
-            <div className="overflow-y-auto space-y-2.5 pr-1 flex-1">
-              {historicoModal.ordens.length === 0 ? (
-                <div className="bg-[#071226] border border-[#12274D] rounded-xl p-8 text-center text-slate-400">
-                  Nenhuma Ordem de Serviço registrada para este filtro ainda.
-                </div>
-              ) : (
-                historicoModal.ordens.map((os) => {
-                  const st = STATUS_META[os.status] || STATUS_META.ORCAMENTO;
-                  return (
-                    <div
-                      key={os.id}
-                      className="bg-[#071226] border border-[#264577] rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-                    >
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-slate-400">
-                            #{os.id.slice(0, 8).toUpperCase()}
-                          </span>
-                          <span
-                            className={`px-2 py-0.5 rounded border text-xs font-bold ${st.badgeBg} ${st.badgeText}`}
-                          >
-                            {st.label}
-                          </span>
-                          <span className="text-xs text-slate-400">
-                            {formatarDataCurta(os.data_abertura)}
-                          </span>
-                          {os.veiculos?.placa && (
-                            <span className="px-2 py-0.5 rounded bg-[#1E3A8A] text-white font-mono text-xs font-bold">
-                              {os.veiculos.placa}
-                            </span>
-                          )}
+            {novosVeiculosRascunho.length === 0 ? (
+              <p className="pt-2 text-sm text-ink-subtle">
+                Use “Adicionar outro veículo” se quiser cadastrar um carro novo para este cliente agora.
+              </p>
+            ) : (
+              <div className="divide-y divide-line">
+                {novosVeiculosRascunho.map((rasc, idx) => (
+                  <div key={rasc.tempId} className="space-y-4 py-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-ink-muted">Novo veículo {idx + 1}</span>
+                      {(novosVeiculosRascunho.length > 1 || clienteEmEdicao) && (
+                        <Button variante="fantasma" tamanho="sm" onClick={() => removerRascunhoVeiculo(rasc.tempId)}>
+                          Remover este veículo
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-6 gap-4">
+                      <div className="col-span-6 flex flex-col gap-1.5 sm:col-span-3">
+                        <label htmlFor={`placa-${rasc.tempId}`} className="text-sm font-medium text-ink">
+                          Placa (com busca automática) *
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            id={`placa-${rasc.tempId}`}
+                            name={`placa_${idx}`}
+                            type="text"
+                            autoCorrect="off"
+                            autoCapitalize="characters"
+                            spellCheck={false}
+                            maxLength={8}
+                            value={rasc.placa}
+                            onChange={(e) => atualizarRascunhoVeiculo(rasc.tempId, { placa: e.target.value.toUpperCase() })}
+                            placeholder="ABC1D23"
+                            className={`${CLASSE_CAMPO} font-mono uppercase`}
+                          />
+                          {botaoPlaca(rasc.buscandoPlaca, () => consultarPlacaNoRascunho(rasc.tempId, rasc.placa))}
                         </div>
-                        <p className="text-sm text-slate-200 truncate">
-                          {os.descricao_problema || 'Sem descrição informada'}
-                        </p>
+                        {rasc.msgPlaca && (
+                          <p role="status" className="text-xs text-ink-muted">
+                            {rasc.msgPlaca}
+                          </p>
+                        )}
                       </div>
-
-                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                        <div className="text-right">
-                          <div className="text-xs text-slate-400">Total</div>
-                          <div className="text-base font-extrabold text-white">
-                            {formatarMoeda(os.total_geral)}
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setHistoricoModal(null);
-                            onNavigateTab('os', undefined, os.id);
-                          }}
-                          className="min-h-[42px] px-3.5 py-2 rounded-xl bg-[#1E3A8A] hover:bg-blue-800 border border-blue-400 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <span>Abrir OS</span>
-                          <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                        </button>
+                      <div className="col-span-6 sm:col-span-3">
+                        <Field rotulo="Modelo *">
+                          <input
+                            id={`modelo-${rasc.tempId}`}
+                            name={`modelo_${idx}`}
+                            type="text"
+                            value={rasc.modelo}
+                            onChange={(e) => atualizarRascunhoVeiculo(rasc.tempId, { modelo: e.target.value })}
+                            placeholder="Ex: Onix 1.0 Turbo"
+                            className={CLASSE_CAMPO}
+                          />
+                        </Field>
+                      </div>
+                      <div className="col-span-6 sm:col-span-2">
+                        <Field rotulo="Marca / Montadora">
+                          <input
+                            id={`marca-${rasc.tempId}`}
+                            name={`marca_${idx}`}
+                            type="text"
+                            value={rasc.marca}
+                            onChange={(e) => atualizarRascunhoVeiculo(rasc.tempId, { marca: e.target.value })}
+                            placeholder="Ex: Chevrolet"
+                            className={CLASSE_CAMPO}
+                          />
+                        </Field>
+                      </div>
+                      <div className="col-span-3 sm:col-span-2">
+                        <Field rotulo="Cor">
+                          <input
+                            id={`cor-${rasc.tempId}`}
+                            name={`cor_${idx}`}
+                            type="text"
+                            value={rasc.cor}
+                            onChange={(e) => atualizarRascunhoVeiculo(rasc.tempId, { cor: e.target.value })}
+                            placeholder="Prata"
+                            className={CLASSE_CAMPO}
+                          />
+                        </Field>
+                      </div>
+                      <div className="col-span-3 sm:col-span-2">
+                        <Field rotulo="Ano">
+                          <input
+                            id={`ano-${rasc.tempId}`}
+                            name={`ano_${idx}`}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={4}
+                            value={rasc.ano}
+                            onChange={(e) => atualizarRascunhoVeiculo(rasc.tempId, { ano: e.target.value.replace(/\D/g, '') })}
+                            placeholder="2022"
+                            className={CLASSE_CAMPO}
+                          />
+                        </Field>
+                      </div>
+                      <div className="col-span-6 sm:col-span-3">
+                        <Field rotulo="KM Atual">
+                          <input
+                            id={`km-${rasc.tempId}`}
+                            name={`km_${idx}`}
+                            type="text"
+                            inputMode="numeric"
+                            value={rasc.km_atual}
+                            onChange={(e) => atualizarRascunhoVeiculo(rasc.tempId, { km_atual: e.target.value.replace(/\D/g, '') })}
+                            placeholder="85000"
+                            className={CLASSE_CAMPO}
+                          />
+                        </Field>
                       </div>
                     </div>
-                  );
-                })
+                  </div>
+                ))}
+              </div>
+            )}
+          </fieldset>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variante="secundario" onClick={() => sairDaFolha(fichaSuja, fecharFicha)}>
+              Cancelar
+            </Button>
+            <Button type="submit" carregando={salvandoFicha}>
+              {salvandoFicha ? 'Salvando ficha…' : 'Salvar ficha'}
+            </Button>
+          </div>
+        </form>
+      </Folha>
+
+      {/* FOLHA 2: EDITAR VEÍCULO EXISTENTE */}
+      <Folha
+        aberto={veiculoEmEdicao !== null}
+        tamanho="lg"
+        fecharNoFundo={false}
+        titulo={veiculoEmEdicao ? `Editar Veículo — ${veiculoEmEdicao.placa}` : ''}
+        aoCancelar={() => sairDaFolha(veiculoSujo, fecharEdicaoVeiculo)}
+      >
+        <p className="-mt-3 text-sm text-ink-muted">Atualize placa, modelo, cor, ano ou quilometragem do veículo.</p>
+        {confirmarDescarte}
+        {erro && alertaErro(erro)}
+        <form onSubmit={handleSalvarEdicaoVeiculo} className="space-y-6">
+          <div className="grid grid-cols-6 gap-4">
+            <div className="col-span-6 flex flex-col gap-1.5 sm:col-span-3">
+              <label htmlFor="edit-vei-placa" className="text-sm font-medium text-ink">
+                Placa *
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="edit-vei-placa"
+                  name="placa"
+                  type="text"
+                  required
+                  autoCorrect="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  maxLength={8}
+                  value={editVeiPlaca}
+                  onChange={(e) => setEditVeiPlaca(e.target.value.toUpperCase())}
+                  className={`${CLASSE_CAMPO} font-mono uppercase`}
+                />
+                {botaoPlaca(buscandoPlacaEdit, handleConsultarPlacaEdit)}
+              </div>
+              {msgPlacaEdit && (
+                <p role="status" className="text-xs text-ink-muted">
+                  {msgPlacaEdit}
+                </p>
               )}
             </div>
+            <div className="col-span-6 sm:col-span-3">
+              <Field rotulo="Modelo *">
+                <input
+                  id="edit-vei-modelo"
+                  name="modelo"
+                  type="text"
+                  required
+                  value={editVeiModelo}
+                  onChange={(e) => setEditVeiModelo(e.target.value)}
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
+            </div>
+            <div className="col-span-6 sm:col-span-2">
+              <Field rotulo="Marca">
+                <input
+                  id="edit-vei-marca"
+                  name="marca"
+                  type="text"
+                  value={editVeiMarca}
+                  onChange={(e) => setEditVeiMarca(e.target.value)}
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
+            </div>
+            <div className="col-span-3 sm:col-span-2">
+              <Field rotulo="Cor">
+                <input
+                  id="edit-vei-cor"
+                  name="cor"
+                  type="text"
+                  value={editVeiCor}
+                  onChange={(e) => setEditVeiCor(e.target.value)}
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
+            </div>
+            <div className="col-span-3 sm:col-span-2">
+              <Field rotulo="Ano">
+                <input
+                  id="edit-vei-ano"
+                  name="ano"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={editVeiAno}
+                  onChange={(e) => setEditVeiAno(e.target.value.replace(/\D/g, ''))}
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
+            </div>
+            <div className="col-span-6 sm:col-span-3">
+              <Field rotulo="KM Atual">
+                <input
+                  id="edit-vei-km"
+                  name="km_atual"
+                  type="text"
+                  inputMode="numeric"
+                  value={editVeiKm}
+                  onChange={(e) => setEditVeiKm(e.target.value.replace(/\D/g, ''))}
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
+            </div>
+            <div className="col-span-6 sm:col-span-3">
+              <Field rotulo="Chassi (opcional)">
+                <input
+                  id="edit-vei-chassi"
+                  name="chassi"
+                  type="text"
+                  autoCorrect="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  value={editVeiChassi}
+                  onChange={(e) => setEditVeiChassi(e.target.value.toUpperCase())}
+                  className={`${CLASSE_CAMPO} font-mono`}
+                />
+              </Field>
+            </div>
+          </div>
 
-            <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#12274D]">
-              {historicoModal.veiculo ? (
-                <button
-                  type="button"
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variante="secundario" onClick={() => sairDaFolha(veiculoSujo, fecharEdicaoVeiculo)}>
+              Cancelar
+            </Button>
+            <Button type="submit" carregando={salvandoVeiculoEdit}>
+              {salvandoVeiculoEdit ? 'Salvando…' : 'Salvar Alterações'}
+            </Button>
+          </div>
+        </form>
+      </Folha>
+
+      {/* FOLHA 3: HISTÓRICO DE ORDENS DE SERVIÇO DO VEÍCULO OU CLIENTE */}
+      <Folha
+        aberto={historicoModal !== null}
+        tamanho="lg"
+        titulo={historicoModal?.titulo ?? ''}
+        aoCancelar={() => setHistoricoModal(null)}
+      >
+        {historicoModal && (
+          <>
+            <p className="-mt-3 text-sm text-ink-muted">{historicoModal.subtitulo}</p>
+            {historicoModal.ordens.length === 0 ? (
+              <p className="py-6 text-center text-sm text-ink-subtle">
+                Nenhuma Ordem de Serviço registrada para este filtro ainda.
+              </p>
+            ) : (
+              <ul aria-label="Ordens de serviço" className="divide-y divide-line">
+                {historicoModal.ordens.map((os) => (
+                  <li key={os.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusBadge status={os.status in STATUS_OS ? os.status : 'ORCAMENTO'} />
+                        <span className="text-xs tabular-nums text-ink-muted">{formatarDataCurta(os.data_abertura)}</span>
+                        <span className="font-mono text-xs text-ink-subtle">#{os.id.slice(0, 8).toUpperCase()}</span>
+                        {!historicoModal.veiculo && os.veiculos?.placa && <PlateChip placa={os.veiculos.placa} />}
+                      </div>
+                      <p className="truncate text-sm text-ink">{os.descricao_problema || 'Sem descrição informada'}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center justify-between gap-3">
+                      <span className="text-base font-semibold tabular-nums text-ink">{formatarMoeda(os.total_geral)}</span>
+                      <Button
+                        variante="secundario"
+                        tamanho="sm"
+                        onClick={() => {
+                          setHistoricoModal(null);
+                          onNavigateTab('os', undefined, os.id);
+                        }}
+                      >
+                        Abrir OS
+                        <ExternalLink size={14} aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <Button variante="secundario" onClick={() => setHistoricoModal(null)}>
+                Fechar
+              </Button>
+              {historicoModal.veiculo && (
+                <Button
                   onClick={() => {
                     const v = historicoModal.veiculo!;
                     const c = historicoModal.cliente;
                     setHistoricoModal(null);
                     iniciarNovaOsParaVeiculo(v, c);
                   }}
-                  className="min-h-[46px] px-4 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <Wrench className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
-                  <span>+ Abrir Nova OS para {historicoModal.veiculo.placa}</span>
-                </button>
-              ) : (
-                <span />
+                  Abrir nova OS para {historicoModal.veiculo.placa}
+                </Button>
               )}
-              <button
-                type="button"
-                onClick={() => setHistoricoModal(null)}
-                className="min-h-[46px] px-5 py-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-200 font-bold text-sm cursor-pointer"
-              >
-                Fechar
-              </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Folha>
 
-      {/* MODAL 4: ABRIR NOVA OS RÁPIDA DIRETO DO VEÍCULO */}
-      {novaOsRapida && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="titulo-modal-nova-os-rapida"
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-        >
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-lg p-5 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#12274D]">
-              <div>
-                <span className="px-2.5 py-0.5 rounded bg-[#1E3A8A] text-white font-mono font-bold text-xs">
-                  {novaOsRapida.veiculo.placa} &bull; {novaOsRapida.veiculo.modelo}
-                </span>
-                <h2
-                  id="titulo-modal-nova-os-rapida"
-                  className="text-xl font-extrabold text-white mt-1.5"
-                >
-                  Abrir Ordem de Serviço
-                </h2>
-                <p className="text-xs text-slate-300">
-                  Cliente: <strong>{novaOsRapida.cliente.nome}</strong>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setNovaOsRapida(null)}
-                aria-label="Fechar abertura rápida de OS"
-                className="p-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-300 hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" aria-hidden="true" />
-              </button>
+      {/* FOLHA 4: ABRIR NOVA OS RÁPIDA DIRETO DO VEÍCULO */}
+      <Folha
+        aberto={novaOsRapida !== null}
+        fecharNoFundo={false}
+        titulo="Abrir Ordem de Serviço"
+        aoCancelar={() => sairDaFolha(osSuja, fecharOsRapida)}
+      >
+        {novaOsRapida && (
+          <>
+            <div className="-mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-muted">
+              <PlateChip placa={novaOsRapida.veiculo.placa} />
+              <span>{novaOsRapida.veiculo.modelo}</span>
+              <span>
+                Cliente: <span className="font-medium text-ink">{novaOsRapida.cliente.nome}</span>
+              </span>
             </div>
-
-            {erro && (
-              <div
-                role="alert"
-                className="bg-red-950 border border-red-500 rounded-xl p-3 text-sm text-red-100 font-bold"
-              >
-                {erro}
-              </div>
-            )}
-
+            {confirmarDescarte}
+            {erro && alertaErro(erro)}
             <form onSubmit={handleConfirmarNovaOsRapida} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label
-                    htmlFor="os-rapida-km"
-                    className="block text-xs font-bold text-slate-200 mb-1"
-                  >
-                    KM Atual na Entrada
-                  </label>
-                  <input
-                    id="os-rapida-km"
-                    name="km_atual"
-                    type="text"
-                    inputMode="numeric"
-                    value={osKmAtual}
-                    onChange={(e) => setOsKmAtual(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Ex: 85000"
-                    className="w-full min-h-[48px] px-3.5 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="os-rapida-mecanico"
-                    className="block text-xs font-bold text-slate-200 mb-1"
-                  >
-                    Mecânico Responsável
-                  </label>
-                  <select
-                    id="os-rapida-mecanico"
-                    name="mecanico_responsavel_id"
-                    value={osMecanicoId}
-                    onChange={(e) => setOsMecanicoId(e.target.value)}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-sm cursor-pointer"
-                  >
-                    <option value="">Definir depois na bancada</option>
-                    {mecanicos.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.nome} ({m.cargo})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="os-rapida-defeito"
-                  className="block text-xs font-bold text-slate-200 mb-1"
+              <Field rotulo="KM Atual na Entrada">
+                <input
+                  id="os-rapida-km"
+                  name="km_atual"
+                  type="text"
+                  inputMode="numeric"
+                  value={osKmAtual}
+                  onChange={(e) => setOsKmAtual(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Ex: 85000"
+                  className={CLASSE_CAMPO}
+                />
+              </Field>
+              <Field rotulo="Mecânico Responsável">
+                <select
+                  id="os-rapida-mecanico"
+                  name="mecanico_responsavel_id"
+                  value={osMecanicoId}
+                  onChange={(e) => setOsMecanicoId(e.target.value)}
+                  className={`${CLASSE_CAMPO} cursor-pointer`}
                 >
-                  Defeito Relatado / Serviço Solicitado
-                </label>
+                  <option value="">Definir depois na bancada</option>
+                  {mecanicos.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nome} ({m.cargo})
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field rotulo="Defeito Relatado / Serviço Solicitado">
                 <textarea
                   id="os-rapida-defeito"
                   name="descricao_problema"
@@ -1909,33 +1285,22 @@ export function ClientesVeiculos({
                   value={osDescricao}
                   onChange={(e) => setOsDescricao(e.target.value)}
                   placeholder="Ex: Revisão de freios, troca de óleo e barulho na suspensão dianteira..."
-                  className="w-full p-3.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-medium text-sm"
+                  className={CLASSE_TEXTAREA}
                 />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2 border-t border-[#12274D]">
-                <button
-                  type="button"
-                  onClick={() => setNovaOsRapida(null)}
-                  className="min-h-[48px] px-4 py-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-200 font-bold text-sm cursor-pointer"
-                >
+              </Field>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button variante="secundario" onClick={() => sairDaFolha(osSuja, fecharOsRapida)}>
                   Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={criandoOsRapida}
-                  className="min-h-[48px] px-6 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm inline-flex items-center gap-2 cursor-pointer"
-                >
-                  <Wrench className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
-                  <span>{criandoOsRapida ? 'Abrindo Bancada…' : 'Abrir Bancada da OS'}</span>
-                </button>
+                </Button>
+                <Button type="submit" carregando={criandoOsRapida}>
+                  {criandoOsRapida ? 'Abrindo Bancada…' : 'Abrir Bancada da OS'}
+                </Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Folha>
     </div>
   );
 }
 export default ClientesVeiculos;
-
