@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MoreHorizontal, type LucideIcon } from 'lucide-react';
 
 export interface ItemMenu {
   rotulo: string;
   icone: LucideIcon;
   aoClicar: () => void;
+  /** Item visível mas inativo (ex.: saída com saldo zero). */
+  desabilitado?: boolean;
 }
 
 /**
@@ -13,8 +15,24 @@ export interface ItemMenu {
  */
 export function MenuAcoes({ rotulo, itens }: { rotulo: string; itens: ItemMenu[] }) {
   const [aberto, setAberto] = useState(false);
+  const [acima, setAcima] = useState(false);
+  const painel = useRef<HTMLDivElement>(null);
   const raiz = useRef<HTMLDivElement>(null);
   const gatilho = useRef<HTMLButtonElement>(null);
+
+  // Sem espaço abaixo (barra de navegação do celular ocupa ~5rem no rodapé), abre para cima
+  useLayoutEffect(() => {
+    if (!aberto) {
+      setAcima(false);
+      return;
+    }
+    const gatilhoBox = gatilho.current?.getBoundingClientRect();
+    const altura = painel.current?.offsetHeight ?? 0;
+    if (!gatilhoBox) return;
+    const reservaRodape = window.innerWidth < 1024 ? 88 : 8;
+    const abaixo = window.innerHeight - gatilhoBox.bottom - reservaRodape;
+    setAcima(altura + 4 > abaixo && gatilhoBox.top > altura + 8);
+  }, [aberto]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -60,20 +78,22 @@ export function MenuAcoes({ rotulo, itens }: { rotulo: string; itens: ItemMenu[]
       </button>
       {aberto && (
         <div
+          ref={painel}
           role="menu"
           aria-label={rotulo}
-          className="absolute right-0 top-full z-20 mt-1 w-60 rounded-2xl bg-surface p-1.5 shadow-card ring-1 ring-line"
+          className={`absolute right-0 z-20 w-60 rounded-2xl bg-surface p-1.5 shadow-card ring-1 ring-line dark:bg-line dark:ring-line-strong ${acima ? 'bottom-full mb-1' : 'top-full mt-1'}`}
         >
-          {itens.map(({ rotulo: r, icone: Icone, aoClicar }) => (
+          {itens.map(({ rotulo: r, icone: Icone, aoClicar, desabilitado }) => (
             <button
               key={r}
               type="button"
               role="menuitem"
+              disabled={desabilitado}
               onClick={() => {
                 setAberto(false);
                 aoClicar();
               }}
-              className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-ink transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+              className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-ink transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
             >
               <Icone size={16} className="text-ink-muted" aria-hidden="true" />
               {r}

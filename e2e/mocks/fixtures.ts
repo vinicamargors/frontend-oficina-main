@@ -171,17 +171,17 @@ const ITENS: Array<[string, string, number, number, number, number]> = [
   ['Pastilha de freio dianteira', 'FREIOS', 10, 85, 169.9, 4],
   ['Disco de freio ventilado', 'FREIOS', 6, 160, 289, 2],
   ['Pastilha de freio traseira', 'FREIOS', 1, 70, 139.9, 3], // baixo
-  ['Vela de ignição NGK', 'IGNIÇÃO', 40, 16, 34.9, 8],
-  ['Cabo de vela jogo', 'IGNIÇÃO', 7, 95, 189, 2],
-  ['Bateria 60Ah', 'ELÉTRICA', 5, 340, 549, 2],
-  ['Lâmpada H4 par', 'ELÉTRICA', 22, 24, 59.9, 6],
-  ['Amortecedor dianteiro', 'SUSPENSÃO', 8, 210, 389, 2],
-  ['Bieleta estabilizadora', 'SUSPENSÃO', 12, 35, 79.9, 4],
+  ['Vela de ignição NGK', 'IGNICAO', 40, 16, 34.9, 8],
+  ['Cabo de vela jogo', 'IGNICAO', 7, 95, 189, 2],
+  ['Bateria 60Ah', 'ELETRICA', 5, 340, 549, 2],
+  ['Lâmpada H4 par', 'ELETRICA', 22, 24, 59.9, 6],
+  ['Amortecedor dianteiro', 'SUSPENSAO', 8, 210, 389, 2],
+  ['Bieleta estabilizadora', 'SUSPENSAO', 12, 35, 79.9, 4],
   ['Correia dentada kit', 'MOTOR', 9, 190, 349, 3],
   ['Junta do cabeçote', 'MOTOR', 4, 120, 249, 2],
   ['Bomba d’água', 'MOTOR', 6, 98, 199, 2],
   ['Pneu 175/70 R14', 'PNEUS', 16, 280, 429, 4],
-  ['Palheta limpador par', 'ACESSÓRIOS', 20, 21, 49.9, 5],
+  ['Palheta limpador par', 'ACESSORIOS', 20, 21, 49.9, 5],
 ];
 
 export const estoque: EstoqueItem[] = ITENS.map(([nome, categoria, quantidade, custo, venda, minimo], i) => ({
