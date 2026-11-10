@@ -4,7 +4,7 @@ const DIA_MS = 24 * 60 * 60 * 1000;
 
 export type NivelAtraso = 'ok' | 'atencao' | 'atrasado';
 
-/** Dias inteiros desde `dataISO` (o backend só envia `data_abertura`). Nunca negativo. */
+/** Conta períodos completos de 24h (não dias de calendário). Dias inteiros desde `dataISO` (o backend só envia `data_abertura`). Nunca negativo. */
 export function diasDesde(dataISO: string, agora: Date = new Date()): number {
   const inicio = new Date(dataISO).getTime();
   if (Number.isNaN(inicio)) return 0;

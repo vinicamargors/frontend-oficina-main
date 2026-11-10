@@ -52,7 +52,6 @@ function CardOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
         <button
           type="button"
           onClick={onAbrir}
-          aria-label={`Abrir ordem de serviço de ${placa}, ${modelo}, ${clienteNome}`}
           className="block w-full cursor-pointer rounded-2xl p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           <span className="flex flex-wrap items-center justify-between gap-2">
@@ -240,19 +239,32 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                   <StatusBadge status={st} />
                   <span className="text-sm font-medium tabular-nums text-ink-muted">{total}</span>
                 </div>
-                {cards.length === 0 ? (
+                {total === 0 ? (
                   <p className="px-1 text-sm text-ink-muted">Nenhum veículo</p>
                 ) : (
-                  <ul className="space-y-3">
-                    {cards.map((os) => (
-                      <CardOS key={os.id} os={os} onAbrir={() => onNavigateTab('os', undefined, os.id)} />
-                    ))}
-                  </ul>
-                )}
-                {total > cards.length && (
-                  <Button variante="fantasma" tamanho="sm" className="mt-2" onClick={() => onNavigateTab('os', st)}>
-                    Ver todas ({total})
-                  </Button>
+                  <>
+                    {cards.length > 0 && (
+                      <ul className="space-y-3">
+                        {cards.map((os) => (
+                          <CardOS key={os.id} os={os} onAbrir={() => onNavigateTab('os', undefined, os.id)} />
+                        ))}
+                      </ul>
+                    )}
+                    {total > cards.length && (
+                      <div className="mt-2">
+                        {cards.length > 0 && (
+                          <p className="px-3 text-xs text-ink-muted">
+                            {cards.length === 1 ? 'Mostrando a mais recente' : `Mostrando as ${cards.length} mais recentes`}
+                          </p>
+                        )}
+                        <Button variante="fantasma" tamanho="sm" onClick={() => onNavigateTab('os', st)}>
+                          {cards.length === 0
+                            ? `${total} ${total === 1 ? 'veículo' : 'veículos'}, ver todas`
+                            : `Ver todas (${total})`}
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </section>
             );
