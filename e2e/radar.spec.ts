@@ -71,19 +71,58 @@ test.describe('radar do pátio', () => {
     exigirRedeCompleta(page);
   });
 
-  test('no celular o quadro rola na horizontal por dentro, sem mexer na página', async ({ page }, info) => {
+  test('no celular as 4 etapas aparecem empilhadas, sem rolagem lateral nem troca de etapa', async ({ page }, info) => {
     const { tema, largura } = contextoDoProjeto(info);
     test.skip(largura >= 1024, 'só celular');
     await simularBackend(page, 'cheio');
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'radar');
-    const quadro = page.getByTestId('quadro-patio');
-    const { rolavel, sobraPagina } = await quadro.evaluate((el) => ({
-      rolavel: el.scrollWidth > el.clientWidth,
+
+    await expect(page.getByTestId('quadro-patio')).toBeHidden();
+    const lista = page.getByTestId('patio-lista');
+    await expect(lista).toBeVisible();
+
+    const caixas: Array<{ x: number; y: number; w: number }> = [];
+    for (const etapa of ETAPAS) {
+      const regiao = page.getByRole('region', { name: etapa, exact: true });
+      await expect(regiao).toBeVisible();
+      const c = await regiao.boundingBox();
+      caixas.push({ x: c!.x, y: c!.y, w: c!.width });
+      // primeira linha da etapa alcançável só por rolagem vertical
+      const linha = regiao.getByRole('button').first();
+      await linha.scrollIntoViewIfNeeded();
+      await expect(linha).toBeInViewport();
+      // linhas compactas
+      const alt = (await linha.boundingBox())!.height;
+      expect(alt).toBeLessThanOrEqual(80);
+    }
+    for (let i = 1; i < caixas.length; i++) expect(caixas[i].y).toBeGreaterThan(caixas[i - 1].y);
+    for (const c of caixas) {
+      expect(c.x).toBeGreaterThanOrEqual(0);
+      expect(c.x + c.w).toBeLessThanOrEqual(largura);
+    }
+
+    const { estouros, sobraPagina } = await lista.evaluate((el) => ({
+      estouros: Array.from(el.querySelectorAll('*')).filter((e) => e.getBoundingClientRect().right > el.getBoundingClientRect().right + 1).length,
       sobraPagina: document.documentElement.scrollWidth - window.innerWidth,
     }));
-    expect(rolavel).toBe(true);
+    expect(estouros).toBe(0);
     expect(sobraPagina).toBeLessThanOrEqual(0);
+    exigirRedeCompleta(page);
+  });
+
+  test('no desktop as 4 colunas ficam lado a lado', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    test.skip(largura < 1024, 'só desktop');
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'radar');
+    await expect(page.getByTestId('patio-lista')).toBeHidden();
+    const ys = new Set<number>();
+    for (const etapa of ETAPAS) {
+      ys.add(Math.round((await page.getByRole('region', { name: etapa, exact: true }).boundingBox())!.y));
+    }
+    expect(ys.size).toBe(1);
   });
 
   test('clicar no card abre a ordem de serviço', async ({ page }, info) => {

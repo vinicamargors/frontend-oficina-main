@@ -82,6 +82,121 @@ function CardOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
   );
 }
 
+function LinhaOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
+  const st = (os.status as StatusOS) || 'ORCAMENTO';
+  const placa = os.veiculos?.placa || 'SEM-PLACA';
+  const modelo = os.veiculos?.modelo || 'Veículo';
+  const clienteNome = os.clientes?.nome || 'Cliente';
+  const foneLimpo = (os.clientes?.telefone || '').replace(/\D/g, '');
+  const dias = diasDesde(os.data_abertura);
+  const nivel = nivelAtraso(st, dias);
+
+  return (
+    <li className="relative">
+      <button
+        type="button"
+        onClick={onAbrir}
+        className={`flex min-h-16 w-full cursor-pointer items-center gap-3 py-2.5 pl-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand ${
+          foneLimpo ? 'pr-14' : 'pr-4'
+        }`}
+      >
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <PlateChip placa={placa} />
+            <span className="truncate text-sm font-medium text-ink">{modelo}</span>
+          </span>
+          <span className="mt-1 flex gap-1 text-xs text-ink-muted">
+            <span className="truncate">{clienteNome}</span>
+            <span className="shrink-0">· {textoDias(dias)}</span>
+          </span>
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          <span className="text-sm font-semibold tabular-nums text-ink">{formatBRL(os.total_geral)}</span>
+          {nivel !== 'ok' && <MarcaAtraso nivel={nivel} />}
+        </span>
+      </button>
+      {foneLimpo && (
+        <a
+          href={`https://wa.me/55${foneLimpo}`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Conversar no WhatsApp com ${clienteNome}`}
+          title="WhatsApp"
+          className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          <MessageCircle size={20} strokeWidth={1.5} aria-hidden="true" />
+        </a>
+      )}
+    </li>
+  );
+}
+
+function Etapa({
+  st,
+  ordens,
+  counts,
+  onNavigateTab,
+  compacto = false,
+}: {
+  st: StatusOS;
+  ordens: UltimaOS[];
+  counts: Record<string, number>;
+  onNavigateTab: DashboardProps['onNavigateTab'];
+  compacto?: boolean;
+}) {
+  const rotulo = STATUS_OS[st].rotulo;
+  const cards = ordens.filter((o) => o.status === st);
+  const total = counts[st] ?? cards.length;
+  const abrir = (id: string) => onNavigateTab('os', undefined, id);
+
+  return (
+    <section aria-label={rotulo} className="min-w-0">
+      <div className={`flex items-center justify-between gap-2 px-1 ${total === 0 && compacto ? '' : 'mb-3'}`}>
+        <StatusBadge status={st} />
+        <span className="text-sm font-medium tabular-nums text-ink-muted">
+          {total === 0 && compacto ? 'Nenhum veículo' : total}
+        </span>
+      </div>
+      {total === 0 ? (
+        !compacto && <p className="px-1 text-sm text-ink-muted">Nenhum veículo</p>
+      ) : (
+        <>
+          {cards.length > 0 &&
+            (compacto ? (
+              <Panel espaco="nenhum" className="overflow-hidden">
+                <ul className="divide-y divide-line">
+                  {cards.map((os) => (
+                    <LinhaOS key={os.id} os={os} onAbrir={() => abrir(os.id)} />
+                  ))}
+                </ul>
+              </Panel>
+            ) : (
+              <ul className="space-y-3">
+                {cards.map((os) => (
+                  <CardOS key={os.id} os={os} onAbrir={() => abrir(os.id)} />
+                ))}
+              </ul>
+            ))}
+          {total > cards.length && (
+            <div className="mt-2">
+              {cards.length > 0 && (
+                <p className="px-3 text-xs text-ink-muted">
+                  {cards.length === 1 ? 'Mostrando a mais recente' : `Mostrando as ${cards.length} mais recentes`}
+                </p>
+              )}
+              <Button variante="fantasma" tamanho="sm" onClick={() => onNavigateTab('os', st)}>
+                {cards.length === 0
+                  ? `${total} ${total === 1 ? 'veículo' : 'veículos'}, ver todas`
+                  : `Ver todas (${total})`}
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 function Numero({
   rotulo,
   valor,
@@ -221,55 +336,20 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <Button onClick={novaOS}>Nova ordem de serviço</Button>
         </Panel>
       ) : (
-        <div
-          data-testid="quadro-patio"
-          className="-mx-4 flex scroll-px-4 snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:scroll-px-0 md:px-0 lg:grid lg:grid-cols-4 lg:overflow-visible"
-        >
-          {ETAPAS.map((st) => {
-            const rotulo = STATUS_OS[st].rotulo;
-            const cards = ordens.filter((o) => o.status === st);
-            const total = counts[st] ?? cards.length;
-            return (
-              <section
-                key={st}
-                aria-label={rotulo}
-                className="w-[78vw] max-w-[320px] shrink-0 snap-start md:w-[300px] lg:w-auto lg:max-w-none lg:min-w-0"
-              >
-                <div className="mb-3 flex items-center justify-between gap-2 px-1">
-                  <StatusBadge status={st} />
-                  <span className="text-sm font-medium tabular-nums text-ink-muted">{total}</span>
-                </div>
-                {total === 0 ? (
-                  <p className="px-1 text-sm text-ink-muted">Nenhum veículo</p>
-                ) : (
-                  <>
-                    {cards.length > 0 && (
-                      <ul className="space-y-3">
-                        {cards.map((os) => (
-                          <CardOS key={os.id} os={os} onAbrir={() => onNavigateTab('os', undefined, os.id)} />
-                        ))}
-                      </ul>
-                    )}
-                    {total > cards.length && (
-                      <div className="mt-2">
-                        {cards.length > 0 && (
-                          <p className="px-3 text-xs text-ink-muted">
-                            {cards.length === 1 ? 'Mostrando a mais recente' : `Mostrando as ${cards.length} mais recentes`}
-                          </p>
-                        )}
-                        <Button variante="fantasma" tamanho="sm" onClick={() => onNavigateTab('os', st)}>
-                          {cards.length === 0
-                            ? `${total} ${total === 1 ? 'veículo' : 'veículos'}, ver todas`
-                            : `Ver todas (${total})`}
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </section>
-            );
-          })}
-        </div>
+        <>
+          {/* Desktop: quadro em 4 colunas com cards */}
+          <div data-testid="quadro-patio" className="hidden gap-4 lg:grid lg:grid-cols-4">
+            {ETAPAS.map((st) => (
+              <Etapa key={st} st={st} ordens={ordens} counts={counts} onNavigateTab={onNavigateTab} />
+            ))}
+          </div>
+          {/* Celular e tablet: todas as etapas empilhadas, linhas compactas, sem rolagem lateral */}
+          <div data-testid="patio-lista" className="space-y-6 lg:hidden">
+            {ETAPAS.map((st) => (
+              <Etapa key={st} st={st} ordens={ordens} counts={counts} onNavigateTab={onNavigateTab} compacto />
+            ))}
+          </div>
+        </>
       )}
 
       {concluidas > 0 && (
