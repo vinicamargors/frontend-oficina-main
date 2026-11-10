@@ -528,6 +528,49 @@ test.describe('trocar de tela com o formulário da oficina sujo', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
   });
 
+  test('"Sair" com o formulário sujo pergunta antes; descartar sai da conta sem deixar o voltar dobrado', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await abrirComHistorico(page, tema);
+    const clicarSair = async () => {
+      if (largura < 1024) {
+        await barraMobile(page).getByRole('button', { name: 'Mais' }).click();
+        await page.getByRole('dialog', { name: 'Mais opções' }).getByRole('button', { name: 'Sair' }).click();
+      } else {
+        await page.getByRole('complementary').getByRole('button', { name: 'Sair' }).click();
+      }
+    };
+    const entrar = page.getByRole('button', { name: 'Entrar no Mecanify' });
+    await campo(page, 'Chave PIX').fill('pix-digitado');
+    await clicarSair();
+    const folha = folhaDescartar(page);
+    await expect(folha).toBeVisible();
+    await folha.getByRole('button', { name: 'Continuar editando' }).click();
+    await expect(folha).toHaveCount(0);
+    await expect(entrar).toHaveCount(0);
+    await expect(campo(page, 'Chave PIX')).toHaveValue('pix-digitado');
+
+    await clicarSair();
+    await folha.getByRole('button', { name: 'Descartar' }).click();
+    await expect(entrar).toBeVisible();
+    // a entrada extra que a Oficina deixou no histórico não fica: o voltar sai da URL da oficina
+    await expect(page).toHaveURL(/tab=oficina/);
+    await page.goBack();
+    await expect(page).not.toHaveURL(/tab=oficina/);
+  });
+
+  test('"Sair" com o formulário limpo sai direto, sem perguntar', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await abrirComHistorico(page, tema);
+    if (largura < 1024) {
+      await barraMobile(page).getByRole('button', { name: 'Mais' }).click();
+      await page.getByRole('dialog', { name: 'Mais opções' }).getByRole('button', { name: 'Sair' }).click();
+    } else {
+      await page.getByRole('complementary').getByRole('button', { name: 'Sair' }).click();
+    }
+    await expect(page.getByRole('button', { name: 'Entrar no Mecanify' })).toBeVisible();
+    await expect(folhaDescartar(page)).toHaveCount(0);
+  });
+
   test('formulário limpo: navega direto, sem perguntar', async ({ page }, info) => {
     const { tema, largura } = contextoDoProjeto(info);
     await abrirComHistorico(page, tema);

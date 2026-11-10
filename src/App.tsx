@@ -188,6 +188,14 @@ function AppShell() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  // Saiu da conta descartando a Oficina suja: já desmontada (sem o "voltar" dela), tira a entrada extra do histórico
+  const desfazerEntradaExtraAoSair = useRef(false);
+  useEffect(() => {
+    if (isAuthenticated || !desfazerEntradaExtraAoSair.current) return;
+    desfazerEntradaExtraAoSair.current = false;
+    window.history.go(-1);
+  }, [isAuthenticated]);
+
   const searchParams = new URLSearchParams(window.location.search);
   const modoPublico = searchParams.get('modo');
   const osIdPublico = searchParams.get('osId');
@@ -289,6 +297,14 @@ function AppShell() {
     protegerSaida(() => handleNavigateTab(id, undefined, undefined, oficinaSuja.current));
   };
 
+  const sair = () => {
+    setMaisAberto(false);
+    protegerSaida(() => {
+      desfazerEntradaExtraAoSair.current = oficinaSuja.current;
+      void logout();
+    });
+  };
+
   const seletorMaster = (idSeletor: string) =>
     isMaster && empresas.length > 0 ? (
       <div className="space-y-1.5">
@@ -367,7 +383,7 @@ function AppShell() {
             </div>
             <ThemeToggle />
           </div>
-          <Button variante="fantasma" icone={LogOut} onClick={logout} className="w-full !justify-start">
+          <Button variante="fantasma" icone={LogOut} onClick={sair} className="w-full !justify-start">
             Sair
           </Button>
         </div>
@@ -462,7 +478,7 @@ function AppShell() {
                 <div className="text-xs text-ink-muted truncate">{cargoLegivel}</div>
               </div>
               <ThemeToggle />
-              <Button variante="fantasma" icone={LogOut} onClick={logout}>
+              <Button variante="fantasma" icone={LogOut} onClick={sair}>
                 Sair
               </Button>
             </div>
