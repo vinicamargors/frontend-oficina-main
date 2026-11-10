@@ -153,13 +153,13 @@ function AppShell() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh w-full bg-[#0B0F17] text-white flex flex-col items-center justify-center p-6 gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-[#F97316] text-[#0B0F17] flex items-center justify-center">
+      <div className="min-h-dvh w-full bg-[#071226] text-white flex flex-col items-center justify-center p-6 gap-4">
+        <div className="w-16 h-16 rounded-2xl bg-[#38BDF8] text-[#071226] flex items-center justify-center">
           <Wrench className="w-9 h-9 stroke-[2.5]" aria-hidden="true" />
         </div>
         <div className="flex items-center gap-3 text-lg font-bold">
           <progress aria-label="Carregando" className="loading-spinner" />
-          <span>Abrindo Autotec&nbsp;Pro…</span>
+          <span>Abrindo Mecanify…</span>
         </div>
       </div>
     );
@@ -231,16 +231,16 @@ function AppShell() {
   const empresaAtual = empresas.find((e) => e.id === effectiveEmpresaId);
 
   return (
-    <div className="min-h-dvh w-full bg-[#0B0F17] text-[#F8FAFC] flex flex-col lg:flex-row print:bg-white print:text-black">
+    <div className="min-h-dvh w-full bg-[#071226] text-[#F8FAFC] flex flex-col lg:flex-row print:bg-white print:text-black">
       {/* SIDEBAR INDUSTRIAL (DESKTOP) */}
       <aside
         aria-label="Menu Principal da Oficina"
-        className="print:hidden hidden lg:flex lg:w-80 xl:w-84 bg-[#111827] border-r-2 border-[#1E293B] flex-col justify-between p-5 shrink-0"
+        className="print:hidden hidden lg:flex lg:w-80 xl:w-84 bg-[#0B1B36] border-r-2 border-[#12274D] flex-col justify-between p-5 shrink-0"
       >
         <div className="space-y-6">
-          {/* Topo da Marca Autotec Pro */}
-          <div className="bg-[#1E3A8A] border-2 border-[#F97316] rounded-2xl p-4 flex items-center gap-3.5">
-            <div className="w-14 h-14 rounded-xl bg-[#F97316] text-[#0B0F17] flex items-center justify-center shrink-0">
+          {/* Topo da Marca Mecanify */}
+          <div className="bg-[#1E3A8A] border-2 border-[#38BDF8] rounded-2xl p-4 flex items-center gap-3.5">
+            <div className="w-14 h-14 rounded-xl bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
               <Wrench className="w-8 h-8 stroke-[2.5]" aria-hidden="true" />
             </div>
             <div className="min-w-0">
@@ -248,7 +248,7 @@ function AppShell() {
                 translate="no"
                 className="text-2xl font-bold text-white tracking-tight block leading-none"
               >
-                Autotec&nbsp;Pro
+                Mecanify
               </span>
               <span className="text-sm text-blue-100 font-medium truncate block mt-1">
                 {empresaAtual?.nome_fantasia || 'Painel Operacional'}
@@ -258,10 +258,10 @@ function AppShell() {
 
           {/* Seletor de Oficina para Master */}
           {isMaster && empresas.length > 0 && (
-            <div className="bg-[#0B0F17] border-2 border-[#334155] rounded-xl p-3.5">
+            <div className="bg-[#071226] border-2 border-[#264577] rounded-xl p-3.5">
               <label
                 htmlFor="seletor-oficina-desktop"
-                className="flex items-center gap-2 text-xs font-bold text-[#F97316] mb-2"
+                className="flex items-center gap-2 text-xs font-bold text-[#38BDF8] mb-2"
               >
                 <Building2 className="w-4 h-4" aria-hidden="true" />
                 <span>Alternar Oficina (Master)</span>
@@ -273,7 +273,7 @@ function AppShell() {
                   setSelectedEmpresaId(e.target.value);
                   localStorage.setItem('autotec_tenant_id', e.target.value);
                 }}
-                className="w-full min-h-[48px] px-3 py-2 rounded-lg bg-[#111827] border border-[#475569] text-white font-semibold text-base cursor-pointer"
+                className="w-full min-h-[48px] px-3 py-2 rounded-lg bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base cursor-pointer"
               >
                 {empresas.map((emp) => (
                   <option key={emp.id} value={emp.id}>
@@ -296,8 +296,8 @@ function AppShell() {
                   onClick={() => handleNavigateTab(item.id)}
                   className={`w-full min-h-[60px] px-4 py-3.5 rounded-xl font-bold text-lg flex items-center gap-4 text-left cursor-pointer border-2 ${
                     active
-                      ? 'bg-[#F97316] text-[#0B0F17] border-[#F97316]'
-                      : 'bg-[#0B0F17] text-slate-200 border-[#1E293B] hover:bg-[#1E293B] hover:border-[#475569]'
+                      ? 'bg-[#38BDF8] text-[#071226] border-[#38BDF8]'
+                      : 'bg-[#071226] text-slate-200 border-[#12274D] hover:bg-[#12274D] hover:border-[#3A5C90]'
                   }`}
                 >
                   <Icon className="w-7 h-7 shrink-0 stroke-[2.2]" aria-hidden="true" />
@@ -309,12 +309,12 @@ function AppShell() {
         </div>
 
         {/* Rodapé do Mecânico / Usuário Logado */}
-        <div className="pt-6 border-t-2 border-[#1E293B] space-y-3">
-          <div className="bg-[#0B0F17] border border-[#334155] rounded-xl p-4">
+        <div className="pt-6 border-t-2 border-[#12274D] space-y-3">
+          <div className="bg-[#071226] border border-[#264577] rounded-xl p-4">
             <div className="text-base font-bold text-white truncate">{user.nome}</div>
             <div className="text-sm text-slate-400 truncate">{user.email}</div>
             <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-md bg-[#1E3A8A] text-white text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-[#F97316]" />
+              <span className="w-2 h-2 rounded-full bg-[#38BDF8]" />
               <span>Cargo: {user.cargo}</span>
             </div>
           </div>
@@ -333,9 +333,9 @@ function AppShell() {
       {/* ÁREA CENTRAL DE TRABALHO (OCUPA 100% DA TELA) */}
       <div className="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0 print:pb-0">
         {/* TOPBAR MOBILE & TABLET COMPACTA */}
-        <header className="print:hidden lg:hidden bg-[#1E3A8A] border-b-2 border-[#F97316] px-3 py-2 flex items-center justify-between gap-2 sticky top-0 z-30">
+        <header className="print:hidden lg:hidden bg-[#1E3A8A] border-b-2 border-[#38BDF8] px-3 py-2 flex items-center justify-between gap-2 sticky top-0 z-30">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-[#F97316] text-[#0B0F17] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
               <Wrench className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
             </div>
             <div className="min-w-0">
@@ -343,7 +343,7 @@ function AppShell() {
                 translate="no"
                 className="text-base font-extrabold text-white block leading-none"
               >
-                Autotec&nbsp;Pro
+                Mecanify
               </span>
               <span className="text-[11px] text-blue-100 font-medium truncate block mt-0.5">
                 {user.nome} &bull; {user.cargo}
@@ -356,7 +356,7 @@ function AppShell() {
             onClick={logout}
             aria-label="Sair da conta"
             title="Sair da conta"
-            className="min-h-[38px] px-2.5 py-1.5 rounded-lg bg-[#0B0F17] border border-red-500 text-red-200 font-bold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+            className="min-h-[38px] px-2.5 py-1.5 rounded-lg bg-[#071226] border border-red-500 text-red-200 font-bold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
           >
             <LogOut className="w-4 h-4" aria-hidden="true" />
             <span className="hidden sm:inline">Sair</span>
@@ -366,7 +366,7 @@ function AppShell() {
         {/* CONTEÚDO PRINCIPAL */}
         <main id="conteudo-principal" className="flex-1 w-full p-2.5 sm:p-5 lg:p-7 print:p-0">
           {!effectiveEmpresaId ? (
-            <div className="bg-[#111827] border-2 border-[#F97316] rounded-2xl p-8 space-y-3">
+            <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl p-8 space-y-3">
               <h2 className="text-2xl font-bold text-white">
                 Selecione uma Oficina para visualizar o pátio
               </h2>
@@ -400,9 +400,9 @@ function AppShell() {
           ) : activeTab === 'oficina' && canSeeConfig ? (
             <Oficina empresaId={effectiveEmpresaId} />
           ) : (
-            <div className="bg-[#111827] border-2 border-[#2563EB] rounded-2xl p-6 sm:p-10 space-y-6">
-              <div className="w-16 h-16 rounded-2xl bg-[#1E3A8A] border-2 border-[#F97316] text-white flex items-center justify-center">
-                <Wrench className="w-8 h-8 text-[#F97316]" aria-hidden="true" />
+            <div className="bg-[#0B1B36] border-2 border-[#2563EB] rounded-2xl p-6 sm:p-10 space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-[#1E3A8A] border-2 border-[#38BDF8] text-white flex items-center justify-center">
+                <Wrench className="w-8 h-8 text-[#38BDF8]" aria-hidden="true" />
               </div>
               <div className="space-y-2">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">
@@ -416,7 +416,7 @@ function AppShell() {
               <button
                 type="button"
                 onClick={() => handleNavigateTab('os')}
-                className="min-h-[58px] px-6 py-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-bold text-lg flex items-center gap-3 cursor-pointer"
+                className="min-h-[58px] px-6 py-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-lg flex items-center gap-3 cursor-pointer"
               >
                 <ArrowLeft className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
                 <span>Ir para Ordens de Serviço</span>
@@ -429,7 +429,7 @@ function AppShell() {
       {/* BARRA INFERIOR DE POLEGAR COMPACTA (MOBILE / CELULAR DO MECÂNICO) */}
       <nav
         aria-label="Navegação Rápida Mobile"
-        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#111827] border-t border-[#334155] px-1 py-1 flex items-center justify-around overflow-x-auto no-scrollbar gap-0.5"
+        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0B1B36] border-t border-[#264577] px-1 py-1 flex items-center justify-around overflow-x-auto no-scrollbar gap-0.5"
         style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
       >
         {visibleNav.map((item) => {
@@ -442,8 +442,8 @@ function AppShell() {
               onClick={() => handleNavigateTab(item.id)}
               className={`min-h-[46px] min-w-[48px] flex-1 rounded-lg flex flex-col items-center justify-center gap-0.5 px-1 py-1 font-bold text-[10px] cursor-pointer shrink-0 ${
                 active
-                  ? 'bg-[#F97316] text-[#0B0F17]'
-                  : 'text-slate-300 hover:bg-[#1E293B]'
+                  ? 'bg-[#38BDF8] text-[#071226]'
+                  : 'text-slate-300 hover:bg-[#12274D]'
               }`}
             >
               <Icon className="w-4 h-4 shrink-0 stroke-[2.2]" aria-hidden="true" />

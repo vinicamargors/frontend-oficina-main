@@ -35,7 +35,7 @@ export function Oficina({ empresaId }: OficinaProps) {
 
   // Identidade Visual
   const [corPrimaria, setCorPrimaria] = useState('#1e3a8a');
-  const [corSecundaria, setCorSecundaria] = useState('#f97316');
+  const [corSecundaria, setCorSecundaria] = useState('#38BDF8');
 
   // Coordenadas GPS e Raio do Pátio (automáticos)
   const [latGps, setLatGps] = useState<number | null>(null);
@@ -84,7 +84,7 @@ export function Oficina({ empresaId }: OficinaProps) {
       setEndereco(cfg.endereco || '');
       setChavePix(cfg.chave_pix || '');
       setCorPrimaria(cfg.cor_primaria || '#1e3a8a');
-      setCorSecundaria(cfg.cor_secundaria || '#f97316');
+      setCorSecundaria(cfg.cor_secundaria || '#38BDF8');
       setLatGps(cfg.latitude_gps ?? null);
       setLonGps(cfg.longitude_gps ?? null);
       setRaioGps(cfg.raio_gps_metros || 100);
@@ -206,9 +206,9 @@ export function Oficina({ empresaId }: OficinaProps) {
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto pb-12">
-      <header className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <header className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#F97316] text-[#F97316] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#38BDF8] text-[#38BDF8] flex items-center justify-center shrink-0">
             <Building2 className="w-6 h-6 stroke-[2.5]" />
           </div>
           <div>
@@ -226,9 +226,9 @@ export function Oficina({ empresaId }: OficinaProps) {
           onClick={carregarDados}
           disabled={carregando}
           title="Recarregar dados"
-          className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-slate-300 flex items-center gap-2 cursor-pointer disabled:opacity-50 text-xs font-bold"
+          className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-300 flex items-center gap-2 cursor-pointer disabled:opacity-50 text-xs font-bold"
         >
-          <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-[#F97316]' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-[#38BDF8]' : ''}`} />
           <span>Atualizar</span>
         </button>
       </header>
@@ -251,9 +251,9 @@ export function Oficina({ empresaId }: OficinaProps) {
 
       <form onSubmit={handleSalvar} className="space-y-4">
         {/* SEÇÃO 1: DADOS CADASTRAIS & FISCAIS */}
-        <section className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-4">
-          <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-[#1E293B] pb-2">
-            <Building2 className="w-4 h-4 text-[#F97316]" />
+        <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-4">
+          <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-[#12274D] pb-2">
+            <Building2 className="w-4 h-4 text-[#38BDF8]" />
             <span>Identificação da Empresa &amp; Contato</span>
           </h2>
 
@@ -265,7 +265,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 required
                 value={nomeFantasia}
                 onChange={(e) => setNomeFantasia(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-bold"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
               />
             </div>
 
@@ -275,7 +275,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 type="text"
                 value={razaoSocial}
                 onChange={(e) => setRazaoSocial(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
               />
             </div>
 
@@ -286,7 +286,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 value={cnpj}
                 onChange={(e) => setCnpj(e.target.value)}
                 placeholder="00.000.000/0001-00"
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
               />
             </div>
 
@@ -296,7 +296,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 type="text"
                 value={inscricaoEstadual}
                 onChange={(e) => setInscricaoEstadual(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
               />
             </div>
 
@@ -307,7 +307,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
                 placeholder="Ex: 11999998888"
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
               />
             </div>
 
@@ -317,7 +317,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 type="tel"
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
               />
             </div>
 
@@ -327,7 +327,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
               />
             </div>
 
@@ -338,7 +338,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 value={chavePix}
                 onChange={(e) => setChavePix(e.target.value)}
                 placeholder="CNPJ, E-mail, Celular ou Chave Aleatória"
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
               />
             </div>
 
@@ -351,7 +351,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                   onChange={(e) => handleCepChange(e.target.value)}
                   placeholder="00000-000"
                   maxLength={9}
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                 />
               </div>
 
@@ -363,7 +363,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                   onChange={(e) => setEndereco(e.target.value)}
                   onBlur={() => resolverCoordenadasAutomaticas(endereco)}
                   placeholder="Rua, Número, Bairro, Cidade - UF"
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
                 />
               </div>
             </div>
@@ -371,8 +371,8 @@ export function Oficina({ empresaId }: OficinaProps) {
         </section>
 
         {/* SEÇÃO 2: ÁREA DO PÁTIO DA OFICINA & TRAVA DO PONTO ELETRÔNICO */}
-        <section className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1E293B] pb-2">
+        <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#12274D] pb-2">
             <div>
               <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-blue-400" />
@@ -408,7 +408,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                   max={1000}
                   value={raioGps}
                   onChange={(e) => setRaioGps(parseInt(e.target.value, 10) || 100)}
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono font-bold text-sm"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono font-bold text-sm"
                 />
                 <span className="text-xs text-slate-400 font-semibold shrink-0">metros</span>
               </div>
@@ -435,7 +435,7 @@ export function Oficina({ empresaId }: OficinaProps) {
 
           {/* MAPA AUTOMÁTICO DO PÁTIO */}
           {latGps != null && lonGps != null && (
-            <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden border border-[#334155] relative bg-[#0B0F17]">
+            <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden border border-[#264577] relative bg-[#071226]">
               <iframe
                 title="Pátio da Oficina"
                 width="100%"
@@ -452,8 +452,8 @@ export function Oficina({ empresaId }: OficinaProps) {
         </section>
 
         {/* SEÇÃO 3: PARÂMETROS DA FOLHA DE PAGAMENTO & REGRAS DE COMISSÃO */}
-        <section className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-3.5">
-          <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-[#1E293B] pb-2">
+        <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3.5">
+          <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-[#12274D] pb-2">
             <DollarSign className="w-4 h-4 text-emerald-400" />
             <span>Parâmetros Padrão da Folha &amp; Comissões da Oficina</span>
           </h2>
@@ -467,7 +467,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 max={31}
                 value={diaPagamento}
                 onChange={(e) => setDiaPagamento(parseInt(e.target.value, 10) || 5)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono text-center font-bold"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold"
               />
               <span className="text-[11px] text-slate-400 mt-0.5 block">Ex: Dia 5 do mês seguinte</span>
             </div>
@@ -480,7 +480,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 max={31}
                 value={diaAdiantamento}
                 onChange={(e) => setDiaAdiantamento(parseInt(e.target.value, 10) || 20)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono text-center font-bold"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold"
               />
               <span className="text-[11px] text-slate-400 mt-0.5 block">Ex: Dia 20 do mês</span>
             </div>
@@ -493,7 +493,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 max={100}
                 value={comissaoServico}
                 onChange={(e) => setComissaoServico(parseFloat(e.target.value) || 0)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono text-center font-bold text-emerald-400"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold text-emerald-400"
               />
               <span className="text-[11px] text-slate-400 mt-0.5 block">Usado quando o mecânico não tem taxa individual</span>
             </div>
@@ -506,7 +506,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 max={100}
                 value={comissaoPeca}
                 onChange={(e) => setComissaoPeca(parseFloat(e.target.value) || 0)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono text-center font-bold text-emerald-400"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold text-emerald-400"
               />
             </div>
 
@@ -517,7 +517,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 min={0}
                 value={valorHoraExtra}
                 onChange={(e) => setValorHoraExtra(parseFloat(e.target.value) || 0)}
-                className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono text-center"
+                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center"
               />
             </div>
 
@@ -527,7 +527,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 id="chk-paga-he"
                 checked={pagaHoraExtra}
                 onChange={(e) => setPagaHoraExtra(e.target.checked)}
-                className="w-4 h-4 rounded text-[#F97316] cursor-pointer"
+                className="w-4 h-4 rounded text-[#38BDF8] cursor-pointer"
               />
               <label htmlFor="chk-paga-he" className="font-bold text-slate-200 cursor-pointer select-none">
                 Pagar hora extra por padrão
@@ -541,7 +541,7 @@ export function Oficina({ empresaId }: OficinaProps) {
           <button
             type="submit"
             disabled={salvando}
-            className="min-h-[50px] px-8 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-black text-base flex items-center gap-2 cursor-pointer shadow-lg shadow-orange-950/40 disabled:opacity-50"
+            className="min-h-[50px] px-8 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-black text-base flex items-center gap-2 cursor-pointer shadow-lg shadow-sky-950/40 disabled:opacity-50"
           >
             <Save className="w-5 h-5 stroke-[2.5]" />
             <span>{salvando ? 'Salvando Alterações…' : 'Salvar Dados da Oficina'}</span>

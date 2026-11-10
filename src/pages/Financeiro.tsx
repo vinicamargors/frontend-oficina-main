@@ -448,9 +448,9 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     let csvContent = '';
 
     if (tipoRelatorio === 'DRE') {
-      nomeArquivo = `dre_autotec_${dataInicio}_a_${dataFim}.csv`;
+      nomeArquivo = `dre_mecanify_${dataInicio}_a_${dataFim}.csv`;
       const linhas = [
-        ['DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO (DRE)', 'AUTOTEC PRO'],
+        ['DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO (DRE)', 'MECANIFY'],
         ['Período:', `${formatData(dataInicio)} a ${formatData(dataFim)}`],
         ['', ''],
         ['CONTA GERENCIAL', 'VALOR (R$)', '% SOBRE RECEITA'],
@@ -514,7 +514,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     } else if (tipoRelatorio === 'BALANCO') {
       nomeArquivo = `balanco_patrimonial_${dataInicio}_a_${dataFim}.csv`;
       const linhas = [
-        ['BALANÇO PATRIMONIAL & POSIÇÃO FINANCEIRA', 'AUTOTEC PRO'],
+        ['BALANÇO PATRIMONIAL & POSIÇÃO FINANCEIRA', 'MECANIFY'],
         ['Período:', `${formatData(dataInicio)} a ${formatData(dataFim)}`],
         ['', ''],
         ['GRUPO PATRIMONIAL', 'VALOR (R$)'],
@@ -537,7 +537,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     } else if (tipoRelatorio === 'BI') {
       nomeArquivo = `relatorio_bi_oficina_${dataInicio}_a_${dataFim}.csv`;
       const linhas = [
-        ['RELATÓRIO DE INTELIGÊNCIA & BI DA OFICINA', 'AUTOTEC PRO'],
+        ['RELATÓRIO DE INTELIGÊNCIA & BI DA OFICINA', 'MECANIFY'],
         ['Período:', `${formatData(dataInicio)} a ${formatData(dataFim)}`],
         ['Ticket Médio:', formatBRL(dadosFinanceiros?.ticket_medio)],
         ['Taxa de Conversão:', `${biData?.taxa_conversao_orcamentos || 0}%`],
@@ -590,7 +590,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
   if (!canSeeFinanceiro) {
     return (
-      <div className="bg-[#111827] border-2 border-red-600 rounded-2xl p-6 sm:p-10 text-center space-y-4 max-w-xl mx-auto my-8">
+      <div className="bg-[#0B1B36] border-2 border-red-600 rounded-2xl p-6 sm:p-10 text-center space-y-4 max-w-xl mx-auto my-8">
         <div className="w-16 h-16 rounded-2xl bg-red-950 border border-red-500 text-red-400 flex items-center justify-center mx-auto">
           <ShieldAlert className="w-8 h-8" />
         </div>
@@ -608,10 +608,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-12">
       {/* CABEÇALHO FINANCEIRO & BARRA GLOBAL DE PERÍODO */}
-      <header className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-3.5 sm:p-5 space-y-3.5">
+      <header className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-3.5 sm:p-5 space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#F97316] text-[#F97316] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#38BDF8] text-[#38BDF8] flex items-center justify-center shrink-0">
               <DollarSign className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
             </div>
             <div>
@@ -634,10 +634,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               disabled={carregando}
               title="Atualizar dados financeiros"
               aria-label="Atualizar dados financeiros"
-              className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-slate-300 flex items-center justify-center cursor-pointer disabled:opacity-50"
+              className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-300 flex items-center justify-center cursor-pointer disabled:opacity-50"
             >
               <RefreshCw
-                className={`w-4 h-4 ${carregando ? 'animate-spin text-[#F97316]' : ''}`}
+                className={`w-4 h-4 ${carregando ? 'animate-spin text-[#38BDF8]' : ''}`}
                 aria-hidden="true"
               />
             </button>
@@ -651,9 +651,9 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 else handleExportarCsv('BALANCO');
               }}
               title="Exportar dados da aba atual para CSV/Excel"
-              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <Download className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+              <Download className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
               <span>Exportar CSV</span>
             </button>
 
@@ -678,7 +678,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         </div>
 
         {/* BARRA DE ATALHOS DE PERÍODO */}
-        <div className="pt-2 border-t border-[#1E293B] flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="pt-2 border-t border-[#12274D] flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
             {(
               [
@@ -697,7 +697,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 className={`px-2.5 py-1 rounded-lg font-bold shrink-0 cursor-pointer transition-colors ${
                   periodoAtalho === at.id
                     ? 'bg-[#2563EB] text-white'
-                    : 'bg-[#0B0F17] text-slate-300 border border-[#334155] hover:bg-[#1E293B]'
+                    : 'bg-[#071226] text-slate-300 border border-[#264577] hover:bg-[#12274D]'
                 }`}
               >
                 {at.label}
@@ -706,7 +706,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           </div>
 
           <div className="flex items-center gap-2 font-mono text-[11px] text-slate-300">
-            <Calendar className="w-3.5 h-3.5 text-[#F97316] shrink-0" aria-hidden="true" />
+            <Calendar className="w-3.5 h-3.5 text-[#38BDF8] shrink-0" aria-hidden="true" />
             <input
               type="date"
               value={dataInicio}
@@ -714,7 +714,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 setDataInicio(e.target.value);
                 setPeriodoAtalho('CUSTOM');
               }}
-              className="px-2 py-0.5 rounded bg-[#0B0F17] border border-[#334155] text-white text-xs"
+              className="px-2 py-0.5 rounded bg-[#071226] border border-[#264577] text-white text-xs"
             />
             <span>até</span>
             <input
@@ -724,7 +724,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 setDataFim(e.target.value);
                 setPeriodoAtalho('CUSTOM');
               }}
-              className="px-2 py-0.5 rounded bg-[#0B0F17] border border-[#334155] text-white text-xs"
+              className="px-2 py-0.5 rounded bg-[#071226] border border-[#264577] text-white text-xs"
             />
           </div>
         </div>
@@ -749,15 +749,15 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {/* 4 ABAS PRINCIPAIS DO MÓDULO FINANCEIRO */}
       <nav
         aria-label="Abas Financeiras"
-        className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 bg-[#0B0F17] p-1.5 rounded-2xl border-2 border-[#1E293B]"
+        className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 bg-[#071226] p-1.5 rounded-2xl border-2 border-[#12274D]"
       >
         <button
           type="button"
           onClick={() => setActiveTab('balanco')}
           className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'balanco'
-              ? 'bg-[#F97316] text-[#0B0F17]'
-              : 'text-slate-300 hover:bg-[#1E293B]'
+              ? 'bg-[#38BDF8] text-[#071226]'
+              : 'text-slate-300 hover:bg-[#12274D]'
           }`}
         >
           <PieChart className="w-4 h-4" aria-hidden="true" />
@@ -769,8 +769,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           onClick={() => setActiveTab('dre')}
           className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'dre'
-              ? 'bg-[#F97316] text-[#0B0F17]'
-              : 'text-slate-300 hover:bg-[#1E293B]'
+              ? 'bg-[#38BDF8] text-[#071226]'
+              : 'text-slate-300 hover:bg-[#12274D]'
           }`}
         >
           <FileSpreadsheet className="w-4 h-4" aria-hidden="true" />
@@ -782,8 +782,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           onClick={() => setActiveTab('contas')}
           className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'contas'
-              ? 'bg-[#F97316] text-[#0B0F17]'
-              : 'text-slate-300 hover:bg-[#1E293B]'
+              ? 'bg-[#38BDF8] text-[#071226]'
+              : 'text-slate-300 hover:bg-[#12274D]'
           }`}
         >
           <CreditCard className="w-4 h-4" aria-hidden="true" />
@@ -798,8 +798,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           onClick={() => setActiveTab('bi')}
           className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'bi'
-              ? 'bg-[#F97316] text-[#0B0F17]'
-              : 'text-slate-300 hover:bg-[#1E293B]'
+              ? 'bg-[#38BDF8] text-[#071226]'
+              : 'text-slate-300 hover:bg-[#12274D]'
           }`}
         >
           <TrendingUp className="w-4 h-4" aria-hidden="true" />
@@ -817,7 +817,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             aria-label="Indicadores Financeiros Executivos"
             className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3"
           >
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
                 <span>Caixa Realizado</span>
                 <ArrowUpRight className="w-4 h-4 text-emerald-400" aria-hidden="true" />
@@ -828,7 +828,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               <div className="text-[11px] text-slate-400">OS Pagas + Aportes recebidos</div>
             </div>
 
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
                 <span>A Receber (Projetado)</span>
                 <Clock className="w-4 h-4 text-blue-400" aria-hidden="true" />
@@ -839,7 +839,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               <div className="text-[11px] text-slate-400">OS em execução / a faturar</div>
             </div>
 
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
                 <span>Despesas Pagas</span>
                 <ArrowDownRight className="w-4 h-4 text-red-400" aria-hidden="true" />
@@ -852,10 +852,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               </div>
             </div>
 
-            <div className="bg-[#111827] border-2 border-[#F97316] rounded-xl p-3 sm:p-4 flex flex-col justify-between shadow-lg shadow-orange-950/20">
-              <div className="flex items-center justify-between text-[#F97316] text-xs font-bold">
+            <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-xl p-3 sm:p-4 flex flex-col justify-between shadow-lg shadow-sky-950/20">
+              <div className="flex items-center justify-between text-[#38BDF8] text-xs font-bold">
                 <span>Lucro Líquido Real</span>
-                <TrendingUp className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                <TrendingUp className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
               </div>
               <div className="text-lg sm:text-2xl font-black font-mono text-white mt-1 tabular-nums">
                 {formatBRL(resumoFinanceiro.lucroLiquidoReal)}
@@ -869,8 +869,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           {/* ESTRUTURA DO BALANÇO PATRIMONIAL ATIVO VS PASSIVO */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* ATIVO CIRCULANTE */}
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#1E293B] pb-2.5">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
                 <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                   <span>Ativo Circulante (Bens e Direitos)</span>
@@ -881,17 +881,17 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               </div>
 
               <div className="space-y-2 text-xs sm:text-sm font-mono tabular-nums">
-                <div className="p-2.5 rounded-xl bg-[#0B0F17] border border-[#1E293B] flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between">
                   <span className="text-slate-300 font-sans">Caixa &amp; Bancos Realizado</span>
                   <strong className="text-white">{formatBRL(resumoFinanceiro.caixaTotal)}</strong>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-[#0B0F17] border border-[#1E293B] flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between">
                   <span className="text-slate-300 font-sans">Contas a Receber (OS em Aberto)</span>
                   <strong className="text-blue-300">{formatBRL(resumoFinanceiro.totalAReceber)}</strong>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-[#0B0F17] border border-[#1E293B] flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between">
                   <span className="text-slate-300 font-sans">Patrimônio em Peças (Estoque Almoxarifado)</span>
                   <strong className="text-amber-300">{formatBRL(patrimonioEstoque)}</strong>
                 </div>
@@ -899,8 +899,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* PASSIVO CIRCULANTE & POSIÇÃO LÍQUIDA */}
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#1E293B] pb-2.5">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
                 <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
                   <span>Passivo Circulante (Obrigações)</span>
@@ -911,14 +911,14 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               </div>
 
               <div className="space-y-2 text-xs sm:text-sm font-mono tabular-nums">
-                <div className="p-2.5 rounded-xl bg-[#0B0F17] border border-[#1E293B] flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between">
                   <span className="text-slate-300 font-sans">Contas a Pagar Pendentes / A Vencer</span>
                   <strong className="text-red-300">{formatBRL(resumoFinanceiro.despesasPendentes)}</strong>
                 </div>
 
-                <div className="p-3 rounded-xl bg-orange-950/30 border-2 border-[#F97316] flex items-center justify-between mt-3">
+                <div className="p-3 rounded-xl bg-sky-950/30 border-2 border-[#38BDF8] flex items-center justify-between mt-3">
                   <div className="font-sans">
-                    <div className="text-xs font-bold text-[#F97316] uppercase tracking-wider">
+                    <div className="text-xs font-bold text-[#38BDF8] uppercase tracking-wider">
                       Posição Patrimonial Líquida
                     </div>
                     <div className="text-[11px] text-slate-300 mt-0.5">
@@ -939,11 +939,11 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           ABA 2: DRE OPERACIONAL DA OFICINA (DEMONSTRATIVO)
           ======================================================== */}
       {activeTab === 'dre' && (
-        <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1E293B] pb-3">
+        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#12274D] pb-3">
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-[#F97316]" aria-hidden="true" />
+                <FileSpreadsheet className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
                 <span>Demonstrativo do Resultado do Exercício (DRE)</span>
               </h2>
               <p className="text-xs text-slate-400">
@@ -953,9 +953,9 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             <button
               type="button"
               onClick={() => handleExportarCsv('DRE')}
-              className="min-h-[38px] px-3.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+              className="min-h-[38px] px-3.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
             >
-              <Download className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+              <Download className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
               <span>Baixar DRE (Excel)</span>
             </button>
           </div>
@@ -963,7 +963,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           {/* TABELA VERTICAL DE DRE ESTRUTURADA */}
           <div className="space-y-2 text-xs sm:text-sm font-mono tabular-nums">
             {/* 1. RECEITA BRUTA */}
-            <div className="p-3 rounded-xl bg-[#0B0F17] border border-blue-900/60 flex items-center justify-between font-bold">
+            <div className="p-3 rounded-xl bg-[#071226] border border-blue-900/60 flex items-center justify-between font-bold">
               <span className="font-sans text-blue-300 flex items-center gap-2">
                 <span>1. RECEITA BRUTA TOTAL</span>
               </span>
@@ -985,7 +985,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             )}
 
             {/* 2. CUSTO VARIÁVEL (CMV) */}
-            <div className="p-3 rounded-xl bg-[#0B0F17] border border-red-950 flex items-center justify-between font-bold">
+            <div className="p-3 rounded-xl bg-[#071226] border border-red-950 flex items-center justify-between font-bold">
               <span className="font-sans text-red-300">
                 2. (-) CUSTOS VARIÁVEIS DIRETOS (CMV / PEÇAS DAS OS)
               </span>
@@ -1008,7 +1008,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* 4. DESPESAS OPERACIONAIS / CONTAS A PAGAR */}
-            <div className="p-3 rounded-xl bg-[#0B0F17] border border-red-950 flex items-center justify-between font-bold mt-2">
+            <div className="p-3 rounded-xl bg-[#071226] border border-red-950 flex items-center justify-between font-bold mt-2">
               <span className="font-sans text-red-300">
                 4. (-) DESPESAS OPERACIONAIS LIQUIDADAS (CONTAS PAGAS)
               </span>
@@ -1035,7 +1035,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             )}
 
             {/* 5. LUCRO LÍQUIDO REAL */}
-            <div className="p-4 rounded-xl bg-[#0B0F17] border-2 border-emerald-500 flex items-center justify-between font-bold shadow-lg shadow-emerald-950/40 mt-3">
+            <div className="p-4 rounded-xl bg-[#071226] border-2 border-emerald-500 flex items-center justify-between font-bold shadow-lg shadow-emerald-950/40 mt-3">
               <div className="font-sans">
                 <span className="text-base sm:text-lg text-emerald-400 font-black block">
                   5. (=) LUCRO LÍQUIDO REAL DO PERÍODO
@@ -1063,7 +1063,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {activeTab === 'contas' && (
         <div className="space-y-3.5">
           {/* BARRA DE FILTROS & AÇÕES DE LANÇAMENTOS */}
-          <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-3 sm:p-4 space-y-3">
+          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 space-y-3">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
               <search className="flex-1 relative">
                 <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" aria-hidden="true" />
@@ -1075,7 +1075,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck="false"
-                  className="w-full min-h-[40px] pl-9 pr-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white text-xs sm:text-sm"
+                  className="w-full min-h-[40px] pl-9 pr-3 bg-[#071226] border border-[#264577] rounded-xl text-white text-xs sm:text-sm"
                 />
               </search>
 
@@ -1101,7 +1101,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* SUB-FILTROS DE TIPO E STATUS */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#1E293B] text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#12274D] text-xs">
               <div className="flex items-center gap-1.5">
                 {(
                   [
@@ -1117,7 +1117,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-colors ${
                       filtroTipoTransacao === f.id
                         ? 'bg-[#2563EB] text-white'
-                        : 'bg-[#0B0F17] text-slate-300 border border-[#334155]'
+                        : 'bg-[#071226] text-slate-300 border border-[#264577]'
                     }`}
                   >
                     {f.label}
@@ -1140,8 +1140,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     onClick={() => setFiltroStatusTransacao(s.id)}
                     className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer text-[11px] transition-colors ${
                       filtroStatusTransacao === s.id
-                        ? 'bg-[#F97316] text-[#0B0F17]'
-                        : 'bg-[#0B0F17] text-slate-300 border border-[#334155]'
+                        ? 'bg-[#38BDF8] text-[#071226]'
+                        : 'bg-[#071226] text-slate-300 border border-[#264577]'
                     }`}
                   >
                     {s.label}
@@ -1153,7 +1153,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
           {/* LISTA DE TRANSAÇÕES */}
           {transacoesFiltradas.length === 0 ? (
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-8 text-center text-slate-400 space-y-2">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
               <CreditCard className="w-8 h-8 text-slate-500 mx-auto" />
               <p className="text-sm font-bold text-white">Nenhum lançamento no filtro atual</p>
               <p className="text-xs text-slate-400">
@@ -1161,7 +1161,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               </p>
             </div>
           ) : (
-            <div className="bg-[#0B0F17] border-2 border-[#334155] rounded-xl divide-y divide-[#1E293B]">
+            <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
               {transacoesFiltradas.map((t) => {
                 const isDespesa = t.tipo === 'DESPESA';
                 const isLiquidado = t.status === 'LIQUIDADO';
@@ -1170,7 +1170,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 return (
                   <article
                     key={t.id}
-                    className="p-3 sm:px-4 sm:py-3 hover:bg-[#111827]/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    className="p-3 sm:px-4 sm:py-3 hover:bg-[#0B1B36]/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                   >
                     {/* Linha 1: Descrição e Badges */}
                     <div className="min-w-0 sm:flex-1 space-y-1">
@@ -1185,7 +1185,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                           {isDespesa ? 'A PAGAR' : 'A RECEBER'}
                         </span>
 
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#1E293B] text-slate-300 border border-[#334155]">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#12274D] text-slate-300 border border-[#264577]">
                           {t.categoria}
                         </span>
 
@@ -1224,7 +1224,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     </div>
 
                     {/* Linha 2 (Mobile) / Lado Direito: Valor e Ações */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#1E293B]">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#12274D]">
                       <div className="text-right font-mono tabular-nums">
                         <div
                           className={`text-base sm:text-lg font-black ${
@@ -1258,7 +1258,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                           onClick={() => abrirModalEdicaoTransacao(t)}
                           title="Editar Lançamento"
                           aria-label={`Editar ${t.descricao}`}
-                          className="w-8 h-8 rounded-lg bg-[#1E293B] hover:bg-[#334155] border border-slate-600 text-amber-300 flex items-center justify-center cursor-pointer"
+                          className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-amber-300 flex items-center justify-center cursor-pointer"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -1289,7 +1289,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         <div className="space-y-4">
           {/* CARDS DE EFICIÊNCIA OPERACIONAL */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-3.5 flex flex-col justify-between">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3.5 flex flex-col justify-between">
               <span className="text-slate-400 text-xs font-bold">Ticket Médio por OS</span>
               <div className="text-xl sm:text-2xl font-black font-mono text-white mt-1 tabular-nums">
                 {formatBRL(dadosFinanceiros?.ticket_medio)}
@@ -1297,7 +1297,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               <span className="text-[11px] text-slate-400">Gasto médio por veículo</span>
             </div>
 
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-3.5 flex flex-col justify-between">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3.5 flex flex-col justify-between">
               <span className="text-slate-400 text-xs font-bold">Taxa de Conversão</span>
               <div className="text-xl sm:text-2xl font-black font-mono text-emerald-400 mt-1 tabular-nums">
                 {biData?.taxa_conversao_orcamentos ?? 0}%
@@ -1305,7 +1305,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               <span className="text-[11px] text-slate-400">Orçamentos que viraram serviço</span>
             </div>
 
-            <div className="col-span-2 sm:col-span-1 bg-[#111827] border-2 border-[#1E293B] rounded-xl p-3.5 flex flex-col justify-between">
+            <div className="col-span-2 sm:col-span-1 bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3.5 flex flex-col justify-between">
               <span className="text-slate-400 text-xs font-bold">Giro Médio no Pátio</span>
               <div className="text-xl sm:text-2xl font-black font-mono text-amber-400 mt-1 tabular-nums">
                 {biData?.lead_time_medio_horas ?? 0}h
@@ -1316,10 +1316,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* RANKING DE PRODUTIVIDADE POR MECÂNICO */}
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#1E293B] pb-2.5">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
                 <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                  <Wrench className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                   <span>Produtividade &amp; Lucro por Mecânico</span>
                 </h3>
                 <span className="text-xs text-slate-400 font-mono">
@@ -1334,10 +1334,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   biData?.produtividade_mecanicos.map((mec, idx) => (
                     <div
                       key={mec.nome}
-                      className="p-2.5 rounded-xl bg-[#0B0F17] border border-[#1E293B] flex items-center justify-between text-xs"
+                      className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-[#1E293B] text-slate-300 font-bold flex items-center justify-center text-[10px]">
+                        <span className="w-5 h-5 rounded-full bg-[#12274D] text-slate-300 font-bold flex items-center justify-center text-[10px]">
                           {idx + 1}
                         </span>
                         <div>
@@ -1361,8 +1361,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* FORMAS DE PAGAMENTO UTILIZADAS */}
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#1E293B] pb-2.5">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
                 <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-blue-400" aria-hidden="true" />
                   <span>Distribuição por Meio de Pagamento</span>
@@ -1388,7 +1388,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                             {formatBRL(mp.valor_total)} ({pct.toFixed(0)}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-[#0B0F17] overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-[#071226] overflow-hidden">
                           <div
                             className="h-full bg-blue-500 rounded-full"
                             style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}
@@ -1402,8 +1402,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* RENTABILIDADE POR MARCA DE VEÍCULO */}
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#1E293B] pb-2.5">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
                 <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <Car className="w-4 h-4 text-amber-400" aria-hidden="true" />
                   <span>Rentabilidade por Marca de Veículo</span>
@@ -1417,7 +1417,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   biData?.rentabilidade_marcas.map((marca) => (
                     <div
                       key={marca.marca}
-                      className="p-2.5 rounded-xl bg-[#0B0F17] border border-[#1E293B] flex items-center justify-between text-xs"
+                      className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between text-xs"
                     >
                       <div>
                         <strong className="text-white block uppercase">{marca.marca}</strong>
@@ -1434,8 +1434,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* TOP 10 CLIENTES (CURVA ABC) */}
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#1E293B] pb-2.5">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
                 <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                   <Users className="w-4 h-4 text-emerald-400" aria-hidden="true" />
                   <span>Top Clientes Mais Lucrativos (Curva ABC)</span>
@@ -1449,7 +1449,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   biData?.top_10_clientes.map((cli, idx) => (
                     <div
                       key={cli.nome}
-                      className="p-2.5 rounded-xl bg-[#0B0F17] border border-[#1E293B] flex items-center justify-between text-xs"
+                      className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-5 h-5 rounded-full bg-emerald-950 text-emerald-300 font-bold flex items-center justify-center text-[10px] border border-emerald-500">
@@ -1480,8 +1480,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {/* MODAL: CADASTRO / EDIÇÃO DE TRANSAÇÃO (DESPESA OU RECEITA AVULSA) */}
       {modalTransacaoAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#111827] border-2 border-[#F97316] rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-3">
+          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#12274D] pb-3">
               <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                 {formTipo === 'DESPESA' ? (
                   <ArrowDownRight className="w-5 h-5 text-red-400" />
@@ -1520,7 +1520,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                       ? 'Ex: Aluguel do Galpão, Conta de Luz Enel…'
                       : 'Ex: Aporte Sócio Roberto, Venda de Sucata/Baterias…'
                   }
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
                 />
               </div>
 
@@ -1530,7 +1530,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   <select
                     value={formCategoria}
                     onChange={(e) => setFormCategoria(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-bold"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
                   >
                     {(formTipo === 'DESPESA' ? CATEGORIAS_DESPESA : CATEGORIAS_RECEITA).map(
                       (cat) => (
@@ -1552,7 +1552,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     value={formValor}
                     onChange={(e) => setFormValor(e.target.value)}
                     placeholder="0,00"
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono font-bold"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono font-bold"
                   />
                 </div>
               </div>
@@ -1567,7 +1567,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     required
                     value={formVencimento}
                     onChange={(e) => setFormVencimento(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                   />
                 </div>
 
@@ -1578,7 +1578,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   <select
                     value={formForma}
                     onChange={(e) => setFormForma(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
                   >
                     {FORMAS_PAGAMENTO.map((fp) => (
                       <option key={fp} value={fp}>
@@ -1596,17 +1596,17 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   value={formObservacoes}
                   onChange={(e) => setFormObservacoes(e.target.value)}
                   placeholder="Número de nota fiscal, recibo ou detalhes…"
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
                 />
               </div>
 
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0B0F17] border border-[#334155]">
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#071226] border border-[#264577]">
                 <input
                   type="checkbox"
                   id="chk-ja-liquidado"
                   checked={formJaPago}
                   onChange={(e) => setFormJaPago(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#F97316] cursor-pointer"
+                  className="w-4 h-4 rounded text-[#38BDF8] cursor-pointer"
                 />
                 <label
                   htmlFor="chk-ja-liquidado"
@@ -1618,18 +1618,18 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1E293B]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#12274D]">
                 <button
                   type="button"
                   onClick={() => setModalTransacaoAberto(false)}
-                  className="min-h-[42px] px-4 rounded-xl bg-[#1E293B] text-white font-bold cursor-pointer"
+                  className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={salvandoTransacao}
-                  className="min-h-[42px] px-5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold cursor-pointer disabled:opacity-50"
+                  className="min-h-[42px] px-5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold cursor-pointer disabled:opacity-50"
                 >
                   {salvandoTransacao ? 'Salvando…' : 'Salvar Lançamento'}
                 </button>
@@ -1642,7 +1642,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {/* MODAL: CONFIRMAÇÃO DE EXCLUSÃO */}
       {itemParaExcluir && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#111827] border-2 border-red-600 rounded-2xl w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
+          <div className="bg-[#0B1B36] border-2 border-red-600 rounded-2xl w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-red-950 border border-red-500 text-red-400 flex items-center justify-center shrink-0">
                 <Trash2 className="w-5 h-5" />
@@ -1653,7 +1653,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               </div>
             </div>
 
-            <div className="p-3 bg-[#0B0F17] rounded-xl border border-[#334155]">
+            <div className="p-3 bg-[#071226] rounded-xl border border-[#264577]">
               <div className="text-sm font-bold text-white">{itemParaExcluir.descricao}</div>
               <div className="text-xs text-slate-400 font-mono mt-0.5">
                 Valor: {formatBRL(itemParaExcluir.valor)} &bull; Venc: {formatData(itemParaExcluir.data_vencimento)}
@@ -1664,7 +1664,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               <button
                 type="button"
                 onClick={() => setItemParaExcluir(null)}
-                className="min-h-[42px] px-4 rounded-xl bg-[#1E293B] text-white font-bold text-xs cursor-pointer"
+                className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
               >
                 Cancelar
               </button>

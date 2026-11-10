@@ -54,8 +54,8 @@ const STATUS_META: Record<
   },
   AGUARDANDO_PECA: {
     label: 'Aguardando Peça',
-    badgeBg: 'bg-orange-500/20 border-orange-500',
-    badgeText: 'text-orange-300',
+    badgeBg: 'bg-sky-500/20 border-sky-500',
+    badgeText: 'text-sky-300',
   },
   EXECUCAO: {
     label: 'Em Execução',
@@ -605,7 +605,7 @@ export function ClientesVeiculos({
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* CABEÇALHO UNIFICADO COMPACTO DE CLIENTES & VEÍCULOS */}
-      <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+      <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
         <div className="flex items-center justify-between gap-2">
           <div>
             <h1 className="text-lg sm:text-2xl font-extrabold text-white leading-tight">
@@ -619,7 +619,7 @@ export function ClientesVeiculos({
           <button
             type="button"
             onClick={abrirFichaNovoCliente}
-            className="sm:hidden min-h-[38px] px-3 py-1.5 rounded-xl bg-[#F97316] text-[#0B0F17] font-extrabold text-xs flex items-center gap-1 cursor-pointer shrink-0"
+            className="sm:hidden min-h-[38px] px-3 py-1.5 rounded-xl bg-[#38BDF8] text-[#071226] font-extrabold text-xs flex items-center gap-1 cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4 stroke-[2.8]" aria-hidden="true" />
             <span>+ Novo</span>
@@ -631,7 +631,7 @@ export function ClientesVeiculos({
           <div
             role="group"
             aria-label="Modo de visualização"
-            className="flex-1 sm:flex-initial bg-[#0B0F17] p-1 rounded-xl border border-[#334155] grid grid-cols-2 sm:flex items-center gap-1"
+            className="flex-1 sm:flex-initial bg-[#071226] p-1 rounded-xl border border-[#264577] grid grid-cols-2 sm:flex items-center gap-1"
           >
             <button
               type="button"
@@ -641,7 +641,7 @@ export function ClientesVeiculos({
               }}
               className={`min-h-[36px] sm:min-h-[40px] px-3 py-1 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
                 viewMode === 'clientes'
-                  ? 'bg-[#F97316] text-[#0B0F17]'
+                  ? 'bg-[#38BDF8] text-[#071226]'
                   : 'text-slate-300 hover:text-white'
               }`}
             >
@@ -656,7 +656,7 @@ export function ClientesVeiculos({
               }}
               className={`min-h-[36px] sm:min-h-[40px] px-3 py-1 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
                 viewMode === 'veiculos'
-                  ? 'bg-[#F97316] text-[#0B0F17]'
+                  ? 'bg-[#38BDF8] text-[#071226]'
                   : 'text-slate-300 hover:text-white'
               }`}
             >
@@ -668,7 +668,7 @@ export function ClientesVeiculos({
           <button
             type="button"
             onClick={abrirFichaNovoCliente}
-            className="hidden sm:flex min-h-[44px] px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-sm items-center justify-center gap-2 cursor-pointer"
+            className="hidden sm:flex min-h-[44px] px-4 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm items-center justify-center gap-2 cursor-pointer"
           >
             <Plus className="w-5 h-5 stroke-[2.8]" aria-hidden="true" />
             <span>+ Novo Cliente &amp; Veículo</span>
@@ -709,7 +709,7 @@ export function ClientesVeiculos({
       )}
 
       {/* BARRA DE PESQUISA UNIFICADA COMPACTA (<search>) */}
-      <search className="bg-[#111827] border-2 border-[#1E293B] rounded-xl sm:rounded-2xl p-2.5 sm:p-3">
+      <search className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-2.5 sm:p-3">
         <div className="relative">
           <Search
             className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -729,7 +729,7 @@ export function ClientesVeiculos({
             spellCheck={false}
             placeholder="Placa, nome do cliente, WhatsApp, CPF ou modelo…"
             aria-label="Pesquisar por placa, cliente, telefone, CPF ou modelo"
-            className="w-full min-h-[40px] sm:min-h-[46px] pl-10 pr-20 py-1.5 rounded-lg sm:rounded-xl bg-[#0B0F17] border border-[#334155] focus:border-[#F97316] text-white text-sm font-medium"
+            className="w-full min-h-[40px] sm:min-h-[46px] pl-10 pr-20 py-1.5 rounded-lg sm:rounded-xl bg-[#071226] border border-[#264577] focus:border-[#38BDF8] text-white text-sm font-medium"
           />
           {searchTerm && (
             <button
@@ -738,7 +738,7 @@ export function ClientesVeiculos({
                 setSearchTerm('');
                 setCurrentPage(1);
               }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded bg-[#1E293B] hover:bg-[#334155] text-xs font-bold text-slate-200 cursor-pointer"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded bg-[#12274D] hover:bg-[#264577] text-xs font-bold text-slate-200 cursor-pointer"
             >
               Limpar
             </button>
@@ -748,13 +748,13 @@ export function ClientesVeiculos({
 
       {/* CONTEÚDO PRINCIPAL: LISTA POR CLIENTES OU POR PLACAS */}
       {loading ? (
-        <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-8 flex flex-col items-center justify-center gap-2">
+        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 flex flex-col items-center justify-center gap-2">
           <progress aria-label="Carregando clientes e veículos" className="loading-spinner" />
           <p className="text-slate-300 text-sm font-bold">Carregando clientes e frota…</p>
         </div>
       ) : viewMode === 'clientes' ? (
         clientesPaginados.length === 0 ? (
-          <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-8 text-center space-y-3">
+          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center space-y-3">
             <Users className="w-10 h-10 text-slate-500 mx-auto" aria-hidden="true" />
             <div className="space-y-1">
               <h2 className="text-base sm:text-lg font-bold text-white">
@@ -764,7 +764,7 @@ export function ClientesVeiculos({
             <button
               type="button"
               onClick={abrirFichaNovoCliente}
-              className="min-h-[42px] px-4 py-2 rounded-xl bg-[#F97316] text-[#0B0F17] font-extrabold text-xs sm:text-sm inline-flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[42px] px-4 py-2 rounded-xl bg-[#38BDF8] text-[#071226] font-extrabold text-xs sm:text-sm inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
               <span>Cadastrar Cliente &amp; Veículo</span>
@@ -780,7 +780,7 @@ export function ClientesVeiculos({
               return (
                 <article
                   key={cli.id}
-                  className="bg-[#111827] border border-[#1E293B] hover:border-[#334155] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-2.5 transition-colors"
+                  className="bg-[#0B1B36] border border-[#12274D] hover:border-[#264577] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-2.5 transition-colors"
                 >
                   {/* Linha Superior do Cliente Compacta */}
                   <div className="flex items-center justify-between gap-2">
@@ -796,7 +796,7 @@ export function ClientesVeiculos({
 
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-300 mt-0.5">
                         <span className="inline-flex items-center gap-1 font-semibold text-slate-200">
-                          <Phone className="w-3 h-3 text-[#F97316]" aria-hidden="true" />
+                          <Phone className="w-3 h-3 text-[#38BDF8]" aria-hidden="true" />
                           <span>{cli.telefone || 'Sem fone'}</span>
                         </span>
                         {cli.cpf_cnpj && (
@@ -829,9 +829,9 @@ export function ClientesVeiculos({
                         onClick={() => abrirHistoricoCliente(cli)}
                         aria-label={`Histórico de ${cli.nome}`}
                         title="Histórico de OS do Cliente"
-                        className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-slate-200 font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
+                        className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-200 font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
                       >
-                        <ClipboardList className="w-3.5 h-3.5 text-[#F97316]" aria-hidden="true" />
+                        <ClipboardList className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
                         <span className="hidden md:inline">Histórico</span>
                         <span className="text-[11px] font-mono">({osDoCliente.length})</span>
                       </button>
@@ -843,7 +843,7 @@ export function ClientesVeiculos({
                         title="Adicionar Veículo"
                         className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-[#1E3A8A] hover:bg-blue-800 border border-blue-500 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
                       >
-                        <Plus className="w-3.5 h-3.5 text-[#F97316]" aria-hidden="true" />
+                        <Plus className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
                         <Car className="w-3.5 h-3.5 sm:hidden" aria-hidden="true" />
                         <span className="hidden sm:inline">+ Veículo</span>
                       </button>
@@ -853,9 +853,9 @@ export function ClientesVeiculos({
                         onClick={() => abrirFichaEditarCliente(cli, false)}
                         aria-label={`Editar ficha de ${cli.nome}`}
                         title="Editar Ficha do Cliente"
-                        className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg bg-[#0B0F17] hover:bg-[#1E293B] border border-[#475569] text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                        className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#3A5C90] text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
                       >
-                        <Edit2 className="w-3.5 h-3.5 text-[#F97316]" aria-hidden="true" />
+                        <Edit2 className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
                         <span className="hidden md:inline">Editar</span>
                       </button>
                     </div>
@@ -863,14 +863,14 @@ export function ClientesVeiculos({
 
                   {/* Lista Compacta dos Veículos do Cliente */}
                   {carros.length === 0 ? (
-                    <div className="bg-[#0B0F17] border border-dashed border-[#334155] rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+                    <div className="bg-[#071226] border border-dashed border-[#264577] rounded-lg px-3 py-2 flex items-center justify-between gap-2">
                       <span className="text-xs text-slate-400">
                         Sem veículo vinculado.
                       </span>
                       <button
                         type="button"
                         onClick={() => abrirFichaEditarCliente(cli, true)}
-                        className="px-2.5 py-1 rounded bg-[#F97316] text-[#0B0F17] font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1 rounded bg-[#38BDF8] text-[#071226] font-bold text-xs inline-flex items-center gap-1 cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                         <span>+ Veículo</span>
@@ -883,7 +883,7 @@ export function ClientesVeiculos({
                         return (
                           <div
                             key={v.id}
-                            className="bg-[#0B0F17] border border-[#1E293B] hover:border-[#475569] rounded-lg px-2.5 py-2 flex items-center justify-between gap-2"
+                            className="bg-[#071226] border border-[#12274D] hover:border-[#3A5C90] rounded-lg px-2.5 py-2 flex items-center justify-between gap-2"
                           >
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 min-w-0">
@@ -911,7 +911,7 @@ export function ClientesVeiculos({
                                 onClick={() => abrirHistoricoVeiculo(v, cli)}
                                 title={`Histórico (${osDoCarro.length} OS)`}
                                 aria-label={`Histórico do veículo ${v.placa}`}
-                                className="h-8 px-2 rounded-lg bg-[#111827] hover:bg-[#1E293B] border border-[#334155] text-slate-200 font-bold text-xs flex items-center gap-1 cursor-pointer"
+                                className="h-8 px-2 rounded-lg bg-[#0B1B36] hover:bg-[#12274D] border border-[#264577] text-slate-200 font-bold text-xs flex items-center gap-1 cursor-pointer"
                               >
                                 <History className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" />
                                 <span className="font-mono text-[11px]">{osDoCarro.length}</span>
@@ -922,7 +922,7 @@ export function ClientesVeiculos({
                                 onClick={() => abrirModalEditarVeiculo(v)}
                                 title="Editar dados do veículo"
                                 aria-label={`Editar veículo ${v.placa}`}
-                                className="h-8 w-8 rounded-lg bg-[#111827] hover:bg-[#1E293B] border border-[#334155] text-slate-200 flex items-center justify-center cursor-pointer"
+                                className="h-8 w-8 rounded-lg bg-[#0B1B36] hover:bg-[#12274D] border border-[#264577] text-slate-200 flex items-center justify-center cursor-pointer"
                               >
                                 <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                               </button>
@@ -930,7 +930,7 @@ export function ClientesVeiculos({
                               <button
                                 type="button"
                                 onClick={() => iniciarNovaOsParaVeiculo(v, cli)}
-                                className="h-8 px-2.5 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-xs flex items-center gap-1 cursor-pointer"
+                                className="h-8 px-2.5 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-1 cursor-pointer"
                               >
                                 <Wrench className="w-3.5 h-3.5 stroke-[2.5]" aria-hidden="true" />
                                 <span>+ OS</span>
@@ -949,7 +949,7 @@ export function ClientesVeiculos({
       ) : (
         /* VISÃO DIRETA POR PLACAS / VEÍCULOS COMPACTA */
         veiculosPaginados.length === 0 ? (
-          <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-8 text-center space-y-2">
+          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center space-y-2">
             <Car className="w-10 h-10 text-slate-500 mx-auto" aria-hidden="true" />
             <h2 className="text-base sm:text-lg font-bold text-white">
               Nenhum veículo encontrado
@@ -967,7 +967,7 @@ export function ClientesVeiculos({
               return (
                 <article
                   key={v.id}
-                  className="bg-[#111827] border border-[#1E293B] hover:border-[#475569] rounded-xl p-3 flex flex-col justify-between gap-2.5"
+                  className="bg-[#0B1B36] border border-[#12274D] hover:border-[#3A5C90] rounded-xl p-3 flex flex-col justify-between gap-2.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -1004,18 +1004,18 @@ export function ClientesVeiculos({
                         type="button"
                         onClick={() => abrirModalEditarVeiculo(v)}
                         aria-label={`Editar veículo ${v.placa}`}
-                        className="h-8 w-8 rounded-lg bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-slate-200 flex items-center justify-center cursor-pointer"
+                        className="h-8 w-8 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-200 flex items-center justify-center cursor-pointer"
                       >
-                        <Edit2 className="w-3.5 h-3.5 text-[#F97316]" aria-hidden="true" />
+                        <Edit2 className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#1E293B]">
+                  <div className="flex items-center gap-2 pt-2 border-t border-[#12274D]">
                     <button
                       type="button"
                       onClick={() => abrirHistoricoVeiculo(v, dono)}
-                      className="flex-1 h-8 px-2.5 rounded-lg bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="flex-1 h-8 px-2.5 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <History className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" />
                       <span>Histórico ({osDoCarro.length})</span>
@@ -1024,7 +1024,7 @@ export function ClientesVeiculos({
                     <button
                       type="button"
                       onClick={() => iniciarNovaOsParaVeiculo(v, dono)}
-                      className="flex-1 h-8 px-2.5 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="flex-1 h-8 px-2.5 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Wrench className="w-3.5 h-3.5 stroke-[2.5]" aria-hidden="true" />
                       <span>+ Abrir OS</span>
@@ -1039,7 +1039,7 @@ export function ClientesVeiculos({
 
       {/* PAGINAÇÃO */}
       {totalPages > 1 && (
-        <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm text-slate-300 font-semibold">
             Página <strong className="text-white">{currentPage}</strong> de{' '}
             <strong className="text-white">{totalPages}</strong> ({totalItems} registros)
@@ -1049,7 +1049,7 @@ export function ClientesVeiculos({
               type="button"
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="min-h-[44px] px-4 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] disabled:opacity-40 text-white font-bold text-sm inline-flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-[#071226] border border-[#264577] disabled:opacity-40 text-white font-bold text-sm inline-flex items-center gap-1.5 cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               <span>Anterior</span>
@@ -1058,7 +1058,7 @@ export function ClientesVeiculos({
               type="button"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="min-h-[44px] px-4 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] disabled:opacity-40 text-white font-bold text-sm inline-flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-[#071226] border border-[#264577] disabled:opacity-40 text-white font-bold text-sm inline-flex items-center gap-1.5 cursor-pointer"
             >
               <span>Próxima</span>
               <ChevronRight className="w-4 h-4" aria-hidden="true" />
@@ -1075,8 +1075,8 @@ export function ClientesVeiculos({
           aria-labelledby="titulo-modal-ficha-cliente"
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
         >
-          <div className="bg-[#111827] border-2 border-[#F97316] rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto p-5 sm:p-6 space-y-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#1E293B]">
+          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto p-5 sm:p-6 space-y-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#12274D]">
               <div>
                 <h2
                   id="titulo-modal-ficha-cliente"
@@ -1094,7 +1094,7 @@ export function ClientesVeiculos({
                 type="button"
                 onClick={() => setFichaAberta(false)}
                 aria-label="Fechar ficha"
-                className="p-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-slate-300 hover:text-white cursor-pointer"
+                className="p-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-300 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
@@ -1113,7 +1113,7 @@ export function ClientesVeiculos({
             <form onSubmit={handleSalvarFichaCliente} className="space-y-6">
               {/* Dados do Cliente */}
               <fieldset className="space-y-3">
-                <legend className="text-sm font-extrabold uppercase tracking-wider text-[#F97316]">
+                <legend className="text-sm font-extrabold uppercase tracking-wider text-[#38BDF8]">
                   1. Dados do Cliente
                 </legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1133,7 +1133,7 @@ export function ClientesVeiculos({
                       value={cliNome}
                       onChange={(e) => setCliNome(e.target.value)}
                       placeholder="Ex: João Carlos da Silva"
-                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                     />
                   </div>
 
@@ -1154,7 +1154,7 @@ export function ClientesVeiculos({
                       value={cliTelefone}
                       onChange={(e) => setCliTelefone(e.target.value)}
                       placeholder="(11) 99999-9999"
-                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                     />
                   </div>
 
@@ -1175,7 +1175,7 @@ export function ClientesVeiculos({
                       value={cliCpfCnpj}
                       onChange={(e) => setCliCpfCnpj(e.target.value)}
                       placeholder="000.000.000-00"
-                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                     />
                   </div>
 
@@ -1194,7 +1194,7 @@ export function ClientesVeiculos({
                       value={cliEndereco}
                       onChange={(e) => setCliEndereco(e.target.value)}
                       placeholder="Rua, Número, Bairro, Cidade"
-                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                      className="w-full min-h-[48px] px-3.5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                     />
                   </div>
                 </div>
@@ -1210,7 +1210,7 @@ export function ClientesVeiculos({
                     {(veiculosPorCliente[clienteEmEdicao.id] || []).map((v) => (
                       <div
                         key={v.id}
-                        className="bg-[#0B0F17] border border-[#334155] rounded-xl p-3 flex items-center justify-between gap-2"
+                        className="bg-[#071226] border border-[#264577] rounded-xl p-3 flex items-center justify-between gap-2"
                       >
                         <div className="min-w-0">
                           <span className="px-2 py-0.5 rounded bg-[#1E3A8A] text-white font-mono font-bold text-xs">
@@ -1226,9 +1226,9 @@ export function ClientesVeiculos({
                             setFichaAberta(false);
                             abrirModalEditarVeiculo(v);
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-[#111827] hover:bg-[#1E293B] border border-[#475569] text-xs font-bold text-slate-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
+                          className="px-3 py-1.5 rounded-lg bg-[#0B1B36] hover:bg-[#12274D] border border-[#3A5C90] text-xs font-bold text-slate-200 inline-flex items-center gap-1 cursor-pointer shrink-0"
                         >
-                          <Edit2 className="w-3.5 h-3.5 text-[#F97316]" aria-hidden="true" />
+                          <Edit2 className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
                           <span>Editar Carro</span>
                         </button>
                       </div>
@@ -1240,7 +1240,7 @@ export function ClientesVeiculos({
               {/* Novos Veículos a Adicionar na Ficha */}
               <fieldset className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <legend className="text-sm font-extrabold uppercase tracking-wider text-[#F97316]">
+                  <legend className="text-sm font-extrabold uppercase tracking-wider text-[#38BDF8]">
                     {clienteEmEdicao
                       ? '2. Adicionar Novo(s) Veículo(s) a este Cliente'
                       : '2. Veículo(s) do Cliente'}
@@ -1255,7 +1255,7 @@ export function ClientesVeiculos({
                     }
                     className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-800 border border-blue-400 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Plus className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                    <Plus className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                     <span>+ Adicionar Outro Veículo</span>
                   </button>
                 </div>
@@ -1269,7 +1269,7 @@ export function ClientesVeiculos({
                     {novosVeiculosRascunho.map((rasc, idx) => (
                       <div
                         key={rasc.tempId}
-                        className="bg-[#0B0F17] border-2 border-[#334155] rounded-xl p-4 space-y-3"
+                        className="bg-[#071226] border-2 border-[#264577] rounded-xl p-4 space-y-3"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-extrabold uppercase text-blue-300">
@@ -1310,7 +1310,7 @@ export function ClientesVeiculos({
                                   })
                                 }
                                 placeholder="ABC1D23"
-                                className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#111827] border border-[#475569] text-white font-mono font-bold uppercase text-base"
+                                className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-mono font-bold uppercase text-base"
                               />
                               <button
                                 type="button"
@@ -1320,7 +1320,7 @@ export function ClientesVeiculos({
                                 }
                                 className="min-h-[46px] px-3 py-2 rounded-xl bg-[#1E3A8A] hover:bg-blue-800 border border-blue-400 text-white font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
                               >
-                                <Sparkles className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                                <Sparkles className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                                 <span>
                                   {rasc.buscandoPlaca ? 'Buscando…' : 'Buscar Placa'}
                                 </span>
@@ -1351,7 +1351,7 @@ export function ClientesVeiculos({
                                 })
                               }
                               placeholder="Ex: Onix 1.0 Turbo"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#111827] border border-[#475569] text-white font-semibold text-base"
+                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
                             />
                           </div>
 
@@ -1373,7 +1373,7 @@ export function ClientesVeiculos({
                                 })
                               }
                               placeholder="Ex: Chevrolet"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#111827] border border-[#475569] text-white font-semibold text-base"
+                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
                             />
                           </div>
 
@@ -1395,7 +1395,7 @@ export function ClientesVeiculos({
                                 })
                               }
                               placeholder="Prata / Branco"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#111827] border border-[#475569] text-white font-semibold text-base"
+                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
                             />
                           </div>
 
@@ -1419,7 +1419,7 @@ export function ClientesVeiculos({
                                 })
                               }
                               placeholder="2022"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#111827] border border-[#475569] text-white font-semibold text-base"
+                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
                             />
                           </div>
 
@@ -1442,7 +1442,7 @@ export function ClientesVeiculos({
                                 })
                               }
                               placeholder="85000"
-                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#111827] border border-[#475569] text-white font-semibold text-base"
+                              className="w-full min-h-[46px] px-3 py-2 rounded-xl bg-[#0B1B36] border border-[#3A5C90] text-white font-semibold text-base"
                             />
                           </div>
                         </div>
@@ -1452,18 +1452,18 @@ export function ClientesVeiculos({
                 )}
               </fieldset>
 
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-[#1E293B]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-[#12274D]">
                 <button
                   type="button"
                   onClick={() => setFichaAberta(false)}
-                  className="min-h-[50px] px-5 py-2.5 rounded-xl bg-[#0B0F17] border border-[#334155] text-slate-200 font-bold text-base cursor-pointer"
+                  className="min-h-[50px] px-5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-slate-200 font-bold text-base cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={salvandoFicha}
-                  className="min-h-[50px] px-6 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-base cursor-pointer"
+                  className="min-h-[50px] px-6 py-2.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-base cursor-pointer"
                 >
                   {salvandoFicha ? 'Salvando Ficha…' : 'Salvar Ficha Completa'}
                 </button>
@@ -1481,8 +1481,8 @@ export function ClientesVeiculos({
           aria-labelledby="titulo-modal-editar-veiculo"
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto"
         >
-          <div className="bg-[#111827] border-2 border-[#F97316] rounded-2xl w-full max-w-xl p-5 sm:p-6 space-y-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#1E293B]">
+          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-xl p-5 sm:p-6 space-y-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#12274D]">
               <div>
                 <h2
                   id="titulo-modal-editar-veiculo"
@@ -1498,7 +1498,7 @@ export function ClientesVeiculos({
                 type="button"
                 onClick={() => setVeiculoEmEdicao(null)}
                 aria-label="Fechar edição de veículo"
-                className="p-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-slate-300 hover:text-white cursor-pointer"
+                className="p-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-300 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
@@ -1534,7 +1534,7 @@ export function ClientesVeiculos({
                       maxLength={8}
                       value={editVeiPlaca}
                       onChange={(e) => setEditVeiPlaca(e.target.value.toUpperCase())}
-                      className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-mono font-bold uppercase text-base"
+                      className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-mono font-bold uppercase text-base"
                     />
                     <button
                       type="button"
@@ -1566,7 +1566,7 @@ export function ClientesVeiculos({
                     required
                     value={editVeiModelo}
                     onChange={(e) => setEditVeiModelo(e.target.value)}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                   />
                 </div>
 
@@ -1583,7 +1583,7 @@ export function ClientesVeiculos({
                     type="text"
                     value={editVeiMarca}
                     onChange={(e) => setEditVeiMarca(e.target.value)}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                   />
                 </div>
 
@@ -1600,7 +1600,7 @@ export function ClientesVeiculos({
                     type="text"
                     value={editVeiCor}
                     onChange={(e) => setEditVeiCor(e.target.value)}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                   />
                 </div>
 
@@ -1619,7 +1619,7 @@ export function ClientesVeiculos({
                     maxLength={4}
                     value={editVeiAno}
                     onChange={(e) => setEditVeiAno(e.target.value.replace(/\D/g, ''))}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                   />
                 </div>
 
@@ -1637,7 +1637,7 @@ export function ClientesVeiculos({
                     inputMode="numeric"
                     value={editVeiKm}
                     onChange={(e) => setEditVeiKm(e.target.value.replace(/\D/g, ''))}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                   />
                 </div>
 
@@ -1657,23 +1657,23 @@ export function ClientesVeiculos({
                     spellCheck={false}
                     value={editVeiChassi}
                     onChange={(e) => setEditVeiChassi(e.target.value.toUpperCase())}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-mono text-sm"
+                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-mono text-sm"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#1E293B]">
+              <div className="flex justify-end gap-3 pt-3 border-t border-[#12274D]">
                 <button
                   type="button"
                   onClick={() => setVeiculoEmEdicao(null)}
-                  className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[#0B0F17] border border-[#334155] text-slate-200 font-bold text-sm cursor-pointer"
+                  className="min-h-[48px] px-5 py-2.5 rounded-xl bg-[#071226] border border-[#264577] text-slate-200 font-bold text-sm cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={salvandoVeiculoEdit}
-                  className="min-h-[48px] px-6 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-sm cursor-pointer"
+                  className="min-h-[48px] px-6 py-2.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm cursor-pointer"
                 >
                   {salvandoVeiculoEdit ? 'Salvando…' : 'Salvar Alterações'}
                 </button>
@@ -1691,8 +1691,8 @@ export function ClientesVeiculos({
           aria-labelledby="titulo-modal-historico-os"
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto"
         >
-          <div className="bg-[#111827] border-2 border-[#2563EB] rounded-2xl w-full max-w-2xl max-h-[88vh] flex flex-col p-5 sm:p-6 gap-4 shadow-2xl">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#1E293B]">
+          <div className="bg-[#0B1B36] border-2 border-[#2563EB] rounded-2xl w-full max-w-2xl max-h-[88vh] flex flex-col p-5 sm:p-6 gap-4 shadow-2xl">
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#12274D]">
               <div>
                 <h2
                   id="titulo-modal-historico-os"
@@ -1708,7 +1708,7 @@ export function ClientesVeiculos({
                 type="button"
                 onClick={() => setHistoricoModal(null)}
                 aria-label="Fechar histórico"
-                className="p-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-slate-300 hover:text-white cursor-pointer"
+                className="p-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-300 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
@@ -1716,7 +1716,7 @@ export function ClientesVeiculos({
 
             <div className="overflow-y-auto space-y-2.5 pr-1 flex-1">
               {historicoModal.ordens.length === 0 ? (
-                <div className="bg-[#0B0F17] border border-[#1E293B] rounded-xl p-8 text-center text-slate-400">
+                <div className="bg-[#071226] border border-[#12274D] rounded-xl p-8 text-center text-slate-400">
                   Nenhuma Ordem de Serviço registrada para este filtro ainda.
                 </div>
               ) : (
@@ -1725,7 +1725,7 @@ export function ClientesVeiculos({
                   return (
                     <div
                       key={os.id}
-                      className="bg-[#0B0F17] border border-[#334155] rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                      className="bg-[#071226] border border-[#264577] rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
@@ -1777,7 +1777,7 @@ export function ClientesVeiculos({
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#1E293B]">
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#12274D]">
               {historicoModal.veiculo ? (
                 <button
                   type="button"
@@ -1787,7 +1787,7 @@ export function ClientesVeiculos({
                     setHistoricoModal(null);
                     iniciarNovaOsParaVeiculo(v, c);
                   }}
-                  className="min-h-[46px] px-4 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-sm inline-flex items-center gap-2 cursor-pointer"
+                  className="min-h-[46px] px-4 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm inline-flex items-center gap-2 cursor-pointer"
                 >
                   <Wrench className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
                   <span>+ Abrir Nova OS para {historicoModal.veiculo.placa}</span>
@@ -1798,7 +1798,7 @@ export function ClientesVeiculos({
               <button
                 type="button"
                 onClick={() => setHistoricoModal(null)}
-                className="min-h-[46px] px-5 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-slate-200 font-bold text-sm cursor-pointer"
+                className="min-h-[46px] px-5 py-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-200 font-bold text-sm cursor-pointer"
               >
                 Fechar
               </button>
@@ -1815,8 +1815,8 @@ export function ClientesVeiculos({
           aria-labelledby="titulo-modal-nova-os-rapida"
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
         >
-          <div className="bg-[#111827] border-2 border-[#F97316] rounded-2xl w-full max-w-lg p-5 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#1E293B]">
+          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-lg p-5 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#12274D]">
               <div>
                 <span className="px-2.5 py-0.5 rounded bg-[#1E3A8A] text-white font-mono font-bold text-xs">
                   {novaOsRapida.veiculo.placa} &bull; {novaOsRapida.veiculo.modelo}
@@ -1835,7 +1835,7 @@ export function ClientesVeiculos({
                 type="button"
                 onClick={() => setNovaOsRapida(null)}
                 aria-label="Fechar abertura rápida de OS"
-                className="p-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-slate-300 hover:text-white cursor-pointer"
+                className="p-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-300 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
@@ -1867,7 +1867,7 @@ export function ClientesVeiculos({
                     value={osKmAtual}
                     onChange={(e) => setOsKmAtual(e.target.value.replace(/\D/g, ''))}
                     placeholder="Ex: 85000"
-                    className="w-full min-h-[48px] px-3.5 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-base"
+                    className="w-full min-h-[48px] px-3.5 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-base"
                   />
                 </div>
 
@@ -1883,7 +1883,7 @@ export function ClientesVeiculos({
                     name="mecanico_responsavel_id"
                     value={osMecanicoId}
                     onChange={(e) => setOsMecanicoId(e.target.value)}
-                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-semibold text-sm cursor-pointer"
+                    className="w-full min-h-[48px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-semibold text-sm cursor-pointer"
                   >
                     <option value="">Definir depois na bancada</option>
                     {mecanicos.map((m) => (
@@ -1909,22 +1909,22 @@ export function ClientesVeiculos({
                   value={osDescricao}
                   onChange={(e) => setOsDescricao(e.target.value)}
                   placeholder="Ex: Revisão de freios, troca de óleo e barulho na suspensão dianteira..."
-                  className="w-full p-3.5 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-medium text-sm"
+                  className="w-full p-3.5 rounded-xl bg-[#071226] border border-[#264577] text-white font-medium text-sm"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2 border-t border-[#1E293B]">
+              <div className="flex justify-end gap-3 pt-2 border-t border-[#12274D]">
                 <button
                   type="button"
                   onClick={() => setNovaOsRapida(null)}
-                  className="min-h-[48px] px-4 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-slate-200 font-bold text-sm cursor-pointer"
+                  className="min-h-[48px] px-4 py-2 rounded-xl bg-[#071226] border border-[#264577] text-slate-200 font-bold text-sm cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={criandoOsRapida}
-                  className="min-h-[48px] px-6 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-sm inline-flex items-center gap-2 cursor-pointer"
+                  className="min-h-[48px] px-6 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm inline-flex items-center gap-2 cursor-pointer"
                 >
                   <Wrench className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
                   <span>{criandoOsRapida ? 'Abrindo Bancada…' : 'Abrir Bancada da OS'}</span>

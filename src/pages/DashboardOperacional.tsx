@@ -60,9 +60,9 @@ const STATUS_META: Record<
   },
   AGUARDANDO_PECA: {
     label: 'Aguardando Peça',
-    badgeBg: 'bg-orange-950',
-    badgeBorder: 'border-orange-500',
-    badgeText: 'text-orange-300',
+    badgeBg: 'bg-sky-950',
+    badgeBorder: 'border-sky-500',
+    badgeText: 'text-sky-300',
     icon: Clock,
   },
   EXECUCAO: {
@@ -122,14 +122,14 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           {[1, 2, 3, 4].map((n) => (
             <div
               key={n}
-              className="h-40 rounded-2xl bg-[#111827] border-2 border-[#1E293B] p-6 flex flex-col justify-between"
+              className="h-40 rounded-2xl bg-[#0B1B36] border-2 border-[#12274D] p-6 flex flex-col justify-between"
             >
-              <div className="h-6 w-40 bg-[#1E293B] rounded" />
-              <div className="h-12 w-24 bg-[#1E293B] rounded" />
+              <div className="h-6 w-40 bg-[#12274D] rounded" />
+              <div className="h-12 w-24 bg-[#12274D] rounded" />
             </div>
           ))}
         </div>
-        <div className="h-80 rounded-2xl bg-[#111827] border-2 border-[#1E293B] p-6 flex items-center justify-center gap-3 text-slate-300 text-lg font-medium">
+        <div className="h-80 rounded-2xl bg-[#0B1B36] border-2 border-[#12274D] p-6 flex items-center justify-center gap-3 text-slate-300 text-lg font-medium">
           <progress aria-label="Carregando dados" className="loading-spinner" />
           <span>Sincronizando pátio com o servidor…</span>
         </div>
@@ -139,7 +139,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
 
   if (error) {
     return (
-      <div className="bg-[#111827] border-2 border-red-500 rounded-2xl p-8 space-y-5">
+      <div className="bg-[#0B1B36] border-2 border-red-500 rounded-2xl p-8 space-y-5">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-xl bg-red-950 border-2 border-red-500 text-red-300 flex items-center justify-center shrink-0">
             <AlertOctagon className="w-8 h-8" aria-hidden="true" />
@@ -154,7 +154,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         <button
           type="button"
           onClick={carregarRadar}
-          className="min-h-[58px] px-6 py-3.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-bold text-lg flex items-center gap-3 cursor-pointer"
+          className="min-h-[58px] px-6 py-3.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-lg flex items-center gap-3 cursor-pointer"
         >
           <RefreshCw className="w-6 h-6" aria-hidden="true" />
           <span>Tentar Novamente Agora</span>
@@ -174,7 +174,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   return (
     <div className="space-y-3.5 sm:space-y-5">
       {/* CABEÇALHO DE AÇÃO RÁPIDA COMPACTO NO MOBILE */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 bg-[#111827] border-2 border-[#1E293B] rounded-xl sm:rounded-2xl p-3 sm:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-5">
         <div className="flex items-center justify-between gap-2">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -195,9 +195,9 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
             onClick={carregarRadar}
             aria-label="Atualizar Radar do Pátio"
             title="Atualizar"
-            className="sm:hidden min-h-[38px] px-2.5 py-1.5 rounded-lg bg-[#1E293B] border border-[#475569] text-white flex items-center justify-center cursor-pointer shrink-0"
+            className="sm:hidden min-h-[38px] px-2.5 py-1.5 rounded-lg bg-[#12274D] border border-[#3A5C90] text-white flex items-center justify-center cursor-pointer shrink-0"
           >
-            <RefreshCw className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+            <RefreshCw className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
           </button>
         </div>
 
@@ -205,16 +205,16 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={carregarRadar}
-            className="hidden sm:flex min-h-[46px] px-3.5 py-2 rounded-xl bg-[#1E293B] hover:bg-[#334155] border border-[#475569] text-white font-bold text-sm items-center justify-center gap-2 cursor-pointer"
+            className="hidden sm:flex min-h-[46px] px-3.5 py-2 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-sm items-center justify-center gap-2 cursor-pointer"
           >
-            <RefreshCw className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+            <RefreshCw className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
             <span>Atualizar</span>
           </button>
 
           <button
             type="button"
             onClick={() => onNavigateTab('os', undefined, 'NOVA_OS')}
-            className="w-full sm:w-auto min-h-[42px] sm:min-h-[48px] px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto min-h-[42px] sm:min-h-[48px] px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer"
           >
             <PlusCircle className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
             <span>+ Nova Ordem de Serviço</span>
@@ -229,7 +229,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('os', 'EXECUCAO')}
-            className="text-left bg-[#111827] hover:bg-[#1E293B] border-2 border-[#F97316] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
+            className="text-left bg-[#0B1B36] hover:bg-[#12274D] border-2 border-[#38BDF8] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
           >
             <div className="flex items-start justify-between w-full gap-1.5">
               <div className="min-w-0">
@@ -240,7 +240,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                   Ag. Peça + Exec. + Final.
                 </span>
               </div>
-              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#F97316] text-[#0B0F17] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
                 <Car className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.3]" aria-hidden="true" />
               </div>
             </div>
@@ -248,7 +248,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
               <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono tabular-nums">
                 {veiculosNoPatio}
               </span>
-              <span className="text-[11px] sm:text-xs font-bold text-[#F97316]">
+              <span className="text-[11px] sm:text-xs font-bold text-[#38BDF8]">
                 Ver →
               </span>
             </div>
@@ -258,7 +258,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('os', 'EXECUCAO')}
-            className="text-left bg-[#111827] hover:bg-[#1E293B] border-2 border-[#2563EB] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
+            className="text-left bg-[#0B1B36] hover:bg-[#12274D] border-2 border-[#2563EB] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
           >
             <div className="flex items-start justify-between w-full gap-1.5">
               <div className="min-w-0">
@@ -287,7 +287,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('os', 'ORCAMENTO')}
-            className="text-left bg-[#111827] hover:bg-[#1E293B] border-2 border-amber-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
+            className="text-left bg-[#0B1B36] hover:bg-[#12274D] border-2 border-amber-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
           >
             <div className="flex items-start justify-between w-full gap-1.5">
               <div className="min-w-0">
@@ -298,7 +298,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                   Abertos (30d)
                 </span>
               </div>
-              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-amber-500 text-[#0B0F17] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-amber-500 text-[#071226] flex items-center justify-center shrink-0">
                 <Clock className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.3]" aria-hidden="true" />
               </div>
             </div>
@@ -316,7 +316,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('estoque')}
-            className={`text-left bg-[#111827] hover:bg-[#1E293B] border-2 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer ${
+            className={`text-left bg-[#0B1B36] hover:bg-[#12274D] border-2 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer ${
               criticosCount > 0 ? 'border-red-500' : 'border-emerald-500'
             }`}
           >
@@ -333,7 +333,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                 className={`w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${
                   criticosCount > 0
                     ? 'bg-red-500 text-white'
-                    : 'bg-emerald-500 text-[#0B0F17]'
+                    : 'bg-emerald-500 text-[#071226]'
                 }`}
               >
                 <Package className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.3]" aria-hidden="true" />
@@ -378,10 +378,10 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                 key={st}
                 type="button"
                 onClick={() => onNavigateTab('os', st)}
-                className="bg-[#111827] hover:bg-[#1E293B] border border-[#334155] hover:border-[#F97316] rounded-xl p-2.5 sm:p-4 flex flex-col justify-between min-h-[64px] sm:min-h-[96px] text-left cursor-pointer"
+                className="bg-[#0B1B36] hover:bg-[#12274D] border border-[#264577] hover:border-[#38BDF8] rounded-xl p-2.5 sm:p-4 flex flex-col justify-between min-h-[64px] sm:min-h-[96px] text-left cursor-pointer"
               >
                 <div className="flex items-center justify-between gap-1">
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#F97316] shrink-0" aria-hidden="true" />
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#38BDF8] shrink-0" aria-hidden="true" />
                   <span className="text-lg sm:text-2xl font-extrabold font-mono tabular-nums text-white">
                     {qtd}
                   </span>
@@ -400,7 +400,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         {/* ÚLTIMAS ORDENS NO PÁTIO (8 COLUNAS) */}
         <section
           aria-label="Últimas Ordens de Serviço"
-          className="xl:col-span-8 bg-[#111827] border-2 border-[#1E293B] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between"
+          className="xl:col-span-8 bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between gap-2 mb-3">
@@ -419,7 +419,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
             </div>
 
             {!data?.ultimas_os || data.ultimas_os.length === 0 ? (
-              <div className="bg-[#0B0F17] border border-[#1E293B] rounded-xl p-6 text-center space-y-2">
+              <div className="bg-[#071226] border border-[#12274D] rounded-xl p-6 text-center space-y-2">
                 <Car className="w-10 h-10 text-slate-500 mx-auto" aria-hidden="true" />
                 <p className="text-sm sm:text-base font-bold text-white">
                   Nenhuma Ordem de Serviço aberta nos últimos 30 dias
@@ -440,14 +440,14 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                   return (
                     <div
                       key={os.id}
-                      className="bg-[#0B0F17] border border-[#334155] rounded-xl p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                      className="bg-[#071226] border border-[#264577] rounded-xl p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                     >
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center justify-between sm:justify-start gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <span
                               translate="no"
-                              className="px-2 py-0.5 rounded bg-[#1E293B] border border-slate-500 font-mono text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider shrink-0"
+                              className="px-2 py-0.5 rounded bg-[#12274D] border border-slate-500 font-mono text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider shrink-0"
                             >
                               {placa}
                             </span>
@@ -456,7 +456,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                             </span>
                           </div>
 
-                          <span className="sm:hidden font-mono font-extrabold text-sm text-[#F97316] tabular-nums shrink-0">
+                          <span className="sm:hidden font-mono font-extrabold text-sm text-[#38BDF8] tabular-nums shrink-0">
                             {formatBRL(os.total_geral)}
                           </span>
                         </div>
@@ -489,7 +489,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                             <button
                               type="button"
                               onClick={() => onNavigateTab('os', undefined, os.id)}
-                              className="h-8 px-2.5 rounded-lg bg-[#F97316] text-[#0B0F17] font-extrabold text-xs flex items-center gap-1 shrink-0 cursor-pointer"
+                              className="h-8 px-2.5 rounded-lg bg-[#38BDF8] text-[#071226] font-extrabold text-xs flex items-center gap-1 shrink-0 cursor-pointer"
                             >
                               <Wrench className="w-3.5 h-3.5" aria-hidden="true" />
                               <span>Abrir</span>
@@ -506,9 +506,9 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                           <span>{meta.label}</span>
                         </span>
 
-                        <div className="px-2.5 py-1 rounded-lg bg-[#111827] border border-[#334155] font-mono font-bold text-sm text-white tabular-nums flex items-center gap-1">
+                        <div className="px-2.5 py-1 rounded-lg bg-[#0B1B36] border border-[#264577] font-mono font-bold text-sm text-white tabular-nums flex items-center gap-1">
                           <DollarSign
-                            className="w-3.5 h-3.5 text-[#F97316] shrink-0"
+                            className="w-3.5 h-3.5 text-[#38BDF8] shrink-0"
                             aria-hidden="true"
                           />
                           <span>{formatBRL(os.total_geral)}</span>
@@ -530,7 +530,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                         <button
                           type="button"
                           onClick={() => onNavigateTab('os', undefined, os.id)}
-                          className="min-h-[38px] px-3 py-1.5 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-bold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+                          className="min-h-[38px] px-3 py-1.5 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
                         >
                           <Wrench className="w-3.5 h-3.5 stroke-[2.5]" aria-hidden="true" />
                           <span>Abrir OS</span>
@@ -547,7 +547,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         {/* ALERTA DE ESTOQUE CRÍTICO (4 COLUNAS) */}
         <section
           aria-label="Itens com estoque baixo"
-          className="xl:col-span-4 bg-[#111827] border-2 border-[#1E293B] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between"
+          className="xl:col-span-4 bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between gap-2 mb-3">
@@ -558,7 +558,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
             </div>
 
             {!data?.itens_criticos || data.itens_criticos.length === 0 ? (
-              <div className="bg-[#0B0F17] border border-emerald-700 rounded-xl p-4 text-center space-y-1">
+              <div className="bg-[#071226] border border-emerald-700 rounded-xl p-4 text-center space-y-1">
                 <CheckCircle2
                   className="w-8 h-8 text-emerald-400 mx-auto"
                   aria-hidden="true"
@@ -570,7 +570,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                 {data.itens_criticos.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-[#0B0F17] border border-red-600/80 rounded-xl p-2.5 flex items-center justify-between gap-2"
+                    className="bg-[#071226] border border-red-600/80 rounded-xl p-2.5 flex items-center justify-between gap-2"
                   >
                     <div className="min-w-0">
                       <div className="text-xs sm:text-sm font-bold text-white truncate">
@@ -595,9 +595,9 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('estoque')}
-            className="mt-3 w-full min-h-[42px] px-4 py-2 rounded-xl bg-[#1E293B] hover:bg-[#334155] border border-[#475569] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer"
+            className="mt-3 w-full min-h-[42px] px-4 py-2 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer"
           >
-            <Package className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+            <Package className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
             <span>Abrir Estoque Completo</span>
           </button>
         </section>
