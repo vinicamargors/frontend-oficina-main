@@ -164,6 +164,12 @@ test.describe('bancada: confirmação do Pago', () => {
     expect(caixa.y + caixa.height).toBeLessThanOrEqual(nav.y + 1);
     expect(caixa.y + caixa.height).toBeGreaterThanOrEqual(nav.y - 2);
 
+    // a posição vem da variável --barra-inferior-h publicada pelo shell (não de um número fixo)
+    await page.evaluate(() => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.setProperty('--barra-inferior-h', '140px'));
+    const alterada = (await barra.boundingBox())!;
+    expect(Math.round(844 - (alterada.y + alterada.height))).toBe(140);
+    await page.evaluate(() => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.removeProperty('--barra-inferior-h'));
+
     // o fim da página não fica escondido atrás da barra
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const ultimo = page.getByLabel('Relato do Problema / Diagnóstico');

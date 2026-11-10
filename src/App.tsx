@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
 import { DashboardOperacional } from './pages/DashboardOperacional';
@@ -63,15 +63,22 @@ function AppShell() {
   });
 
   const [maisAberto, setMaisAberto] = useState(false);
-  const barraRef = useRef<HTMLElement>(null);
+  const [barra, setBarra] = useState<HTMLElement | null>(null);
   const folhaRef = useRef<HTMLDivElement>(null);
   const maisBtnRef = useRef<HTMLButtonElement>(null);
   const [alturaBarra, setAlturaBarra] = useState(0);
 
-  // Mede a barra inferior (varia com a área segura do aparelho) para encaixar a folha "Mais" logo acima dela.
+  // Mede a barra inferior (varia com a área segura do aparelho e ao girar/redimensionar): a folha "Mais" e as barras de ação das
+  // telas se encaixam logo acima dela pela variável --barra-inferior-h (0 no desktop, onde a barra some).
   useLayoutEffect(() => {
-    if (maisAberto && barraRef.current) setAlturaBarra(barraRef.current.offsetHeight);
-  }, [maisAberto]);
+    if (!barra) return;
+    const medir = () => setAlturaBarra(barra.offsetHeight);
+    medir();
+    if (typeof ResizeObserver === 'undefined') return;
+    const obs = new ResizeObserver(medir);
+    obs.observe(barra, { box: 'border-box' });
+    return () => obs.disconnect();
+  }, [barra]);
 
   // Foco entra na folha ao abrir e volta para o botão "Mais" ao fechar.
   useEffect(() => {
@@ -301,7 +308,9 @@ function AppShell() {
     setMaisAberto(false);
     protegerSaida(() => {
       desfazerEntradaExtraAoSair.current = oficinaSuja.current;
-      void logout();
+      logout().catch(() => {
+        desfazerEntradaExtraAoSair.current = false;
+      });
     });
   };
 
@@ -322,7 +331,7 @@ function AppShell() {
               localStorage.setItem('autotec_tenant_id', id);
             });
           }}
-          className="w-full h-10 min-h-11 md:min-h-10 px-3 rounded-md bg-surface border border-line-strong text-ink text-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="w-full h-10 min-h-11 md:min-h-10 px-3 rounded-lg bg-surface border border-line-strong text-ink text-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           {empresas.map((emp) => (
             <option key={emp.id} value={emp.id}>
@@ -334,7 +343,10 @@ function AppShell() {
     ) : null;
 
   return (
-    <div className="min-h-dvh w-full bg-canvas text-ink flex flex-col lg:flex-row print:bg-white print:text-black">
+    <div
+      className="min-h-dvh w-full bg-canvas text-ink flex flex-col lg:flex-row print:bg-white print:text-black"
+      style={{ '--barra-inferior-h': `${alturaBarra}px` } as CSSProperties}
+    >
       {/* MENU LATERAL (DESKTOP) */}
       <aside
         aria-label="Menu Principal da Oficina"
@@ -507,9 +519,9 @@ function AppShell() {
 
       {/* BARRA INFERIOR (MOBILE) */}
       <nav
-        ref={barraRef}
+        ref={setBarra}
         aria-label="Navegação Rápida Mobile"
-        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-line/60 px-1 pt-1 flex items-stretch"
+        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface px-1 pt-1 flex items-stretch"
         style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
       >
         {[

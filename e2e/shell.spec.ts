@@ -159,4 +159,49 @@ test.describe('shell mobile', () => {
     await expect(barra.getByRole('button', { name: /Caixa|Equipe|Oficina/ })).toHaveCount(0);
     exigirRedeCompleta(page);
   });
+
+  test('barra inferior sem fio de borda; publica --barra-inferior-h e a folha "Mais" acompanha a altura real', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'radar');
+    const barra = page.getByRole('navigation', { name: MOBILE });
+    expect(await barra.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('0px');
+
+    const lerVar = () =>
+      page.evaluate(() => {
+        const raiz = document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]');
+        return raiz ? parseFloat(raiz.style.getPropertyValue('--barra-inferior-h')) : null;
+      });
+    const altura = (await barra.boundingBox())!.height;
+    expect(await lerVar()).toBeCloseTo(altura, 0);
+
+    await barra.getByRole('button', { name: 'Mais' }).click();
+    const folha = page.getByRole('dialog', { name: 'Mais opções' });
+    await expect(folha).toBeVisible();
+    // a barra cresce com o dialogo aberto (ex.: área segura mudou): folha e variável acompanham sem reabrir
+    await barra.evaluate((el) => {
+      el.style.paddingBottom = '40px';
+    });
+    const nova = (await barra.boundingBox())!.height;
+    expect(nova).toBeGreaterThan(altura + 20);
+    await expect.poll(lerVar).toBeCloseTo(nova, 0);
+    await expect
+      .poll(async () => {
+        const f = (await folha.boundingBox())!;
+        return Math.round(844 - (f.y + f.height));
+      })
+      .toBe(Math.round(nova));
+  });
+});
+
+test('seletor de oficina do master usa cantos rounded-lg', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'master', tema);
+  await abrirTela(page, 'radar');
+  if (largura < 1024) await page.getByRole('navigation', { name: MOBILE }).getByRole('button', { name: 'Mais' }).click();
+  const seletor = page.getByLabel('Oficina (Master)').locator('visible=true').first();
+  await expect(seletor).toBeVisible();
+  expect(await seletor.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('8px');
 });

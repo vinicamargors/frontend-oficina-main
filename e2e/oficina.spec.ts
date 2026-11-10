@@ -331,6 +331,11 @@ test.describe('dados da oficina', () => {
     await page.mouse.wheel(0, 600);
     const b2 = (await salvar.boundingBox())!;
     expect(b2.y + b2.height).toBeLessThanOrEqual(nav.y);
+    // a barra de salvar também usa --barra-inferior-h
+    const barraSalvar = salvar.locator('xpath=ancestor::div[contains(@class,"sticky")][1]');
+    await page.evaluate(() => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.setProperty('--barra-inferior-h', '140px'));
+    expect(await barraSalvar.evaluate((el) => getComputedStyle(el).bottom)).toBe('140px');
+    await page.evaluate(() => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.removeProperty('--barra-inferior-h'));
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const b3 = (await salvar.boundingBox())!;
     expect(b3.y + b3.height).toBeLessThanOrEqual(nav.y);

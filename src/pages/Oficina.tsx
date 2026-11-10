@@ -585,7 +585,7 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
 
         {/* BARRA DE SALVAR: no celular fica logo acima da navegação inferior do app */}
         {!mostrarEsqueleto && (
-          <div className="sticky bottom-[calc(61px+max(0.25rem,env(safe-area-inset-bottom)))] z-30 rounded-2xl bg-surface p-3 ring-1 ring-line-strong lg:bottom-4">
+          <div className="sticky bottom-[var(--barra-inferior-h,calc(60px+max(0.25rem,env(safe-area-inset-bottom))))] z-30 rounded-2xl bg-surface p-3 ring-1 ring-line-strong lg:bottom-4">
             {saidaPendente ? (
               <div role="alert" ref={(el) => el?.scrollIntoView({ block: 'nearest' })} className="space-y-3">
                 <p className="text-sm font-medium text-ink">Descartar alterações? O que você digitou será perdido.</p>

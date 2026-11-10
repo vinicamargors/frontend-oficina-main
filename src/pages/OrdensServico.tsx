@@ -2727,7 +2727,7 @@ export function OrdensServico({
           <section
             aria-label="Ações da ordem de serviço"
             className="fixed inset-x-0 z-40 flex gap-2 bg-surface px-4 py-2 lg:hidden"
-            style={{ bottom: 'calc(61px + max(0.25rem, env(safe-area-inset-bottom)))' }}
+            style={{ bottom: 'var(--barra-inferior-h, calc(60px + max(0.25rem, env(safe-area-inset-bottom))))' }}
           >
             <a
               href={gerarLinkWhatsAppOrcamento(dossie)}
