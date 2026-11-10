@@ -11,8 +11,9 @@ import { Oficina } from './pages/Oficina';
 import { AvaliacaoPublicaOS } from './pages/AvaliacaoPublicaOS';
 import { api } from './api/client';
 import { Empresa, StatusOS } from './types';
+import { BrandMark, Button, ThemeToggle } from './components/ui';
 import {
-  Wrench,
+  Ellipsis,
   LayoutDashboard,
   ClipboardList,
   Users,
@@ -20,7 +21,6 @@ import {
   DollarSign,
   LogOut,
   Building2,
-  ArrowLeft,
   UserCheck,
 } from 'lucide-react';
 
@@ -33,6 +33,14 @@ type NavTab =
   | 'financeiro'
   | 'equipe'
   | 'oficina';
+
+const ROTULO_CARGO: Record<string, string> = {
+  DONO: 'Dono',
+  ATENDENTE: 'Atendente',
+  MECANICO: 'Mecânico',
+  FINANCEIRO: 'Financeiro',
+  master: 'Master',
+};
 
 function AppShell() {
   const { user, loading, isAuthenticated, logout } = useAuth();
@@ -52,6 +60,17 @@ function AppShell() {
     const params = new URLSearchParams(window.location.search);
     return params.get('osId') || undefined;
   });
+
+  const [maisAberto, setMaisAberto] = useState(false);
+
+  useEffect(() => {
+    if (!maisAberto) return;
+    const aoTecla = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMaisAberto(false);
+    };
+    window.addEventListener('keydown', aoTecla);
+    return () => window.removeEventListener('keydown', aoTecla);
+  }, [maisAberto]);
 
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [selectedEmpresaId, setSelectedEmpresaId] = useState<string>(
@@ -154,9 +173,7 @@ function AppShell() {
   if (loading) {
     return (
       <div className="min-h-dvh w-full bg-canvas text-ink flex flex-col items-center justify-center p-6 gap-4">
-        <div className="w-16 h-16 rounded-lg bg-brand text-on-brand flex items-center justify-center">
-          <Wrench className="w-9 h-9 stroke-[2.5]" aria-hidden="true" />
-        </div>
+        <BrandMark tamanho={56} />
         <div className="flex items-center gap-3 text-lg font-semibold">
           <progress aria-label="Carregando" className="loading-spinner" />
           <span>Abrindo Mecanify…</span>
@@ -229,156 +246,125 @@ function AppShell() {
 
   const visibleNav = navItems.filter((item) => item.visible);
   const empresaAtual = empresas.find((e) => e.id === effectiveEmpresaId);
+  const cargoLegivel = ROTULO_CARGO[user.cargo] ?? user.cargo;
+  const principaisMobile = visibleNav.slice(0, 4);
+  const extrasMobile = visibleNav.slice(4);
+  const abaNoExtra = extrasMobile.some((i) => i.id === activeTab);
+
+  const irPara = (id: NavTab) => {
+    setMaisAberto(false);
+    handleNavigateTab(id);
+  };
+
+  const seletorMaster = (idSeletor: string) =>
+    isMaster && empresas.length > 0 ? (
+      <div className="space-y-1.5">
+        <label htmlFor={idSeletor} className="flex items-center gap-2 text-xs font-medium text-ink-muted">
+          <Building2 size={14} aria-hidden="true" />
+          <span>Oficina (Master)</span>
+        </label>
+        <select
+          id={idSeletor}
+          value={effectiveEmpresaId}
+          onChange={(e) => {
+            setSelectedEmpresaId(e.target.value);
+            localStorage.setItem('autotec_tenant_id', e.target.value);
+          }}
+          className="w-full h-10 min-h-11 md:min-h-10 px-3 rounded-md bg-surface border border-line-strong text-ink text-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          {empresas.map((emp) => (
+            <option key={emp.id} value={emp.id}>
+              {emp.nome_fantasia}
+            </option>
+          ))}
+        </select>
+      </div>
+    ) : null;
 
   return (
     <div className="min-h-dvh w-full bg-canvas text-ink flex flex-col lg:flex-row print:bg-white print:text-black">
-      {/* SIDEBAR INDUSTRIAL (DESKTOP) */}
+      {/* MENU LATERAL (DESKTOP) */}
       <aside
         aria-label="Menu Principal da Oficina"
-        className="print:hidden hidden lg:flex lg:w-80 xl:w-84 bg-surface border-r-2 border-line flex-col justify-between p-5 shrink-0"
+        className="print:hidden hidden lg:flex w-60 shrink-0 bg-surface border-r border-line flex-col justify-between p-3 sticky top-0 h-dvh"
       >
-        <div className="space-y-6">
-          {/* Topo da Marca Mecanify */}
-          <div className="bg-muted border-2 border-brand rounded-lg p-4 flex items-center gap-3.5">
-            <div className="w-14 h-14 rounded-xl bg-brand text-on-brand flex items-center justify-center shrink-0">
-              <Wrench className="w-8 h-8 stroke-[2.5]" aria-hidden="true" />
-            </div>
+        <div className="space-y-5 min-h-0 overflow-y-auto">
+          <div className="flex items-center gap-3 px-2 pt-1">
+            <BrandMark tamanho={32} />
             <div className="min-w-0">
-              <span
-                translate="no"
-                className="text-2xl font-semibold text-ink tracking-tight block leading-none"
-              >
+              <span translate="no" className="text-base font-semibold text-ink block leading-tight">
                 Mecanify
               </span>
-              <span className="text-sm text-info font-medium truncate block mt-1">
+              <span className="text-xs text-ink-muted truncate block">
                 {empresaAtual?.nome_fantasia || 'Painel Operacional'}
               </span>
             </div>
           </div>
 
-          {/* Seletor de Oficina para Master */}
-          {isMaster && empresas.length > 0 && (
-            <div className="bg-sunken border-2 border-line rounded-xl p-3.5">
-              <label
-                htmlFor="seletor-oficina-desktop"
-                className="flex items-center gap-2 text-xs font-semibold text-brand-ink mb-2"
-              >
-                <Building2 className="w-4 h-4" aria-hidden="true" />
-                <span>Alternar Oficina (Master)</span>
-              </label>
-              <select
-                id="seletor-oficina-desktop"
-                value={effectiveEmpresaId}
-                onChange={(e) => {
-                  setSelectedEmpresaId(e.target.value);
-                  localStorage.setItem('autotec_tenant_id', e.target.value);
-                }}
-                className="w-full min-h-[48px] px-3 py-2 rounded-lg bg-surface border border-line-strong text-ink font-semibold text-base cursor-pointer"
-              >
-                {empresas.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.nome_fantasia}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {seletorMaster('seletor-oficina-desktop')}
 
-          {/* Botões Grandes de Navegação */}
-          <nav className="space-y-2.5">
-            {visibleNav.map((item) => {
-              const Icon = item.icon;
-              const active = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleNavigateTab(item.id)}
-                  className={`w-full min-h-[60px] px-4 py-3.5 rounded-xl font-semibold text-lg flex items-center gap-4 text-left cursor-pointer border-2 ${
-                    active
-                      ? 'bg-brand text-on-brand border-brand'
-                      : 'bg-sunken text-ink border-line hover:bg-muted hover:border-line-strong'
-                  }`}
-                >
-                  <Icon className="w-7 h-7 shrink-0 stroke-[2.2]" aria-hidden="true" />
-                  <span className="truncate">{item.label}</span>
-                </button>
-              );
-            })}
+          <nav aria-label="Seções">
+            <ul className="space-y-0.5">
+              {visibleNav.map((item) => {
+                const Icon = item.icon;
+                const active = activeTab === item.id;
+                return (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => irPara(item.id)}
+                      aria-current={active ? 'page' : undefined}
+                      className={`relative w-full h-10 px-3 rounded-md text-sm flex items-center gap-3 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                        active
+                          ? 'bg-muted text-ink font-semibold'
+                          : 'text-ink-muted font-medium hover:bg-muted hover:text-ink'
+                      }`}
+                    >
+                      {active && (
+                        <span aria-hidden="true" className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-brand" />
+                      )}
+                      <Icon size={20} className="shrink-0" aria-hidden="true" />
+                      <span className="truncate">{item.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </nav>
         </div>
 
-        {/* Rodapé do Mecânico / Usuário Logado */}
-        <div className="pt-6 border-t-2 border-line space-y-3">
-          <div className="bg-sunken border border-line rounded-xl p-4">
-            <div className="text-base font-semibold text-ink truncate">{user.nome}</div>
-            <div className="text-sm text-ink-subtle truncate">{user.email}</div>
-            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-md bg-muted text-ink text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-brand" />
-              <span>Cargo: {user.cargo}</span>
+        <div className="pt-3 mt-3 border-t border-line space-y-2">
+          <div className="flex items-center gap-2 px-2">
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-ink truncate">{user.nome}</div>
+              <div className="text-xs text-ink-muted truncate">{cargoLegivel}</div>
             </div>
+            <ThemeToggle />
           </div>
-
-          <button
-            type="button"
-            onClick={logout}
-            className="w-full min-h-[56px] px-4 py-3 rounded-xl bg-danger/15 hover:bg-danger/15 border-2 border-danger text-danger font-semibold text-base flex items-center justify-center gap-3 cursor-pointer"
-          >
-            <LogOut className="w-5 h-5" aria-hidden="true" />
-            <span>Sair da Conta</span>
-          </button>
+          <Button variante="fantasma" icone={LogOut} onClick={logout} className="w-full !justify-start">
+            Sair
+          </Button>
         </div>
       </aside>
 
-      {/* ÁREA CENTRAL DE TRABALHO (OCUPA 100% DA TELA) */}
-      <div className="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0 print:pb-0">
-        {/* TOPBAR MOBILE & TABLET COMPACTA */}
-        <header className="print:hidden lg:hidden bg-muted border-b-2 border-brand px-3 py-2 flex items-center justify-between gap-2 sticky top-0 z-30">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-brand text-on-brand flex items-center justify-center shrink-0">
-              <Wrench className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <span
-                translate="no"
-                className="text-base font-semibold text-ink block leading-none"
-              >
-                Mecanify
-              </span>
-              <span className="text-xs text-info font-medium truncate block mt-0.5">
-                {user.nome} &bull; {user.cargo}
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={logout}
-            aria-label="Sair da conta"
-            title="Sair da conta"
-            className="min-h-[38px] px-2.5 py-1.5 rounded-lg bg-sunken border border-danger text-danger font-semibold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Sair</span>
-          </button>
+      {/* ÁREA CENTRAL */}
+      <div className="flex-1 flex flex-col min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0 print:pb-0">
+        <header className="print:hidden lg:hidden bg-surface border-b border-line px-3 h-12 flex items-center gap-2.5 sticky top-0 z-30">
+          <BrandMark tamanho={28} />
+          <span translate="no" className="text-base font-semibold text-ink">
+            Mecanify
+          </span>
+          <span className="text-xs text-ink-muted truncate">{empresaAtual?.nome_fantasia}</span>
         </header>
 
-        {/* CONTEÚDO PRINCIPAL */}
-        <main id="conteudo-principal" className="flex-1 w-full p-2.5 sm:p-5 lg:p-7 print:p-0">
+        <main id="conteudo-principal" className="flex-1 w-full p-3 sm:p-5 lg:p-7 print:p-0">
           {!effectiveEmpresaId ? (
-            <div className="bg-surface border-2 border-brand rounded-lg p-8 space-y-3">
-              <h2 className="text-2xl font-semibold text-ink">
-                Selecione uma Oficina para visualizar o pátio
-              </h2>
-              <p className="text-base text-ink-muted">
+            <div className="bg-surface border border-line rounded-lg p-8 space-y-2">
+              <h2 className="text-xl font-semibold text-ink">Selecione uma oficina para ver o pátio</h2>
+              <p className="text-sm text-ink-muted">
                 Sua conta Master está autenticada. Escolha uma oficina no seletor para carregar os dados.
               </p>
             </div>
-          ) : activeTab === 'patio' ? (
-            <DashboardOperacional
-              empresaId={effectiveEmpresaId}
-              onNavigateTab={handleNavigateTab}
-            />
           ) : activeTab === 'os' ? (
             <OrdensServico
               empresaId={effectiveEmpresaId}
@@ -400,57 +386,109 @@ function AppShell() {
           ) : activeTab === 'oficina' && canSeeConfig ? (
             <Oficina empresaId={effectiveEmpresaId} />
           ) : (
-            <div className="bg-surface border-2 border-brand rounded-lg p-6 sm:p-10 space-y-6">
-              <div className="w-16 h-16 rounded-lg bg-muted border-2 border-brand text-ink flex items-center justify-center">
-                <Wrench className="w-8 h-8 text-brand-ink" aria-hidden="true" />
-              </div>
-              <div className="space-y-2">
-                <h1 className="text-2xl sm:text-3xl font-semibold text-ink">
-                  Módulo: {visibleNav.find((i) => i.id === activeTab)?.label}
-                </h1>
-                <p className="text-base sm:text-lg text-ink-muted max-w-2xl">
-                  Esta tela entra no MVP 3 (Cadastros dedicados de Veículos, Clientes e
-                  Estoque com ajuste rápido).
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleNavigateTab('os')}
-                className="min-h-[58px] px-6 py-4 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-lg flex items-center gap-3 cursor-pointer"
-              >
-                <ArrowLeft className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
-                <span>Ir para Ordens de Serviço</span>
-              </button>
-            </div>
+            <DashboardOperacional empresaId={effectiveEmpresaId} onNavigateTab={handleNavigateTab} />
           )}
         </main>
       </div>
 
-      {/* BARRA INFERIOR DE POLEGAR COMPACTA (MOBILE / CELULAR DO MECÂNICO) */}
+      {/* "MAIS" (MOBILE) */}
+      {maisAberto && (
+        <div className="print:hidden lg:hidden">
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label="Fechar"
+            onClick={() => setMaisAberto(false)}
+            className="fixed inset-0 z-40 bg-ink/40 cursor-default"
+          />
+          <div
+            role="dialog"
+            aria-label="Mais opções"
+            className="fixed left-0 right-0 z-40 bg-surface border-t border-line rounded-t-xl p-3 space-y-3 max-h-[70dvh] overflow-y-auto"
+            style={{ bottom: 'calc(4.0625rem + env(safe-area-inset-bottom))' }}
+          >
+            {extrasMobile.length > 0 && (
+              <ul className="space-y-0.5">
+                {extrasMobile.map((item) => {
+                  const Icon = item.icon;
+                  const active = activeTab === item.id;
+                  return (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => irPara(item.id)}
+                        aria-current={active ? 'page' : undefined}
+                        className={`relative w-full min-h-11 px-3 rounded-md text-sm flex items-center gap-3 text-left cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                          active ? 'bg-muted text-ink font-semibold' : 'text-ink-muted font-medium hover:bg-muted hover:text-ink'
+                        }`}
+                      >
+                        {active && (
+                          <span aria-hidden="true" className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-brand" />
+                        )}
+                        <Icon size={20} className="shrink-0" aria-hidden="true" />
+                        <span className="truncate">{item.label}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {seletorMaster('seletor-oficina-mobile')}
+            <div className="pt-3 border-t border-line flex items-center gap-2 px-1">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-ink truncate">{user.nome}</div>
+                <div className="text-xs text-ink-muted truncate">{cargoLegivel}</div>
+              </div>
+              <ThemeToggle />
+              <Button variante="fantasma" icone={LogOut} onClick={logout}>
+                Sair
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BARRA INFERIOR (MOBILE) */}
       <nav
         aria-label="Navegação Rápida Mobile"
-        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-line px-1 py-1 flex items-center justify-around overflow-x-auto no-scrollbar gap-0.5"
+        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-line px-1 pt-1 flex items-stretch gap-0.5"
         style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
       >
-        {visibleNav.map((item) => {
-          const Icon = item.icon;
-          const active = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleNavigateTab(item.id)}
-              className={`min-h-[46px] min-w-[48px] flex-1 rounded-lg flex flex-col items-center justify-center gap-0.5 px-1 py-1 font-semibold text-xs cursor-pointer shrink-0 ${
-                active
-                  ? 'bg-brand text-on-brand'
-                  : 'text-ink-muted hover:bg-muted'
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0 stroke-[2.2]" aria-hidden="true" />
-              <span className="truncate max-w-full leading-none">{item.shortLabel}</span>
-            </button>
-          );
-        })}
+        {[
+          ...principaisMobile.map((item) => ({
+            chave: item.id as string,
+            rotulo: item.shortLabel,
+            Icon: item.icon,
+            ativo: activeTab === item.id,
+            aoClicar: () => irPara(item.id),
+          })),
+        ].map(({ chave, rotulo, Icon, ativo, aoClicar }) => (
+          <button
+            key={chave}
+            type="button"
+            onClick={aoClicar}
+            aria-current={ativo ? 'page' : undefined}
+            className={`min-h-14 min-w-11 flex-1 rounded-md flex flex-col items-center justify-center gap-1 px-1 text-xs font-medium cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              ativo ? 'bg-muted text-ink' : 'text-ink-muted hover:bg-muted'
+            }`}
+          >
+            <Icon size={20} className={ativo ? 'text-brand-ink' : ''} aria-hidden="true" />
+            <span className="truncate max-w-full leading-none">{rotulo}</span>
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setMaisAberto((v) => !v)}
+          aria-expanded={maisAberto}
+          aria-haspopup="dialog"
+          aria-current={abaNoExtra && !maisAberto ? 'page' : undefined}
+          className={`min-h-14 min-w-11 flex-1 rounded-md flex flex-col items-center justify-center gap-1 px-1 text-xs font-medium cursor-pointer transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            abaNoExtra || maisAberto ? 'bg-muted text-ink' : 'text-ink-muted hover:bg-muted'
+          }`}
+        >
+          <Ellipsis size={20} className={abaNoExtra ? 'text-brand-ink' : ''} aria-hidden="true" />
+          <span className="leading-none">Mais</span>
+        </button>
       </nav>
     </div>
   );

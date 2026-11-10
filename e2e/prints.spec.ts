@@ -33,3 +33,21 @@ for (const cenario of CENARIOS) {
     });
   }
 }
+
+// Shell (menu lateral / barra inferior) com o Radar ao fundo; no celular, também com a folha "Mais" aberta.
+test('print shell (menu e barra)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'radar');
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `shell-${tema}-${largura}.png`), animations: 'disabled' });
+
+  if (largura < 1024) {
+    await page.getByRole('navigation', { name: 'Navegação Rápida Mobile' }).getByRole('button', { name: 'Mais' }).click();
+    await page.getByRole('dialog', { name: 'Mais opções' }).waitFor();
+    await page.screenshot({ path: join(PASTA, `shell-${tema}-${largura}-mais.png`), animations: 'disabled' });
+  }
+});

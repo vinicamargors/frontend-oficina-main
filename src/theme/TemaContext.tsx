@@ -4,6 +4,7 @@ export type Tema = 'claro' | 'escuro';
 export type PreferenciaTema = Tema | 'sistema';
 
 const CHAVE = 'mecanify_tema';
+const COR_BARRA: Record<Tema, string> = { claro: '#F1EDE4', escuro: '#111214' };
 const CONSULTA_ESCURO = '(prefers-color-scheme: dark)';
 
 interface TemaContextValue {
@@ -45,6 +46,16 @@ export function TemaProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', tema === 'escuro');
   }, [tema]);
+
+  // As metas theme-color têm `media`, que só segue o sistema. Com escolha manual, fixa a cor do tema escolhido
+  // nas duas; com "sistema", devolve os valores originais do index.html.
+  useEffect(() => {
+    const metas = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
+    metas.forEach((m) => {
+      if (m.dataset.original === undefined) m.dataset.original = m.content;
+      m.content = preferencia === 'sistema' ? (m.dataset.original ?? m.content) : COR_BARRA[tema];
+    });
+  }, [tema, preferencia]);
 
   const definir = useCallback((p: PreferenciaTema) => {
     setPreferencia(p);
