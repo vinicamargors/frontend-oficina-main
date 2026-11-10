@@ -93,6 +93,33 @@ placa (`PlateChip`, modelo, cliente, total, "aberta há N dias"). Card com mais 
 ganha marca `warning`; mais de 7 dias, `danger`. Topo: no máximo 3 números (no pátio, a receber, estoque crítico).
 Os dias contam desde `data_abertura` (o backend não envia data da última troca de etapa — não inventar).
 
+
+## Direção atualizada (2026-11-10, pedido do dono)
+
+Referência: app da Binance (minimalista e sofisticado), **usando a nossa paleta** grafite + âmbar. Imagem em
+`docs/brand/referencia-binance.png`. Isto **substitui** as regras de forma abaixo ("Forma e espaço") onde houver conflito.
+
+- **Sem contornos.** Separação por preenchimento (card claro sobre fundo) e espaço. Nada de borda em card, painel ou linha de lista.
+  Borda só em campo de formulário (`line-strong`, exigência de contraste 3:1).
+- **Cards grandes e suaves:** `rounded-2xl` (16px), padding `p-5`/`p-6`, sem sombra no claro; no escuro, degrau de superfície.
+- **Controles:** `rounded-lg` (8px), altura 40/44px. **Pílulas** (`rounded-full`) para abas, chips de filtro e controle segmentado
+  (como "Exchange | Wallet" da referência). Item ativo da pílula: fundo `surface`/`muted` + texto `ink`; inativo: texto `ink-muted`.
+- **Botão primário âmbar** sólido, texto `on-brand`, um por tela. Secundário: fundo `muted`, sem borda.
+- **Números grandes:** valor-chave da tela em 28–36px, peso 600, `tabular-nums` (como o saldo da referência). Rótulo pequeno `ink-muted` acima.
+- **Respiro:** espaçamento generoso (`gap-4`/`gap-6`), no máximo 3 blocos de destaque por tela. Ícones finos (lucide, traço 1.5).
+- **Barra inferior mobile:** 5 itens, ícone + rótulo, item ativo em `ink` com ícone preenchido de âmbar; sem pílula de fundo.
+- Sem mini-gráficos decorativos (sparklines). Cores de status só em texto/ícone/pílula pequena.
+
+## Logo (fornecido pelo dono)
+
+Arquivo de referência: `docs/brand/mecanify-logo-referencia.jpg` (monograma "M" em traço âmbar arredondado com chave inglesa
+cruzando; palavra "mecanify" com "ify" em âmbar; legenda "GESTÃO DE OS").
+- Vetorizar o monograma em SVG fiel ao original (`src/components/ui/BrandMark.tsx`, `currentColor`, sem texto dentro).
+- `Logo` = monograma + palavra "mecanify" em texto (Geist 600; "mecan" em `ink`, "ify" em `brand-ink`). Legenda "GESTÃO DE OS" só no login.
+- `public/favicon.svg` e `public/logo.svg` (monograma âmbar sobre quadrado grafite arredondado).
+- **Usar em tudo:** favicon, login (todas as abas), menu lateral, topo mobile, avaliação pública, cabeçalho das impressões
+  (OS, holerite, etiqueta) em versão monocromática preta, tela de carregamento inicial.
+
 ## Fora do escopo
 
 Trocar os 17 `alert()` por mensagens inline, atalhos de teclado, ações em lote, rotas novas, mudanças no backend.
