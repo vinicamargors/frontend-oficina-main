@@ -10,11 +10,17 @@ export function Folha({
   titulo,
   aoCancelar,
   children,
+  tamanho = 'sm',
+  fecharNoFundo = true,
 }: {
   aberto: boolean;
   titulo: string;
   aoCancelar: () => void;
   children: ReactNode;
+  /** `lg`: formulários longos (rola dentro da folha; ≥640px, cartão de 40rem). */
+  tamanho?: 'sm' | 'lg';
+  /** false: o clique no fundo não fecha (formulários, para um toque errado não descartar o que foi digitado). */
+  fecharNoFundo?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
@@ -37,7 +43,7 @@ export function Folha({
   };
 
   const cliqueNoFundo = (e: MouseEvent<HTMLDialogElement>) => {
-    if (e.target === ref.current) aoCancelar();
+    if (fecharNoFundo && e.target === ref.current) aoCancelar();
   };
 
   return (
@@ -46,7 +52,9 @@ export function Folha({
       aria-labelledby={idTitulo}
       onCancel={cancelar}
       onClick={cliqueNoFundo}
-      className="m-0 mt-auto w-full max-w-full rounded-t-2xl bg-surface p-0 text-ink backdrop:bg-ink/40 dark:backdrop:bg-black/60 sm:m-auto sm:w-[28rem] sm:rounded-2xl"
+      className={`m-0 mt-auto w-full max-w-full rounded-t-2xl bg-surface p-0 text-ink backdrop:bg-ink/40 dark:backdrop:bg-black/60 sm:m-auto sm:rounded-2xl ${
+        tamanho === 'lg' ? 'max-h-[92dvh] overflow-y-auto sm:w-[40rem]' : 'sm:w-[28rem]'
+      }`}
     >
       {aberto && (
         <div className="space-y-5 p-5 sm:p-6" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>

@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from '@playwright/test';
-import { TELAS, abrirTela, entrarComo, exigirRedeCompleta, ordens, simularBackend, type Cenario } from './mocks';
+import { TELAS, abrirTela, clientes, entrarComo, exigirRedeCompleta, ordens, simularBackend, type Cenario } from './mocks';
 import { contextoDoProjeto } from './contexto';
 
 /**
@@ -125,4 +125,32 @@ test('print bancada etapa (confirmação no celular)', async ({ page }, info) =>
   await page.mouse.move(1, 1);
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `bancada-etapa-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+// Clientes: um cliente expandido (veículos aninhados) e a ficha de novo cliente aberta:
+// `clientes-expandido-<tema>-<largura>.png` e `clientes-ficha-<tema>-<largura>.png`.
+test('print clientes expandido (veículos do cliente)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'clientes');
+  await page.getByRole('list', { name: 'Clientes' }).getByRole('button', { name: new RegExp(clientes[0].nome) }).first().click();
+  await page.getByRole('list', { name: `Veículos de ${clientes[0].nome}` }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `clientes-expandido-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+});
+
+test('print clientes ficha (novo cliente aberto)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'clientes');
+  await page.getByRole('button', { name: /Novo cliente/ }).click();
+  await page.getByRole('dialog', { name: /Novo cliente/ }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `clientes-ficha-${tema}-${largura}.png`), animations: 'disabled' });
 });
