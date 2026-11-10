@@ -1,6 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MoreHorizontal, type LucideIcon } from 'lucide-react';
 
+// Itens desabilitados não recebem foco: ficam de fora da navegação por setas, Home/End e do foco inicial
+const ITEM_ATIVO = '[role="menuitem"]:not([disabled]):not([aria-disabled="true"])';
+
 export interface ItemMenu {
   rotulo: string;
   icone: LucideIcon;
@@ -16,6 +19,7 @@ export interface ItemMenu {
 export function MenuAcoes({ rotulo, itens }: { rotulo: string; itens: ItemMenu[] }) {
   const [aberto, setAberto] = useState(false);
   const [acima, setAcima] = useState(false);
+  const [tamanhoJanela, setTamanhoJanela] = useState('');
   const painel = useRef<HTMLDivElement>(null);
   const raiz = useRef<HTMLDivElement>(null);
   const gatilho = useRef<HTMLButtonElement>(null);
@@ -32,11 +36,18 @@ export function MenuAcoes({ rotulo, itens }: { rotulo: string; itens: ItemMenu[]
     const reservaRodape = window.innerWidth < 1024 ? 88 : 8;
     const abaixo = window.innerHeight - gatilhoBox.bottom - reservaRodape;
     setAcima(altura + 4 > abaixo && gatilhoBox.top > altura + 8);
+  }, [aberto, tamanhoJanela]);
+
+  useEffect(() => {
+    if (!aberto) return;
+    const aoRedimensionar = () => setTamanhoJanela(`${window.innerWidth}x${window.innerHeight}`);
+    window.addEventListener('resize', aoRedimensionar);
+    return () => window.removeEventListener('resize', aoRedimensionar);
   }, [aberto]);
 
   useEffect(() => {
     if (!aberto) return;
-    raiz.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    raiz.current?.querySelector<HTMLElement>(ITEM_ATIVO)?.focus();
     const fora = (e: MouseEvent) => {
       if (raiz.current && !raiz.current.contains(e.target as Node)) setAberto(false);
     };
@@ -51,7 +62,7 @@ export function MenuAcoes({ rotulo, itens }: { rotulo: string; itens: ItemMenu[]
       gatilho.current?.focus();
       return;
     }
-    const itensDom = Array.from(raiz.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const itensDom = Array.from(raiz.current?.querySelectorAll<HTMLElement>(ITEM_ATIVO) ?? []);
     const i = itensDom.indexOf(document.activeElement as HTMLElement);
     let alvo = -1;
     if (e.key === 'ArrowDown') alvo = (i + 1) % itensDom.length;

@@ -1,7 +1,7 @@
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Barcode, Pencil, Trash2 } from 'lucide-react';
 import type { EstoqueItem } from '../../types';
 import { MenuAcoes } from '../clientes/MenuAcoes';
-import { estaCritico, margemPercentual, rotuloCategoria } from './auxiliares';
+import { estaCritico, margemPercentual } from './auxiliares';
 
 const formatBRL = (valor?: number | null) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(valor || 0));
@@ -19,6 +19,7 @@ export const COLUNAS_ITEM = {
  */
 export function LinhaItem({
   item,
+  rotuloCategoria,
   verFinanceiro,
   aoAjustar,
   aoEtiqueta,
@@ -26,6 +27,7 @@ export function LinhaItem({
   aoExcluir,
 }: {
   item: EstoqueItem;
+  rotuloCategoria: string;
   verFinanceiro: boolean;
   aoAjustar: (tipo: 'entrada' | 'saida') => void;
   aoEtiqueta: () => void;
@@ -35,7 +37,7 @@ export function LinhaItem({
   const qtd = item.quantidade ?? 0;
   const min = item.minimo_alerta ?? 5;
   const critico = estaCritico(qtd, min);
-  const meta = [rotuloCategoria(item.categoria), item.codigo].filter(Boolean).join(' · ');
+  const meta = [rotuloCategoria, item.codigo].filter(Boolean).join(' · ');
 
   return (
     <li

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { estaCritico, margemPercentual, rotuloCategoria, saldoApos } from '../../src/pages/estoque/auxiliares';
+import {
+  categoriaEquivalente,
+  chaveCategoria,
+  estaCritico,
+  margemPercentual,
+  rotuloCategoria,
+  rotulosDasCategorias,
+  saldoApos,
+} from '../../src/pages/estoque/auxiliares';
 
 describe('rotuloCategoria', () => {
   it('acentua as categorias padrão sem mudar o valor original', () => {
@@ -33,5 +41,29 @@ describe('regras do estoque', () => {
   it('saldo após ajuste', () => {
     expect(saldoApos(10, 'entrada', 3)).toBe(13);
     expect(saldoApos(10, 'saida', 3)).toBe(7);
+  });
+});
+
+describe('categorias com e sem acento', () => {
+  it('só as chaves canônicas sem acento ganham acento; o resto aparece como digitado', () => {
+    expect(rotuloCategoria('ELETRICA')).toBe('Elétrica');
+    expect(rotuloCategoria('ELÉTRICA')).toBe('Elétrica'); // título do que foi digitado
+    expect(rotuloCategoria('LUBRIFICANTES')).toBe('Lubrificantes');
+  });
+  it('valores distintos com o mesmo texto são desambiguados com o valor bruto', () => {
+    const r = rotulosDasCategorias(['PECAS', 'ELETRICA', 'ELÉTRICA', 'MOTOR']);
+    expect(r.ELETRICA).toBe('Elétrica (ELETRICA)');
+    expect(r['ELÉTRICA']).toBe('Elétrica (ELÉTRICA)');
+    expect(r.PECAS).toBe('Peças');
+    expect(r.MOTOR).toBe('Motor');
+  });
+  it('sem colisão, nenhum rótulo leva parênteses', () => {
+    expect(Object.values(rotulosDasCategorias(['PECAS', 'ELETRICA'])).some((l) => l.includes('('))).toBe(false);
+  });
+  it('categoria nova equivalente a uma existente (acento/caixa) é detectada', () => {
+    expect(chaveCategoria(' elétrica ')).toBe('ELETRICA');
+    expect(categoriaEquivalente(['PECAS', 'ELETRICA'], 'ELÉTRICA')).toBe('ELETRICA');
+    expect(categoriaEquivalente(['PECAS', 'ELÉTRICA'], 'ELETRICA')).toBe('ELÉTRICA');
+    expect(categoriaEquivalente(['PECAS'], 'LUBRIFICANTES')).toBeUndefined();
   });
 });

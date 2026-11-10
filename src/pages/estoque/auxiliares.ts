@@ -14,16 +14,45 @@ const ROTULOS_CATEGORIA: Record<string, string> = {
   MOTOR: 'Motor',
 };
 
-const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+const semAcento = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-/** Texto da categoria para a tela: conhecidas ganham acento; as demais viram "Primeira maiúscula". */
+/** Chave de comparação de categorias: sem acento, maiúscula e sem espaços nas pontas. */
+export const chaveCategoria = (categoria: string): string => semAcento(categoria.trim()).toUpperCase();
+
+/**
+ * Texto da categoria para a tela. Só as chaves canônicas do backend (sem acento: PECAS, ELETRICA...) ganham acento;
+ * qualquer outro valor aparece como foi digitado, com a primeira maiúscula. O valor guardado/enviado não muda.
+ */
 export function rotuloCategoria(categoria?: string | null): string {
   const bruto = (categoria || 'PECAS').trim();
-  const chave = semAcento(bruto).toUpperCase();
-  if (ROTULOS_CATEGORIA[chave]) return ROTULOS_CATEGORIA[chave];
+  const canonico = ROTULOS_CATEGORIA[bruto.toUpperCase()];
+  if (canonico) return canonico;
   const minusculo = bruto.toLocaleLowerCase('pt-BR');
   return minusculo.charAt(0).toLocaleUpperCase('pt-BR') + minusculo.slice(1);
 }
+
+/**
+ * Rótulo de cada categoria da lista (chave = valor bruto em maiúsculas). Valores diferentes que dariam o mesmo
+ * texto (ex.: "ELETRICA" e "ELÉTRICA") mostram o valor bruto entre parênteses para ficarem distinguíveis.
+ */
+export function rotulosDasCategorias(categorias: string[]): Record<string, string> {
+  const brutos = Array.from(new Set(categorias.map((c) => c.toUpperCase())));
+  const porTexto = new Map<string, string[]>();
+  for (const c of brutos) {
+    const t = rotuloCategoria(c).toLocaleLowerCase('pt-BR');
+    porTexto.set(t, [...(porTexto.get(t) ?? []), c]);
+  }
+  const mapa: Record<string, string> = {};
+  for (const c of brutos) {
+    const colide = (porTexto.get(rotuloCategoria(c).toLocaleLowerCase('pt-BR')) ?? []).length > 1;
+    mapa[c] = colide ? `${rotuloCategoria(c)} (${c})` : rotuloCategoria(c);
+  }
+  return mapa;
+}
+
+/** Categoria já cadastrada equivalente a `nome` (ignora acento e caixa); `undefined` se for nova. */
+export const categoriaEquivalente = (categorias: string[], nome: string): string | undefined =>
+  categorias.find((c) => chaveCategoria(c) === chaveCategoria(nome));
 
 /** Abaixo ou no mínimo de alerta (mesma regra dos indicadores e do filtro "Crítico"). */
 export const estaCritico = (quantidade?: number | null, minimo?: number | null): boolean =>

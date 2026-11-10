@@ -1,6 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { rotuloCategoria } from './auxiliares';
 
 /**
  * Chips de filtro: "Todas", "Crítico" e uma por categoria, com contagem. Celular: uma linha só, rolagem só dentro da
@@ -8,6 +7,7 @@ import { rotuloCategoria } from './auxiliares';
  */
 export function ChipsCategoria({
   categorias,
+  rotulos,
   contagens,
   total,
   criticos,
@@ -18,6 +18,8 @@ export function ChipsCategoria({
   aoCategoria,
 }: {
   categorias: string[];
+  /** Texto de cada categoria (chave em maiúsculas), já com desambiguação. */
+  rotulos: Record<string, string>;
   contagens: Record<string, number>;
   total: number;
   criticos: number;
@@ -85,7 +87,7 @@ export function ChipsCategoria({
       )}
       {categorias.map((cat) => {
         const ativo = categoriaAtiva === cat && !apenasCriticos;
-        return chip(cat, ativo, () => aoCategoria(cat), <>{rotuloCategoria(cat)} {contar(contagens[cat.toUpperCase()] ?? 0, ativo)}</>);
+        return chip(cat, ativo, () => aoCategoria(cat), <>{rotulos[cat.toUpperCase()] ?? cat} {contar(contagens[cat.toUpperCase()] ?? 0, ativo)}</>);
       })}
     </div>
   );

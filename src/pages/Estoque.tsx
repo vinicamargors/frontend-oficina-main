@@ -19,7 +19,7 @@ import { Button, CLASSE_CAMPO, Field, PageHeader, Panel, Skeleton } from '../com
 import { Folha } from '../components/Folha';
 import { LinhaItem, COLUNAS_ITEM } from './estoque/LinhaItem';
 import { ChipsCategoria } from './estoque/ChipsCategoria';
-import { rotuloCategoria, saldoApos } from './estoque/auxiliares';
+import { categoriaEquivalente, rotuloCategoria, rotulosDasCategorias, saldoApos } from './estoque/auxiliares';
 
 interface EstoqueProps {
   empresaId: string;
@@ -185,14 +185,22 @@ export function Estoque({ empresaId }: EstoqueProps) {
     setTimeout(() => setSucessoMsg(null), 4000);
   };
 
+  // Texto das categorias na tela (acento só nas canônicas; colisões mostram o valor bruto)
+  const rotulosCategoria = useMemo(() => rotulosDasCategorias(categoriasCustom), [categoriasCustom]);
+  const rotuloDe = (raw?: string | null) => rotulosCategoria[(raw || 'PECAS').toUpperCase()] ?? rotuloCategoria(raw);
+
   // Gerenciamento de Categorias
   const handleAdicionarCategoria = (e: React.FormEvent) => {
     e.preventDefault();
     const nomeLimpo = novaCategoriaNome.trim().toUpperCase();
     if (!nomeLimpo) return;
 
-    if (categoriasCustom.includes(nomeLimpo)) {
-      dispararFeedback(`A categoria "${rotuloCategoria(nomeLimpo)}" já existe.`);
+    // Equivalente (mesmo texto sem acento/caixa) já existe: não cria outra, só mostra a existente
+    const existente = categoriaEquivalente(categoriasCustom, nomeLimpo);
+    if (existente) {
+      setCategoriaAtiva(existente);
+      setApenasEstoqueBaixo(false);
+      dispararFeedback(`A categoria "${rotuloDe(existente)}" já existe.`);
       setNovaCategoriaNome('');
       return;
     }
@@ -203,7 +211,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
       localStorage.setItem(`autotec_categorias_${empresaId}`, JSON.stringify(atualizadas));
     } catch {}
     setNovaCategoriaNome('');
-    dispararFeedback(`Categoria "${rotuloCategoria(nomeLimpo)}" criada com sucesso!`);
+    dispararFeedback(`Categoria "${rotuloDe(nomeLimpo)}" criada com sucesso!`);
   };
 
   const handleExcluirCategoria = async (catNome: string, confirmado = false) => {
@@ -236,7 +244,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
       localStorage.setItem(`autotec_categorias_${empresaId}`, JSON.stringify(atualizadas));
     } catch {}
     if (categoriaAtiva === catNome) setCategoriaAtiva('TODAS');
-    dispararFeedback(`Categoria "${rotuloCategoria(catNome)}" removida.`);
+    dispararFeedback(`Categoria "${rotuloDe(catNome)}" removida.`);
   };
 
   // Abrir Modal de Cadastro / Edição
@@ -686,6 +694,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         </div>
         <ChipsCategoria
           categorias={categoriasCustom}
+          rotulos={rotulosCategoria}
           contagens={contagemPorCategoria}
           total={itens.length}
           criticos={stats.criticos}
@@ -750,6 +759,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               <LinhaItem
                 key={item.id}
                 item={item}
+                rotuloCategoria={rotuloDe(item.categoria)}
                 verFinanceiro={verFinanceiro}
                 aoAjustar={(tipo) => abrirModalAjuste(item, tipo)}
                 aoEtiqueta={() => {
@@ -794,7 +804,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               <select value={formCategoria} onChange={(e) => setFormCategoria(e.target.value)} className={CLASSE_CAMPO}>
                 {categoriasCustom.map((cat) => (
                   <option key={cat} value={cat}>
-                    {rotuloCategoria(cat)}
+                    {rotuloDe(cat)}
                   </option>
                 ))}
               </select>
@@ -922,6 +932,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               </div>
               <p className={`text-sm tabular-nums ${saldoDepois < 0 ? 'font-medium text-danger' : 'text-ink-muted'}`}>
                 Saldo depois: {saldoDepois} un.
+                {saldoDepois < 0 && ' · Saldo ficará negativo'}
               </p>
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Button variante="secundario" onClick={() => setModalAjusteAberto(false)}>
@@ -932,7 +943,9 @@ export function Estoque({ empresaId }: EstoqueProps) {
                   variante={ajusteEntrada ? 'primario' : 'perigo'}
                   carregando={ajustando}
                 >
-                  {ajusteEntrada ? `Confirmar entrada de ${qtdAjuste} un.` : `Confirmar saída de ${qtdAjuste} un.`}
+                  {ajusteEntrada
+                    ? `Confirmar entrada de ${qtdAjuste} un.`
+                    : `Confirmar saída de ${qtdAjuste} un.${saldoDepois < 0 ? ' (saldo negativo)' : ''}`}
                 </Button>
               </div>
             </form>
@@ -975,7 +988,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
           >
             <p className="text-sm font-medium text-ink">
               Existem {contagemPorCategoria[categoriaParaExcluir.toUpperCase()] ?? 0} itens usando a categoria "
-              {rotuloCategoria(categoriaParaExcluir)}". Deseja reclassificá-los para "Diversos" e excluir a categoria?
+              {rotuloDe(categoriaParaExcluir)}". Deseja reclassificá-los para "Diversos" e excluir a categoria?
             </p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button variante="secundario" onClick={() => setCategoriaParaExcluir(null)}>
@@ -992,7 +1005,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
           {categoriasCustom.map((cat) => (
             <li key={cat} className="flex min-h-12 items-center justify-between gap-2">
               <span className="min-w-0 truncate text-sm font-medium text-ink">
-                {rotuloCategoria(cat)}{' '}
+                {rotuloDe(cat)}{' '}
                 <span className="font-normal tabular-nums text-ink-muted">
                   ({contagemPorCategoria[cat.toUpperCase()] ?? 0} itens)
                 </span>
@@ -1000,8 +1013,8 @@ export function Estoque({ empresaId }: EstoqueProps) {
               <button
                 type="button"
                 onClick={() => handleExcluirCategoria(cat)}
-                title={`Excluir categoria ${rotuloCategoria(cat)}`}
-                aria-label={`Excluir categoria ${rotuloCategoria(cat)}`}
+                title={`Excluir categoria ${rotuloDe(cat)}`}
+                aria-label={`Excluir categoria ${rotuloDe(cat)}`}
                 className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-muted hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <Trash2 size={18} strokeWidth={1.5} aria-hidden="true" />

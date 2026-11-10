@@ -333,3 +333,92 @@ test.describe('estados', () => {
     await expect(page.getByText('Margem')).toHaveCount(0);
   });
 });
+
+test.describe('menu por teclado e categorias ambíguas', () => {
+  test('saldo zero: setas e Home/End pulam "Registrar saída" desabilitado', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await page.route('**/api/v1/estoque/*', async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      const itens = [{ ...estoque[0], quantidade: 0 }];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify({ itens, stats: { total_itens: 1, estoque_baixo: 1, valor_total_custo: 0, valor_total_venda: 0 } }),
+      });
+    });
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'estoque');
+    await menuDe(page, estoque[0].nome);
+    const itens = page.getByRole('menuitem');
+    await expect(itens.filter({ hasText: 'Registrar saída' })).toBeDisabled();
+    await expect(itens.filter({ hasText: 'Registrar entrada' })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(itens.filter({ hasText: 'Imprimir etiqueta' })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(itens.filter({ hasText: 'Editar peça' })).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    await expect(itens.filter({ hasText: 'Registrar entrada' })).toBeFocused();
+    await page.keyboard.press('End');
+    await expect(itens.filter({ hasText: 'Excluir peça' })).toBeFocused();
+    await page.keyboard.press('Home');
+    await expect(itens.filter({ hasText: 'Registrar entrada' })).toBeFocused();
+  });
+
+  test('ELETRICA e ELÉTRICA no mesmo estoque: chips e opções distinguíveis; criar "elétrica" não duplica', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await page.route('**/api/v1/estoque/*', async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      const itens = [
+        { ...estoque[11], categoria: 'ELETRICA' },
+        { ...estoque[12], categoria: 'ELÉTRICA' },
+      ];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify({ itens, stats: { total_itens: 2, estoque_baixo: 0, valor_total_custo: 0, valor_total_venda: 0 } }),
+      });
+    });
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'estoque');
+    const a = chips(page).getByRole('button', { name: /^Elétrica \(ELETRICA\)/ });
+    const b = chips(page).getByRole('button', { name: /^Elétrica \(ELÉTRICA\)/ });
+    await expect(a).toHaveCount(1);
+    await expect(b).toHaveCount(1);
+    await b.click();
+    await expect(lista(page).getByRole('listitem')).toHaveCount(1);
+    await expect(lista(page)).toContainText(estoque[12].nome);
+
+    await page.getByRole('button', { name: /^Nova peça/ }).click();
+    const opcoes = page.getByRole('dialog', { name: 'Nova peça no estoque' }).getByLabel('Categoria *').locator('option');
+    const textos = await opcoes.allTextContents();
+    expect(new Set(textos).size).toBe(textos.length);
+    await page.keyboard.press('Escape');
+
+    const botao = page.getByRole('button', { name: /^Categorias \(/ });
+    const antes = await botao.textContent();
+    await botao.click();
+    const d = page.getByRole('dialog', { name: 'Gerenciar categorias' });
+    await d.getByLabel(/Nome da nova categoria/).fill('elétrica');
+    await d.getByRole('button', { name: 'Criar' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'já existe' })).toBeVisible();
+    await d.getByRole('button', { name: 'Fechar' }).click();
+    await expect(botao).toHaveText(antes!);
+  });
+
+  test('saída acima do saldo avisa que o saldo ficará negativo (sem bloquear)', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await menuDe(page, ITEM.nome); // saldo 3
+    await page.getByRole('menuitem', { name: /Registrar saída/ }).click();
+    const d = page.getByRole('dialog', { name: 'Saída do estoque' });
+    await d.getByRole('spinbutton', { name: /Quantidade/ }).fill('5');
+    await expect(d).toContainText('Saldo ficará negativo');
+    const confirmar = d.getByRole('button', { name: /Confirmar saída de 5 un\. \(saldo negativo\)/ });
+    await expect(confirmar).toBeEnabled();
+  });
+});
