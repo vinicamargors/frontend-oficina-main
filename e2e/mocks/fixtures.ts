@@ -270,6 +270,12 @@ export function listaOS(cenario: Cenario, q: URLSearchParams): OSPaginatedRespon
   let items = cenario === 'vazio' ? [] : [...ordens];
   const status = q.get('status');
   if (status) items = items.filter((o) => o.status === status);
+  // `data_inicio`/`data_fim` (AAAA-MM-DD, inclusivos) valem para o dia de `data_abertura` no fuso da oficina
+  const dia = (iso: string) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
+  const dataInicio = q.get('data_inicio');
+  if (dataInicio) items = items.filter((o) => dia(o.data_abertura) >= dataInicio);
+  const dataFim = q.get('data_fim');
+  if (dataFim) items = items.filter((o) => dia(o.data_abertura) <= dataFim);
   const clienteId = q.get('cliente_id');
   if (clienteId) items = items.filter((o) => o.cliente_id === clienteId);
   const veiculoId = q.get('veiculo_id');

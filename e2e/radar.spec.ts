@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { abrirTela, dashboard, entrarComo, exigirRedeCompleta, simularBackend } from './mocks';
+import { abrirTela, entrarComo, exigirRedeCompleta, simularBackend } from './mocks';
 import { contextoDoProjeto } from './contexto';
 
 const ETAPAS = ['Orçamento', 'Aguardando peça', 'Em execução', 'Finalizado'];
@@ -9,6 +9,8 @@ test.describe('radar do pátio', () => {
     const { tema } = contextoDoProjeto(info);
     await simularBackend(page, 'cheio');
     await entrarComo(page, 'DONO', tema);
+    // o padrão é 7 dias; 30 dias traz também o orçamento de 9 dias (atrasado)
+    await page.addInitScript(() => localStorage.setItem('mecanify_radar_periodo', '30'));
     await abrirTela(page, 'radar');
 
     for (const etapa of ETAPAS) {
@@ -31,18 +33,13 @@ test.describe('radar do pátio', () => {
   test('coluna com contagem mas sem cards entre os 10 mais recentes não diz "Nenhum veículo"', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await simularBackend(page, 'cheio');
-    await page.route('**/dashboards/*', async (route) => {
-      const base = dashboard('cheio');
-      const corpo = {
-        ...base,
-        status_counts: { ...base.status_counts, FINALIZADO: 5 },
-        ultimas_os: base.ultimas_os.filter((o) => o.status !== 'FINALIZADO'),
-      };
+    // Finalizado tem 5 ordens no período, mas a leitura não devolveu nenhuma (ex.: limite de cards)
+    await page.route(/\/os\/\?.*status=FINALIZADO/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         headers: { 'access-control-allow-origin': '*' },
-        body: JSON.stringify(corpo),
+        body: JSON.stringify({ items: [], total: 5, skip: 0, limit: 20 }),
       });
     });
     await entrarComo(page, 'DONO', tema);
@@ -142,7 +139,7 @@ test.describe('radar do pátio', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'radar');
 
-    await expect(page.getByText('Nenhum veículo no pátio')).toBeVisible();
+    await expect(page.getByText('Nenhuma ordem no período')).toBeVisible();
     const acao = page.getByRole('button', { name: 'Nova ordem de serviço' });
     await expect(acao).toHaveCount(1);
     await expect(page.getByRole('region', { name: 'Orçamento', exact: true })).toHaveCount(0);

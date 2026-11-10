@@ -437,3 +437,41 @@ test('print equipe holerite (tela e impressão)', async ({ page }, info) => {
   await page.emulateMedia({ media: 'print' });
   await page.screenshot({ path: join(PASTA, `equipe-holerite-impressao-${tema}-${largura}.png`), animations: 'disabled' });
 });
+
+// Radar com o seletor de período aberto (menu) e com "Personalizado" aberto: `radar-periodo-<menu|personalizado>-<tema>-<largura>.png`.
+test('print radar período (menu e personalizado)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'radar');
+  const gatilho = page.getByRole('button', { name: /^Últimos / });
+  await gatilho.click();
+  await page.screenshot({ path: join(PASTA, `radar-periodo-menu-${tema}-${largura}.png`), animations: 'disabled' });
+  await page.getByRole('menuitemradio', { name: 'Personalizado' }).click();
+  await page.screenshot({ path: join(PASTA, `radar-periodo-personalizado-${tema}-${largura}.png`), animations: 'disabled' });
+  exigirRedeCompleta(page);
+});
+
+// Período sem ordens, mas com ordens abertas mais antigas: `radar-vazio-periodo-<tema>-<largura>.png`.
+test('print radar vazio-periodo (sem ordens no período, com abertas mais antigas)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await page.route(/\/os\/\?/, async (route) => {
+    if (new URL(route.request().url()).searchParams.get('data_inicio')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify({ items: [], total: 0, skip: 0, limit: 20 }),
+      });
+    } else await route.fallback();
+  });
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'radar');
+  await page.screenshot({ path: join(PASTA, `radar-vazio-periodo-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+  exigirRedeCompleta(page);
+});
