@@ -18,3 +18,8 @@ export function nivelAtraso(status: StatusOS, dias: number): NivelAtraso {
   if (dias > 3) return 'atencao';
   return 'ok';
 }
+
+/** "aberta hoje" / "aberta há 1 dia" / "aberta há N dias". */
+export function textoDias(dias: number): string {
+  return dias === 0 ? 'aberta hoje' : `aberta há ${dias} ${dias === 1 ? 'dia' : 'dias'}`;
+}

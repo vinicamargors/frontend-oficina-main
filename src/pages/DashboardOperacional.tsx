@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api/client';
 import { DashboardOperacional as DashboardData, StatusOS, UltimaOS } from '../types';
-import { AlertOctagon, CircleAlert, CircleCheck, MessageCircle, RefreshCw, TriangleAlert } from 'lucide-react';
+import { AlertOctagon, CircleCheck, MessageCircle, RefreshCw } from 'lucide-react';
 import { Button, PageHeader, Panel, PlateChip, Skeleton, StatusBadge, STATUS_OS } from '../components/ui';
-import { diasDesde, nivelAtraso } from './radar/diasNaEtapa';
+import { diasDesde, nivelAtraso, textoDias } from './radar/diasNaEtapa';
+import { MarcaAtraso } from '../components/MarcaAtraso';
 
 interface DashboardProps {
   empresaId: string;
@@ -18,24 +19,6 @@ const formatBRL = (valor: number) =>
 
 // Etapas que viram coluna do quadro. "Pago / entregue" sai do pátio e fica só como contagem.
 const ETAPAS: StatusOS[] = ['ORCAMENTO', 'AGUARDANDO_PECA', 'EXECUCAO', 'FINALIZADO'];
-
-const textoDias = (dias: number) =>
-  dias === 0 ? 'aberta hoje' : `aberta há ${dias} ${dias === 1 ? 'dia' : 'dias'}`;
-
-function MarcaAtraso({ nivel }: { nivel: 'atencao' | 'atrasado' }) {
-  const atrasado = nivel === 'atrasado';
-  const Icone = atrasado ? CircleAlert : TriangleAlert;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-        atrasado ? 'bg-danger/15 text-danger' : 'bg-warning/15 text-warning'
-      }`}
-    >
-      <Icone size={12} aria-hidden="true" />
-      {atrasado ? 'Atrasado' : 'Atenção'}
-    </span>
-  );
-}
 
 function CardOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
   const st = (os.status as StatusOS) || 'ORCAMENTO';

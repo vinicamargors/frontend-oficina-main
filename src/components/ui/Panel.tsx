@@ -1,4 +1,4 @@
-import type { ElementType, ReactNode } from 'react';
+import type { ElementType, HTMLAttributes, ReactNode } from 'react';
 
 const ESPACOS = { nenhum: '', md: 'p-5', lg: 'p-6' } as const;
 
@@ -10,12 +10,17 @@ export function Panel({
   espaco = 'md',
   className = '',
   children,
-}: {
+  ...resto
+}: HTMLAttributes<HTMLElement> & {
   as?: ElementType;
   /** md = p-5 (padrão), lg = p-6, nenhum = sem padding (use quando o className já define padding). */
   espaco?: keyof typeof ESPACOS;
   className?: string;
   children: ReactNode;
 }) {
-  return <Tag className={`bg-surface rounded-2xl ${ESPACOS[espaco]} ${className}`}>{children}</Tag>;
+  return (
+    <Tag {...resto} className={`bg-surface rounded-2xl ${ESPACOS[espaco]} ${className}`}>
+      {children}
+    </Tag>
+  );
 }

@@ -19,6 +19,11 @@ const VARIANTES: Record<Variante, string> = {
 
 const TAMANHOS = { sm: 'h-8 min-h-11 md:min-h-8 px-3 text-[0.8125rem]', md: 'h-10 min-h-11 md:min-h-10 px-4 text-sm' };
 
+/** Classes do botão, para links (`<a>`) que precisam parecer botão (ex.: WhatsApp). */
+export function classesBotao(variante: Variante = 'primario', tamanho: 'sm' | 'md' = 'md'): string {
+  return `inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-50 ${TAMANHOS[tamanho]} ${VARIANTES[variante]}`;
+}
+
 export function Button({
   variante = 'primario',
   tamanho = 'md',
@@ -36,7 +41,7 @@ export function Button({
       {...resto}
       disabled={disabled || carregando}
       aria-busy={carregando || undefined}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-50 ${TAMANHOS[tamanho]} ${VARIANTES[variante]} ${className}`}
+      className={`${classesBotao(variante, tamanho)} ${className}`}
     >
       {carregando ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : Icone ? <Icone size={16} aria-hidden="true" /> : null}
       {children}

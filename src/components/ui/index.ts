@@ -1,4 +1,4 @@
-export { Button, type ButtonProps } from './Button';
+export { Button, classesBotao, type ButtonProps } from './Button';
 export { Panel } from './Panel';
 export { PageHeader } from './PageHeader';
 export { StatusBadge } from './StatusBadge';
