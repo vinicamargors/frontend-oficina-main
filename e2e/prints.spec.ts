@@ -437,3 +437,19 @@ test('print equipe holerite (tela e impressão)', async ({ page }, info) => {
   await page.emulateMedia({ media: 'print' });
   await page.screenshot({ path: join(PASTA, `equipe-holerite-impressao-${tema}-${largura}.png`), animations: 'disabled' });
 });
+
+// Radar com o seletor de período aberto (menu) e com "Personalizado" aberto: `radar-periodo-<menu|personalizado>-<tema>-<largura>.png`.
+test('print radar período (menu e personalizado)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'radar');
+  const gatilho = page.getByRole('button', { name: /^Últimos / });
+  await gatilho.click();
+  await page.screenshot({ path: join(PASTA, `radar-periodo-menu-${tema}-${largura}.png`), animations: 'disabled' });
+  await page.getByRole('menuitemradio', { name: 'Personalizado' }).click();
+  await page.screenshot({ path: join(PASTA, `radar-periodo-personalizado-${tema}-${largura}.png`), animations: 'disabled' });
+  exigirRedeCompleta(page);
+});
