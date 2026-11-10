@@ -1,0 +1,53 @@
+import { useRef, type KeyboardEvent } from 'react';
+import type { LucideIcon } from 'lucide-react';
+
+export interface TabItem {
+  id: string;
+  rotulo: string;
+  icone?: LucideIcon;
+}
+
+export function Tabs({ itens, ativo, aoMudar, rotuloGrupo }: { itens: TabItem[]; ativo: string; aoMudar: (id: string) => void; rotuloGrupo: string }) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const aoTeclar = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
+    let alvo = -1;
+    if (e.key === 'ArrowRight') alvo = (i + 1) % itens.length;
+    else if (e.key === 'ArrowLeft') alvo = (i - 1 + itens.length) % itens.length;
+    else if (e.key === 'Home') alvo = 0;
+    else if (e.key === 'End') alvo = itens.length - 1;
+    if (alvo < 0) return;
+    e.preventDefault();
+    refs.current[alvo]?.focus();
+  };
+
+  return (
+    <div role="tablist" aria-label={rotuloGrupo} className="flex gap-1 overflow-x-auto">
+      {itens.map((item, i) => {
+        const selecionada = item.id === ativo;
+        const Icone = item.icone;
+        return (
+          <button
+            key={item.id}
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
+            type="button"
+            role="tab"
+            id={`aba-${item.id}`}
+            aria-selected={selecionada}
+            tabIndex={selecionada ? 0 : -1}
+            onClick={() => aoMudar(item.id)}
+            onKeyDown={(e) => aoTeclar(e, i)}
+            className={`inline-flex h-10 min-h-11 md:min-h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              selecionada ? 'bg-muted text-ink shadow-[inset_0_-2px_0_rgb(var(--c-brand))]' : 'text-ink-muted hover:bg-muted hover:text-ink'
+            }`}
+          >
+            {Icone && <Icone size={16} aria-hidden="true" />}
+            {item.rotulo}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
