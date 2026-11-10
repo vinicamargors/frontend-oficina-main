@@ -22,14 +22,15 @@ export function Avatar({ nome, apagado = false }: { nome: string; apagado?: bool
 
 /** Avaliação média em texto ("4,6 · 12 aval."), com a estrela só de apoio. */
 function Avaliacao({ u }: { u: Usuario }) {
-  const total = u.total_avaliacoes || 0;
-  if (total === 0 || u.estrelas_media == null) return <span>Sem avaliações</span>;
+  if (u.estrelas_media == null) return <span>Sem avaliações</span>;
+  const total = u.total_avaliacoes;
   return (
     <span className="inline-flex items-center gap-1 tabular-nums">
       <Star size={12} className="fill-warning text-warning" aria-hidden="true" />
       <span className="sr-only">Nota média </span>
       {formatMedia(u.estrelas_media)}
-      <span className="sr-only"> de 5,</span> · {total} aval.
+      <span className="sr-only"> de 5{total ? ',' : ''}</span>
+      {total ? ` · ${total} aval.` : null}
     </span>
   );
 }

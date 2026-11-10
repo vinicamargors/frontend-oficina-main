@@ -471,3 +471,118 @@ test.describe('estados', () => {
     await expect(page.getByText(/R\$\s3\.200,00/)).toHaveCount(0);
   });
 });
+
+// ------------------------------------------------------------------ polimento: erros, ponto, avaliações e hora extra
+const falha500 = { status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'Servidor fora do ar' }) };
+const jsonOk = (corpo: unknown) => ({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(corpo) });
+
+test.describe('polimento da equipe', () => {
+  test('ponto: falha ao gravar mostra o erro e o botão volta a "Bater ponto agora"', async ({ page, context }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await context.grantPermissions(['geolocation']);
+    await context.setGeolocation({ latitude: -23.55052, longitude: -46.633308 });
+    await abrir(page, tema);
+    await page.route('**/api/v1/equipe/pontos/*', (r) => (r.request().method() === 'POST' ? r.fulfill(falha500) : r.fallback()));
+    await irParaAba(page, 'Ponto');
+    await page.getByRole('button', { name: 'Bater ponto agora' }).click();
+    await page.getByRole('dialog', { name: 'Registrar ponto agora?' }).getByRole('button', { name: 'Registrar ponto' }).click();
+    await expect(page.getByRole('main').getByRole('status').filter({ hasText: /Erro ao registrar o ponto/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Bater ponto agora' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Verificando GPS…' })).toHaveCount(0);
+    await expect(page.getByRole('list', { name: 'Últimos registros de ponto' }).getByRole('listitem')).toHaveCount(2);
+  });
+
+  test('erro de carga continua na tela depois de abrir e fechar o formulário', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await page.route(`**/api/v1/usuarios/${EMPRESA_ID}`, (r) => (r.request().method() === 'GET' ? r.fulfill(falha500) : r.fallback()));
+    await abrirTela(page, 'equipe');
+    const alertaPagina = page.getByRole('main').getByRole('alert').filter({ hasText: 'Servidor fora do ar' });
+    await expect(alertaPagina).toBeVisible();
+    await page.getByRole('button', { name: /Novo colaborador/ }).click();
+    const d = page.getByRole('dialog', { name: 'Novo colaborador' });
+    await expect(d.getByRole('alert')).toHaveCount(0); // o erro da página não entra no formulário
+    await page.keyboard.press('Escape');
+    await expect(d).toHaveCount(0);
+    await expect(alertaPagina).toBeVisible();
+  });
+
+  test('erro ao salvar fica só no formulário e não sobra na página depois de fechar', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.route(`**/api/v1/usuarios/${EMPRESA_ID}`, (r) => (r.request().method() === 'POST' ? r.fulfill(falha500) : r.fallback()));
+    await page.getByRole('button', { name: /Novo colaborador/ }).click();
+    const d = page.getByRole('dialog', { name: 'Novo colaborador' });
+    await d.getByLabel(/Nome completo/).fill('Bruno Lima');
+    await d.getByLabel(/E-mail/).fill('bruno@oficinamodelo.example.com');
+    await d.getByRole('button', { name: 'Salvar colaborador' }).click();
+    await expect(d.getByRole('alert')).toContainText('Erro ao salvar colaborador');
+    await d.getByRole('button', { name: 'Cancelar' }).click();
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    await expect(d).toHaveCount(0);
+    await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
+  });
+
+  test('"Desativar" com o formulário alterado pergunta "Descartar alterações?" antes', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await menuDe(page, RAFAEL.nome);
+    await page.getByRole('menuitem', { name: /Editar colaborador/ }).click();
+    const d = page.getByRole('dialog', { name: 'Editar colaborador' });
+    await d.getByLabel(/Nome completo/).fill('Rafael Nunes Alterado');
+    await d.getByRole('button', { name: 'Desativar' }).click();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await expect(page.getByRole('dialog', { name: 'Desativar colaborador?' })).toHaveCount(0);
+    await d.getByRole('button', { name: 'Continuar editando' }).click();
+    await expect(d.getByLabel(/Nome completo/)).toHaveValue('Rafael Nunes Alterado');
+
+    await d.getByRole('button', { name: 'Desativar' }).click();
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    const conf = page.getByRole('dialog', { name: 'Desativar colaborador?' });
+    await expect(conf).toBeVisible();
+    await expect(conf).toContainText(RAFAEL.nome);
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('avaliação: decide pela média (sem total mostra só a média; sem média é "Sem avaliações")', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    const lista = usuarios.map((u) =>
+      u.id === TIAGO.id ? { ...u, estrelas_media: 4.2, total_avaliacoes: undefined } : u.id === RAFAEL.id ? { ...u, estrelas_media: null, total_avaliacoes: 3 } : u
+    );
+    await page.route(`**/api/v1/usuarios/${EMPRESA_ID}`, (r) => (r.request().method() === 'GET' ? r.fulfill(jsonOk(lista)) : r.fallback()));
+    await abrirTela(page, 'equipe');
+    const t = linha(page, TIAGO.nome);
+    await expect(t).toContainText('4,2');
+    await expect(t).not.toContainText('Sem avaliações');
+    await expect(t).not.toContainText('aval.');
+    await expect(linha(page, RAFAEL.nome)).toContainText('Sem avaliações');
+  });
+
+  test('editar sem mexer na hora extra envia paga_hora_extra e valor_hora_extra como vieram', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    const lista = usuarios.map((u) => (u.id === RAFAEL.id ? { ...u, paga_hora_extra: false, valor_hora_extra: 40 } : u));
+    await page.route(`**/api/v1/usuarios/${EMPRESA_ID}`, (r) => (r.request().method() === 'GET' ? r.fulfill(jsonOk(lista)) : r.fallback()));
+    await abrirTela(page, 'equipe');
+
+    for (const [alvo, esperado] of [
+      [TIAGO, { paga_hora_extra: true, valor_hora_extra: 25 }],
+      [RAFAEL, { paga_hora_extra: false, valor_hora_extra: 40 }],
+    ] as const) {
+      await menuDe(page, alvo.nome);
+      await page.getByRole('menuitem', { name: /Editar colaborador/ }).click();
+      const d = page.getByRole('dialog', { name: 'Editar colaborador' });
+      await d.getByLabel(/Telefone/).fill('(11) 97777-0000');
+      await d.getByRole('button', { name: 'Salvar colaborador' }).click();
+      await expect(d).toHaveCount(0);
+      const e = (await ultimaEscrita(page))!;
+      expect(e.metodo).toBe('PUT');
+      expect(e.caminho).toBe(`/usuarios/${EMPRESA_ID}/${alvo.id}`);
+      expect(e.corpo).toMatchObject(esperado);
+    }
+  });
+});

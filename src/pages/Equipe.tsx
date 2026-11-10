@@ -93,7 +93,9 @@ export function Equipe({ empresaId }: EquipeProps) {
   // Primeira carga concluída: até lá as abas mostram esqueleto (nunca área em branco)
   const [carregado, setCarregado] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState<string | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+  // Erro da carga da página e erro do formulário do colaborador são independentes
+  const [erroCarga, setErroCarga] = useState<string | null>(null);
+  const [erroForm, setErroForm] = useState<string | null>(null);
 
   // Mês de referência da Folha
   const [mesFolhaRef, setMesFolhaRef] = useState(() => {
@@ -183,6 +185,7 @@ export function Equipe({ empresaId }: EquipeProps) {
   const carregarTudo = useCallback(async () => {
     try {
       setCarregando(true);
+      setErroCarga(null);
       const [users, cfgOficina, escalasData, pontosData, avsData, paramsFolha] = await Promise.all([
         api.listarUsuarios(empresaId),
         api.obterConfiguracoesOficina(empresaId),
@@ -206,7 +209,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       }
     } catch (e) {
       const err = e as Error;
-      setErro(err.message || 'Erro ao carregar equipe.');
+      setErroCarga(err.message || 'Erro ao carregar equipe.');
     } finally {
       setCarregando(false);
       setCarregado(true);
@@ -237,7 +240,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     setFormVR('');
     setFormPagaHE(parametrosFolha.paga_hora_extra_padrao);
     setFormValorHE(String(parametrosFolha.valor_hora_extra_padrao ?? 25));
-    setErro(null);
+    setErroForm(null);
     setModalColaboradorAberto(true);
   };
 
@@ -271,7 +274,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     setFormValorHE(
       u.valor_hora_extra && u.valor_hora_extra > 0 ? String(u.valor_hora_extra) : ''
     );
-    setErro(null);
+    setErroForm(null);
     setModalColaboradorAberto(true);
   };
 
@@ -301,11 +304,17 @@ export function Equipe({ empresaId }: EquipeProps) {
   const fecharModalColaborador = () => {
     setSaidaPendente(null);
     setFormInicial('');
+    setErroForm(null);
     setModalColaboradorAberto(false);
   };
-  const sairDoFormulario = () => {
-    if (colaboradorSujo) setSaidaPendente(() => fecharModalColaborador);
-    else fecharModalColaborador();
+  // Sai do formulário (e depois faz `depois`, se houver); com dados alterados, pergunta antes
+  const sairDoFormulario = (depois?: () => void) => {
+    const sair = () => {
+      fecharModalColaborador();
+      depois?.();
+    };
+    if (colaboradorSujo) setSaidaPendente(() => sair);
+    else sair();
   };
 
   const abrirHolerite = (u: Usuario) => {
@@ -352,19 +361,19 @@ export function Equipe({ empresaId }: EquipeProps) {
   // Salvar Colaborador (mensagens de validação e de erro aparecem dentro da folha, sem alert)
   const handleSalvarColaborador = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErro(null);
+    setErroForm(null);
     if (!formNome.trim() || !formEmail.trim()) {
-      setErro('Preencha nome e e-mail.');
+      setErroForm('Preencha nome e e-mail.');
       return;
     }
 
     if (!isGestor) {
-      setErro('Acesso negado: apenas o Dono ou Administrador pode criar ou editar colaboradores.');
+      setErroForm('Acesso negado: apenas o Dono ou Administrador pode criar ou editar colaboradores.');
       return;
     }
 
     if (formSenha.trim() && formSenha.trim().length < 6) {
-      setErro('A nova senha deve ter no mínimo 6 caracteres.');
+      setErroForm('A nova senha deve ter no mínimo 6 caracteres.');
       return;
     }
 
@@ -427,7 +436,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       fecharModalColaborador();
     } catch (e) {
       const err = e as Error;
-      setErro(`Erro ao salvar colaborador: ${err.message || 'Verifique os dados.'}`);
+      setErroForm(`Erro ao salvar colaborador: ${err.message || 'Verifique os dados.'}`);
     } finally {
       setSalvandoColaborador(false);
     }
@@ -556,21 +565,31 @@ export function Equipe({ empresaId }: EquipeProps) {
         const dataStr = agora.toISOString().slice(0, 10);
         const horaStr = agora.toTimeString().slice(0, 5);
 
-        const novoPonto = await api.registrarPonto({
-          empresa_id: empresaId,
-          usuario_id: user?.id || 'usr-atual',
-          usuario_nome: user?.nome || 'Colaborador',
-          data: dataStr,
-          hora: horaStr,
-          tipo: 'ENTRADA',
-          latitude: userLat,
-          longitude: userLon,
-          dentro_raio: dentroRaio,
-          distancia_metros: distancia,
-        });
+        let novoPonto: RegistroPonto;
+        try {
+          novoPonto = await api.registrarPonto({
+            empresa_id: empresaId,
+            usuario_id: user?.id || 'usr-atual',
+            usuario_nome: user?.nome || 'Colaborador',
+            data: dataStr,
+            hora: horaStr,
+            tipo: 'ENTRADA',
+            latitude: userLat,
+            longitude: userLon,
+            dentro_raio: dentroRaio,
+            distancia_metros: distancia,
+          });
+        } catch (e) {
+          setPontoFeedback({
+            sucesso: false,
+            msg: `Erro ao registrar o ponto: ${(e as Error).message || 'tente novamente.'} Nada foi gravado.`,
+          });
+          return;
+        } finally {
+          setRegistrandoPonto(false);
+        }
 
         setPontos((prev) => [novoPonto, ...prev]);
-        setRegistrandoPonto(false);
 
         if (dentroRaio) {
           setPontoFeedback({
@@ -649,7 +668,6 @@ export function Equipe({ empresaId }: EquipeProps) {
     );
   }
 
-  const erroNaTela = erro && !modalColaboradorAberto;
 
   return (
     <div>
@@ -706,7 +724,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           </p>
         )}
       </div>
-      {erroNaTela && <div className="mb-4">{alertaErro(erro)}</div>}
+      {erroCarga && <div className="mb-4">{alertaErro(erroCarga)}</div>}
 
       <AbasEquipe itens={ABAS} ativo={activeTab} aoMudar={(id) => setActiveTab(id as TabEquipe)} idPainel="painel-equipe" />
 
@@ -864,10 +882,10 @@ export function Equipe({ empresaId }: EquipeProps) {
         tamanho="lg"
         fecharNoFundo={false}
         titulo={colaboradorEmEdicao ? 'Editar colaborador' : 'Novo colaborador'}
-        aoCancelar={sairDoFormulario}
+        aoCancelar={() => sairDoFormulario()}
       >
         {confirmarDescarte}
-        {erro && alertaErro(erro)}
+        {erroForm && alertaErro(erroForm)}
         <form onSubmit={handleSalvarColaborador} className="space-y-6">
           <fieldset className="space-y-4">
             <legend className="mb-3 text-sm font-semibold text-ink">Dados e acesso</legend>
@@ -1012,15 +1030,16 @@ export function Equipe({ empresaId }: EquipeProps) {
                 className="sm:mr-auto"
                 onClick={() => {
                   const alvo = colaboradorEmEdicao;
-                  fecharModalColaborador();
-                  setErroFolha(null);
-                  setColaboradorParaDesativar(alvo);
+                  sairDoFormulario(() => {
+                    setErroFolha(null);
+                    setColaboradorParaDesativar(alvo);
+                  });
                 }}
               >
                 Desativar
               </Button>
             )}
-            <Button variante="secundario" onClick={sairDoFormulario} className="sm:ml-auto">
+            <Button variante="secundario" onClick={() => sairDoFormulario()} className="sm:ml-auto">
               Cancelar
             </Button>
             <Button type="submit" carregando={salvandoColaborador}>
