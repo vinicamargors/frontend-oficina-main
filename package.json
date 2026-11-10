@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "e2e": "playwright test -c e2e/playwright.config.ts e2e/telas.spec.ts e2e/tema.spec.ts e2e/shell.spec.ts e2e/login.spec.ts e2e/radar.spec.ts e2e/ordens.spec.ts e2e/clientes.spec.ts e2e/estoque.spec.ts e2e/financeiro.spec.ts",
+    "e2e": "playwright test -c e2e/playwright.config.ts e2e/telas.spec.ts e2e/tema.spec.ts e2e/shell.spec.ts e2e/login.spec.ts e2e/radar.spec.ts e2e/ordens.spec.ts e2e/clientes.spec.ts e2e/estoque.spec.ts e2e/financeiro.spec.ts e2e/equipe.spec.ts",
     "prints": "node e2e/prints.mjs",
     "test": "vitest run"
   },
