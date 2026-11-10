@@ -485,7 +485,7 @@ test.describe('celular', () => {
     await page.getByRole('tab', { name: /Placas/ }).click();
     const itens = page.getByRole('list', { name: 'Veículos' }).getByRole('listitem');
     await expect(itens).toHaveCount(veiculos.length);
-    for (const li of (await itens.all()).slice(0, 4)) expect((await li.boundingBox())!.height).toBeLessThanOrEqual(88);
+    for (const li of await itens.all()) expect((await li.boundingBox())!.height).toBeLessThanOrEqual(96);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   });
 });

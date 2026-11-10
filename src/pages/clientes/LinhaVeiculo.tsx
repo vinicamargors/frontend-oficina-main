@@ -34,7 +34,7 @@ export function LinhaVeiculo({
           <PlateChip placa={veiculo.placa} />
           <span className="min-w-0 truncate text-sm font-medium text-ink">{veiculo.modelo}</span>
         </div>
-        <p className="mt-1 truncate text-xs text-ink-muted">{meta}</p>
+        <p className="mt-1 line-clamp-2 text-xs text-ink-muted">{meta}</p>
       </div>
       {zapUrl && (
         <a

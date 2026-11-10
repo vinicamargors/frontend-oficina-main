@@ -154,3 +154,67 @@ test('print clientes ficha (novo cliente aberto)', async ({ page }, info) => {
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `clientes-ficha-${tema}-${largura}.png`), animations: 'disabled' });
 });
+
+// Clientes, parte de veículos: aba Placas, edição do veículo, histórico por placa e veículo novo com consulta de placa:
+// `clientes-{placas,veiculo-editar,historico,veiculo-novo}-<tema>-<largura>.png`.
+test('print clientes placas (aba Placas)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'clientes');
+  await page.getByRole('tab', { name: /Placas/ }).click();
+  await page.getByRole('list', { name: 'Veículos' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `clientes-placas-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+});
+
+async function abrirVeiculosDoJoao(page: import('@playwright/test').Page, tema: 'claro' | 'escuro') {
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'clientes');
+  await page.getByRole('list', { name: 'Clientes' }).getByRole('button', { name: new RegExp(clientes[0].nome) }).first().click();
+  return page.getByRole('list', { name: `Veículos de ${clientes[0].nome}` });
+}
+
+test('print clientes veiculo editar (Editar veículo aberto)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  const veics = await abrirVeiculosDoJoao(page, tema);
+  await veics.getByRole('button', { name: 'Editar veículo ABC1234' }).click();
+  await page.getByRole('dialog', { name: /Editar Veículo/ }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `clientes-veiculo-editar-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print clientes historico (histórico da placa com várias OS)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  const veics = await abrirVeiculosDoJoao(page, tema);
+  await veics.getByRole('button', { name: 'Histórico do veículo ABC1234' }).click();
+  await page.getByRole('dialog', { name: 'Histórico do Veículo ABC1234' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `clientes-historico-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print clientes veiculo novo (adicionar veículo com consulta de placa)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'clientes');
+  await page.getByRole('button', { name: `Mais ações de ${clientes[0].nome}` }).click();
+  await page.getByRole('menuitem', { name: /Adicionar veículo/ }).click();
+  const d = page.getByRole('dialog', { name: `Ficha de ${clientes[0].nome}` });
+  await d.getByRole('textbox', { name: /^Placa/ }).fill('ZZZ9Z99');
+  await d.getByRole('button', { name: 'Buscar Placa' }).click();
+  const msg = d.getByText('Dados do veículo preenchidos pela placa!');
+  await msg.waitFor();
+  await msg.scrollIntoViewIfNeeded();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `clientes-veiculo-novo-${tema}-${largura}.png`), animations: 'disabled' });
+});

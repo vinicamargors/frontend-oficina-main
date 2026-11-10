@@ -897,6 +897,7 @@ export function ClientesVeiculos({
                 tamanho="sm"
                 icone={Plus}
                 onClick={() => setNovosVeiculosRascunho((prev) => [...prev, criarRascunhoVeiculoVazio()])}
+                className="shrink-0 whitespace-nowrap"
               >
                 Adicionar outro veículo
               </Button>
