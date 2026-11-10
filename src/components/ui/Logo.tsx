@@ -19,7 +19,7 @@ export function Logo({
   const corPalavra = monocromatico ? 'text-black' : 'text-ink';
   const corIfy = monocromatico ? 'text-black' : 'text-brand-ink';
   const corLegenda = monocromatico ? 'text-black' : 'text-ink-muted';
-  const fontePalavra = Math.round(tamanho * (legenda ? 0.6 : 0.68));
+  const fontePalavra = Math.max(12, Math.round(tamanho * (legenda ? 0.6 : 0.68)));
   const fonteLegenda = Math.max(12, Math.round(tamanho * 0.2));
   return (
     <span role="img" aria-label="Mecanify" className={`inline-flex items-center ${className}`} style={{ gap: Math.round(tamanho * 0.32) }}>

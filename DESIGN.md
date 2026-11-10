@@ -10,7 +10,7 @@ Sistema visual "Grafite + Âmbar". Ferramenta de oficina: some no trabalho; a ma
 |---|---|
 | `canvas` | fundo da página |
 | `surface` | cards, painéis, menu |
-| `muted` | hover, chips, cabeçalho de tabela, poços |
+| `muted` | hover, chips, trilho de abas, botão secundário, cabeçalho de tabela (claro `#EBE6DB`, visivelmente mais escuro que `canvas`) |
 | `sunken` | campos de formulário |
 | `line` | divisores decorativos |
 | `line-strong` | borda de campo (>=3:1 contra `sunken` e `surface`) |
@@ -18,7 +18,7 @@ Sistema visual "Grafite + Âmbar". Ferramenta de oficina: some no trabalho; a ma
 | `brand` / `brand-hover` | botão primário, item ativo, foco / hover do primário |
 | `brand-ink` | texto e ícone âmbar |
 | `on-brand` | texto sobre `brand` |
-| `danger` `success` `warning` `info` `done` | texto/ícone de estado (erro, sucesso, alerta, informação, finalizado) |
+| `danger` `success` `warning` `info` `done` | texto/ícone de estado (erro, sucesso, alerta, informação, finalizado); `warning` claro `#AA4006` e `done` claro `#0E7068` (>=4.5:1 também sobre `muted`) |
 | `danger-solid` `success-solid` | fundos de botão destrutivo / confirmação |
 | `on-solid` | texto sobre `danger-solid`/`success-solid` (branco nos dois temas) |
 
@@ -63,7 +63,7 @@ Minimalista e sofisticado com a nossa paleta grafite + âmbar. Referência: `doc
 | Componente | Forma | Contrato |
 |---|---|---|
 | `Button` | `rounded-lg`; `primario` âmbar, `secundario` `muted`, `fantasma`, `perigo` (`danger-solid` + `on-solid`); `sm`/`md` | `variante`, `tamanho`, `icone`, `carregando` (`aria-busy`) |
-| `Panel` | `bg-surface rounded-2xl`, sem borda/sombra | `espaco`: `md` (`p-5`, padrão) \| `lg` (`p-6`) \| `nenhum`; `as` |
+| `Panel` | `bg-surface rounded-2xl`, sem borda/sombra | `espaco`: `md` (`p-5`, padrão) \| `lg` (`p-6`) \| `nenhum`; `as`. Quem aplica padding próprio via `className` deve passar `espaco="nenhum"` (senão `p-5` conflita) |
 | `Tabs` | trilho `bg-muted rounded-full p-1`; aba ativa `bg-surface text-ink` (+`shadow-card`, que é nula no escuro; no escuro `bg-line`); inativa `text-ink-muted` | `role=tablist`, setas/Home/End, `idPainel` → `aria-controls` da aba ativa |
 | `Badge`, `StatusBadge` | pílula `rounded-full` em `<tom>/15` | `tom` |
 | `Field` | rótulo visível, dica e erro abaixo; filho sem `className` recebe `CLASSE_CAMPO` (`rounded-lg border-line-strong bg-sunken`) | mescla `aria-describedby`/`aria-invalid` do filho |
@@ -77,7 +77,7 @@ Minimalista e sofisticado com a nossa paleta grafite + âmbar. Referência: `doc
 Fornecido pelo dono (`docs/brand/mecanify-logo-referencia.jpg`): monograma "M" de dois laços de traço arredondado com uma chave de boca cruzando na diagonal; palavra "mecanify" com "ify" em âmbar; legenda "GESTÃO DE OS".
 
 - **`BrandMark`** — o monograma vetorizado (3 paths, `viewBox="0 0 52 37.4"`, traço 3.8, tudo `currentColor`, padrão `text-brand`). `tamanho` = altura em px. Sozinho é `role="img"` com `aria-label="Mecanify"` (ou `titulo`). Os cortes nos laços, onde a chave passa por cima, são as próprias extremidades retas do traço. Os paths ficam exportados em `MONOGRAMA`.
-- **`Logo`** — monograma + "mecanify" em Geist 600 ("mecan" `ink`, "ify" `brand-ink`); com `legenda`, "GESTÃO DE OS" pequeno e espaçado em `ink-muted` (só no login). `monocromatico` = tudo preto, para impressão (OS, holerite, etiqueta). Um único nome acessível "Mecanify".
+- **`Logo`** — monograma + "mecanify" em Geist 600 ("mecan" `ink`, "ify" `brand-ink`); com `legenda`, "GESTÃO DE OS" pequeno e espaçado em `ink-muted` (só no login). `monocromatico` = tudo preto, para impressão (OS, holerite, etiqueta); o `text-black` aqui é uma **exceção intencional de impressão** (papel é sempre branco), não um token de tema. Um único nome acessível "Mecanify".
 - **`public/favicon.svg` e `public/logo.svg`** — monograma âmbar `#F2A007` sobre quadrado grafite `#1F1D1A` com raio 14/64.
 - Usar em: favicon, login (todas as abas), menu lateral, topo mobile, avaliação pública, cabeçalho das impressões (monocromático), tela de carregamento.
 - Área de respiro mínima: metade da altura do monograma. Tamanho mínimo: 16px de altura (favicon).

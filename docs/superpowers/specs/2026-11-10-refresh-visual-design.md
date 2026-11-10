@@ -27,7 +27,7 @@ números tabulares. Sem bordas em tudo: hierarquia por preenchimento e espaço.
 |---|---|---|---|
 | `canvas` | `#F1EDE4` | `#111214` | fundo da página |
 | `surface` | `#FFFFFF` | `#1A1B1E` | cards, painéis, menu |
-| `muted` | `#F4F1EA` | `#232428` | hover, chips, cabeçalho de tabela, poços |
+| `muted` | `#EBE6DB` | `#232428` | hover, chips, cabeçalho de tabela, poços |
 | `sunken` | `#FFFFFF` | `#0E0F11` | campos de formulário |
 | `line` | `#E2DCD0` | `#2B2D31` | divisores decorativos |
 | `line-strong` | `#8F8778` | `#6B6F78` | borda de campo (≥3:1 contra `sunken` e `surface`) |
@@ -40,7 +40,7 @@ números tabulares. Sem bordas em tudo: hierarquia por preenchimento e espaço.
 | `on-brand` | `#1F1D1A` | `#1A1407` | texto sobre `brand` (≥4.5:1) |
 | `danger` | `#B42318` | `#F97066` | texto/ícone de erro, despesa |
 | `success` | `#166534` | `#4ADE80` | texto/ícone de sucesso, receita |
-| `warning` | `#B54708` | `#FDB022` | alerta |
+| `warning` | `#AA4006` | `#FDB022` | alerta |
 | `info` | `#1D5FB4` | `#7CB4F5` | informação (único uso do azul) |
 | `danger-solid` | `#B42318` | `#D92D20` | botão destrutivo (texto branco ≥4.5:1) |
 | `success-solid` | `#15803D` | `#15803D` | botão de confirmação verde (texto branco ≥4.5:1) |
@@ -52,7 +52,7 @@ números tabulares. Sem bordas em tudo: hierarquia por preenchimento e espaço.
 | `ORCAMENTO` | `ink-muted` sobre `muted` | `ClipboardList` | Orçamento |
 | `AGUARDANDO_PECA` | `warning` | `PackageSearch` | Aguardando peça |
 | `EXECUCAO` | `brand-ink` sobre `brand/15` | `Wrench` | Em execução |
-| `FINALIZADO` | teal: claro `#0F766E` / escuro `#2DD4BF` (token `done`) | `CircleCheck` | Finalizado |
+| `FINALIZADO` | teal: claro `#0E7068` / escuro `#2DD4BF` (token `done`) | `CircleCheck` | Finalizado |
 | `PAGO` | `success` | `BadgeDollarSign` | Pago / entregue |
 
 Sem violeta em lugar nenhum (`taste-skill`). WhatsApp: botão neutro com ícone. "Sair": linha discreta, não botão vermelho.
