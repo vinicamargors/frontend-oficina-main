@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { abrirTela, entrarComo, exigirRedeCompleta, simularBackend, transacoes, type Cenario } from './mocks';
+import { abrirTela, entrarComo, exigirRedeCompleta, listaTransacoes, simularBackend, transacoes, type Cenario } from './mocks';
 import { coletarErros, contextoDoProjeto } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
@@ -18,7 +18,8 @@ const brl = (v: number) => nb(v.toLocaleString('pt-BR', { style: 'currency', cur
 const sobraLateral = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 
 const abas = (page: Page) => page.getByRole('tablist', { name: 'Seções do financeiro' });
-const aba = (page: Page, nome: string) => abas(page).getByRole('tab', { name: nome, exact: true });
+// "Contas" pode levar a contagem de despesas em aberto ("Contas · 5")
+const aba = (page: Page, nome: string) => abas(page).getByRole('tab', { name: new RegExp(`^${nome}( · \\d+)?$`) });
 const resumo = (page: Page) => page.getByRole('region', { name: 'Resumo do período' });
 const lista = (page: Page) => page.getByRole('list', { name: 'Lançamentos' });
 const linha = (page: Page, descricao: string) => lista(page).getByRole('listitem').filter({ hasText: descricao }).first();
@@ -50,7 +51,8 @@ test.describe('cabeçalho, período e resumo', () => {
     await expect(page.getByRole('button', { name: 'Novo lançamento' })).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Exportar CSV' })).toBeVisible();
 
-    await expect(abas(page).getByRole('tab')).toHaveText(['Balanço', 'DRE', 'Contas', 'BI']);
+    const emAberto = transacoes.filter((t) => t.tipo === 'DESPESA' && t.status !== 'LIQUIDADO').length;
+    await expect(abas(page).getByRole('tab')).toHaveText(['Balanço', 'DRE', `Contas · ${emAberto}`, 'BI']);
     await expect(aba(page, 'Balanço')).toHaveAttribute('aria-selected', 'true');
     await expect(aba(page, 'DRE')).toHaveAttribute('aria-selected', 'false');
 
@@ -295,6 +297,38 @@ test.describe('contas a pagar e receber', () => {
     expect(await sobraLateral(page)).toBeLessThanOrEqual(0);
   });
 
+  test('celular: linha mostra data da baixa, forma de pagamento e observações', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    test.skip(largura >= 1024, 'só celular');
+    await simularBackend(page, 'cheio');
+    await page.route('**/api/v1/transacoes-financeiras/*', async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      const corpo = listaTransacoes('cheio', new URLSearchParams());
+      corpo.transacoes = corpo.transacoes.map((t) =>
+        t.id === PENDENTE_DESPESA.id ? { ...t, forma_pagamento: 'Boleto / Faturado', observacoes: 'NF 4471 parcela 2' } : t
+      );
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify(corpo),
+      });
+    });
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'financeiro');
+    await irParaContas(page);
+    const paga = linha(page, DESPESA_PAGA.descricao);
+    const [y, m, d] = DESPESA_PAGA.data_liquidacao!.split('-');
+    await expect(paga.getByTitle(`Baixa ${d}/${m}/${y.slice(2)} · PIX`)).toBeVisible();
+    const comObs = linha(page, PENDENTE_DESPESA.descricao);
+    await expect(comObs.getByTitle('Boleto / Faturado · NF 4471 parcela 2')).toBeVisible();
+    for (const li of [paga, comObs]) {
+      const c = (await li.boundingBox())!;
+      expect(c.height).toBeLessThanOrEqual(96);
+    }
+    expect(await sobraLateral(page)).toBeLessThanOrEqual(0);
+  });
+
   test('dar baixa exige confirmação; cancelar não grava; confirmar liquida com a forma do lançamento', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
@@ -463,6 +497,7 @@ test.describe('estados', () => {
     const erros = coletarErros(page);
     await abrir(page, tema, 'vazio');
     await expect(resumo(page)).toContainText(brl(0));
+    await expect(abas(page).getByRole('tab').nth(2)).toHaveText('Contas');
     await aba(page, 'Contas').click();
     await expect(page.getByRole('heading', { name: 'Nenhum lançamento no período' })).toBeVisible();
     await aba(page, 'BI').click();

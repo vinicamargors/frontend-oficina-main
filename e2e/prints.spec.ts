@@ -294,7 +294,7 @@ for (const cenario of CENARIOS) {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'financeiro');
     for (const [id, rotulo] of ABAS_FINANCEIRO) {
-      await page.getByRole('tablist', { name: 'Seções do financeiro' }).getByRole('tab', { name: rotulo, exact: true }).click();
+      await page.getByRole('tablist', { name: 'Seções do financeiro' }).getByRole('tab', { name: new RegExp(`^${rotulo}( · \\d+)?$`) }).click();
       await page.mouse.move(1, 1);
       await page.screenshot({ path: join(PASTA, `financeiro-${id}-${tema}-${largura}-${cenario}.png`), fullPage: true, animations: 'disabled' });
     }
@@ -306,7 +306,7 @@ async function abrirContasFinanceiro(page: import('@playwright/test').Page, tema
   await simularBackend(page, 'cheio');
   await entrarComo(page, 'DONO', tema);
   await abrirTela(page, 'financeiro');
-  await page.getByRole('tab', { name: 'Contas', exact: true }).click();
+  await page.getByRole('tab', { name: /^Contas( · \d+)?$/ }).click();
 }
 const pendenteFinanceiro = 'Fornecedor de peças — Distribuidora Sul';
 

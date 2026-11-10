@@ -37,6 +37,11 @@ export function LinhaLancamento({
   const status = rotuloStatus(t.status, t.tipo);
   const acaoBaixa = isDespesa ? 'Pagar' : 'Receber';
   const detalhes = [t.forma_pagamento, t.observacoes].filter(Boolean).join(' · ');
+  const dataCurta = (iso?: string | null) => formatData(iso).replace(/\/\d{2}(\d{2})$/, '/$1');
+  // Celular: terceira linha com baixa, forma e observações (só o que existe); texto completo no `title`
+  const extrasCelular = [t.data_liquidacao ? `Baixa ${dataCurta(t.data_liquidacao)}` : null, t.forma_pagamento, t.observacoes]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <li className={`grid min-h-16 grid-cols-[minmax(0,1fr)_auto_2.75rem] items-center gap-x-3 py-2.5 pl-4 pr-2 lg:gap-x-6 lg:pl-5 ${COLUNAS_LANCAMENTO}`}>
@@ -44,17 +49,24 @@ export function LinhaLancamento({
         <p className="line-clamp-2 break-words text-sm font-medium text-ink">{t.descricao}</p>
         <p className="mt-0.5 truncate text-xs text-ink-muted">
           {rotuloCategoriaFinanceira(t.categoria)}
-          <span className="tabular-nums lg:hidden"> · venc. {formatData(t.data_vencimento).replace(/\/\d{2}(\d{2})$/, '/$1')}</span>
+          <span className="tabular-nums lg:hidden"> · venc. {dataCurta(t.data_vencimento)}</span>
           {detalhes && <span className="hidden lg:inline"> · {detalhes}</span>}
         </p>
+        {extrasCelular && (
+          <p title={extrasCelular} className="line-clamp-1 break-words text-xs tabular-nums text-ink-muted lg:hidden">
+            {extrasCelular}
+          </p>
+        )}
       </div>
 
       <div className="hidden text-sm tabular-nums lg:block">
+        <span className="sr-only">Vencimento </span>
         <p className="text-ink">{formatData(t.data_vencimento)}</p>
         {t.data_liquidacao && <p className="text-xs text-ink-muted">baixa {formatData(t.data_liquidacao)}</p>}
       </div>
 
       <div className="hidden lg:block">
+        <span className="sr-only">Situação </span>
         <Badge tom={st.tom}>
           <IconeStatus size={12} aria-hidden="true" />
           {status}
@@ -62,6 +74,7 @@ export function LinhaLancamento({
       </div>
 
       <div className="text-right">
+        <span className="sr-only">Valor </span>
         <p className={`whitespace-nowrap text-base font-semibold tabular-nums ${isDespesa ? 'text-danger' : 'text-success'}`}>
           {valorComSinal(t.valor, t.tipo)}
         </p>

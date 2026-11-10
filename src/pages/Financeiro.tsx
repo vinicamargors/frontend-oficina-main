@@ -73,10 +73,11 @@ const FORMAS_PAGAMENTO = [
   'TED / Transferência',
 ];
 
-const ABAS: TabItem[] = [
+// Aba Contas leva em texto quantas despesas estão pendentes/atrasadas (antes: ponto vermelho só de cor)
+const montarAbas = (despesasEmAberto: number): TabItem[] => [
   { id: 'balanco', rotulo: 'Balanço' },
   { id: 'dre', rotulo: 'DRE' },
-  { id: 'contas', rotulo: 'Contas' },
+  { id: 'contas', rotulo: despesasEmAberto > 0 ? `Contas · ${despesasEmAberto}` : 'Contas' },
   { id: 'bi', rotulo: 'BI' },
 ];
 
@@ -683,6 +684,9 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     : [formCategoria, ...categoriasDoTipo];
 
   const baixaDespesa = itemParaBaixa?.tipo === 'DESPESA';
+  const despesasEmAberto = transacoes.filter(
+    (t) => t.tipo === 'DESPESA' && (t.status === 'PENDENTE' || t.status === 'ATRASADO')
+  ).length;
 
   return (
     <div>
@@ -758,7 +762,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
       <div className="mb-4">
         <Tabs
-          itens={ABAS}
+          itens={montarAbas(despesasEmAberto)}
           ativo={activeTab}
           aoMudar={(id) => setActiveTab(id as TabFinanceiro)}
           rotuloGrupo="Seções do financeiro"
@@ -1019,7 +1023,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       <Folha
         aberto={itemParaExcluir !== null}
         titulo="Excluir lançamento?"
-        aoCancelar={() => setItemParaExcluir(null)}
+        aoCancelar={() => !excluindo && setItemParaExcluir(null)}
       >
         {itemParaExcluir && (
           <>
@@ -1031,7 +1035,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               <p className="mt-3 text-sm text-ink-muted">Esta ação não poderá ser desfeita.</p>
             </div>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button variante="secundario" onClick={() => setItemParaExcluir(null)}>
+              <Button variante="secundario" disabled={excluindo} onClick={() => setItemParaExcluir(null)}>
                 Cancelar
               </Button>
               <Button variante="perigo" icone={Trash2} carregando={excluindo} onClick={handleConfirmarExclusao}>
