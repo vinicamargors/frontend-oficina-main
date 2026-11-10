@@ -90,7 +90,7 @@ progress.loading-spinner:indeterminate {
   --size: 22px;
   --thickness: 3px;
   --spinner-color: currentColor;
-  --track-color: rgba(255, 255, 255, 0.22);
+  --track-color: rgb(var(--c-ink) / 0.18);
   --spinner-duration: 1.2s;
   --_used-spinner-duration: var(--spinner-duration);
 
