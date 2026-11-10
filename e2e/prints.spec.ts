@@ -276,3 +276,73 @@ test('print estoque menu (ações da linha)', async ({ page }, info) => {
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `estoque-menu-${tema}-${largura}.png`), animations: 'disabled' });
 });
+
+// Financeiro: cada aba em cada cenário, o formulário de novo lançamento e as confirmações de baixa e de exclusão:
+// `financeiro-<balanco|dre|contas|bi>-<tema>-<largura>-<cenario>.png` e `financeiro-{form,baixa,exclusao}-<tema>-<largura>.png`.
+const ABAS_FINANCEIRO = [
+  ['balanco', 'Balanço'],
+  ['dre', 'DRE'],
+  ['contas', 'Contas'],
+  ['bi', 'BI'],
+] as const;
+
+for (const cenario of CENARIOS) {
+  test(`print financeiro abas ${cenario}`, async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    mkdirSync(PASTA, { recursive: true });
+    await simularBackend(page, cenario);
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'financeiro');
+    for (const [id, rotulo] of ABAS_FINANCEIRO) {
+      await page.getByRole('tablist', { name: 'Seções do financeiro' }).getByRole('tab', { name: rotulo, exact: true }).click();
+      await page.mouse.move(1, 1);
+      await page.screenshot({ path: join(PASTA, `financeiro-${id}-${tema}-${largura}-${cenario}.png`), fullPage: true, animations: 'disabled' });
+    }
+    exigirRedeCompleta(page);
+  });
+}
+
+async function abrirContasFinanceiro(page: import('@playwright/test').Page, tema: 'claro' | 'escuro') {
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'financeiro');
+  await page.getByRole('tab', { name: 'Contas', exact: true }).click();
+}
+const pendenteFinanceiro = 'Fornecedor de peças — Distribuidora Sul';
+
+test('print financeiro form (novo lançamento aberto)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'financeiro');
+  await page.getByRole('button', { name: 'Novo lançamento' }).click();
+  await page.getByRole('dialog', { name: 'Novo lançamento' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `financeiro-form-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print financeiro baixa (confirmação)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await abrirContasFinanceiro(page, tema);
+  await page.getByRole('button', { name: `Mais ações de ${pendenteFinanceiro}` }).click();
+  await page.getByRole('menuitem', { name: 'Marcar como pago' }).click();
+  await page.getByRole('dialog', { name: 'Dar baixa no lançamento?' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `financeiro-baixa-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print financeiro exclusao (confirmação)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await abrirContasFinanceiro(page, tema);
+  await page.getByRole('button', { name: `Mais ações de ${pendenteFinanceiro}` }).click();
+  await page.getByRole('menuitem', { name: 'Excluir lançamento' }).click();
+  await page.getByRole('dialog', { name: 'Excluir lançamento?' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `financeiro-exclusao-${tema}-${largura}.png`), animations: 'disabled' });
+});
