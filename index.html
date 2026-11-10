@@ -1,22 +1,29 @@
 <!doctype html>
-<html lang="pt-BR" class="dark" style="color-scheme: dark;">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#071226" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F1EDE4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111214" />
+    <script>
+      (function () {
+        var escuro;
+        try {
+          var t = localStorage.getItem('mecanify_tema');
+          if (t === 'claro') escuro = false;
+          else if (t === 'escuro') escuro = true;
+        } catch (e) {}
+        if (escuro === undefined) escuro = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', !!escuro);
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Mecanify — Gestão de Oficina</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
   </head>
-  <body class="bg-[#071226] text-[#F8FAFC] antialiased selection:bg-[#38BDF8] selection:text-[#071226]">
+  <body class="bg-canvas text-ink antialiased">
     <a
       href="#conteudo-principal"
-      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-[#38BDF8] focus:text-[#071226] focus:font-bold focus:px-5 focus:py-3 focus:rounded-lg"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-brand focus:text-on-brand focus:font-semibold focus:px-5 focus:py-3 focus:rounded-md"
     >
       Pular para o conteúdo principal
     </a>
