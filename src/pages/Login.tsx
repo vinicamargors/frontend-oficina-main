@@ -92,6 +92,9 @@ export function Login() {
       'nova-senha': 'Definir Nova Senha — Mecanify',
     };
     document.title = titles[mode];
+    return () => {
+      document.title = 'Mecanify — Gestão de Oficina'; // ao sair do login, volta o título do app
+    };
   }, [mode]);
 
   const switchMode = (newMode: AuthMode) => {

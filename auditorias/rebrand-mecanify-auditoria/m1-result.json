@@ -1,0 +1,219 @@
+{
+ "res": {
+  "texts": {
+   "M1-login": {
+    "autotec": 0,
+    "mecanify": 2,
+    "title": "Entrar — Mecanify"
+   },
+   "M1-cadastro": {
+    "autotec": 0,
+    "mecanify": 1,
+    "title": "Criar Conta da Oficina — Mecanify"
+   },
+   "M1-recuperar": {
+    "autotec": 0,
+    "mecanify": 1,
+    "title": "Recuperar Senha — Mecanify"
+   },
+   "M1-1-RadardoPtio": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-2-OrdensdeServ": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-3-ClientesVecu": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-4-EstoquedePea": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-5-CaixaFinance": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-5-fin-DREOpera": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-5-fin-ContasaP": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-5-fin-BI": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-6-EquipeRH": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-6-equipe-folha": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   },
+   "M1-7-DadosdaOfici": {
+    "autotec": 1,
+    "mecanify": 1,
+    "title": "Entrar — Mecanify",
+    "ctx": [
+     "dono.a@homolog-autotec.example.com"
+    ]
+   }
+  },
+  "contrast": {
+   "M1-login": [],
+   "M1-cadastro": [],
+   "M1-recuperar": [],
+   "M1-1-RadardoPtio": [],
+   "M1-2-OrdensdeServ": [],
+   "M1-3-ClientesVecu": [],
+   "M1-4-EstoquedePea": [],
+   "M1-5-CaixaFinance": [
+    {
+     "sel": "span",
+     "txt": "+ Receita / Aporte",
+     "fg": "rgb(255,255,255)",
+     "bg": "rgb(5,150,105)",
+     "ratio": 3.77,
+     "min": 4.5,
+     "size": 12,
+     "n": 1
+    }
+   ],
+   "M1-5-fin-DREOpera": [
+    {
+     "sel": "span",
+     "txt": "+ Receita / Aporte",
+     "fg": "rgb(255,255,255)",
+     "bg": "rgb(5,150,105)",
+     "ratio": 3.77,
+     "min": 4.5,
+     "size": 12,
+     "n": 1
+    },
+    {
+     "sel": "div.pl-4.pr-3.py-1",
+     "txt": "Nenhuma conta a pagar liquidada no perío",
+     "fg": "rgb(91,123,176)",
+     "bg": "rgb(11,27,54)",
+     "ratio": 4.01,
+     "min": 4.5,
+     "size": 12,
+     "n": 1
+    }
+   ],
+   "M1-5-fin-ContasaP": [
+    {
+     "sel": "span",
+     "txt": "+ Receita / Aporte",
+     "fg": "rgb(255,255,255)",
+     "bg": "rgb(5,150,105)",
+     "ratio": 3.77,
+     "min": 4.5,
+     "size": 12,
+     "n": 2
+    }
+   ],
+   "M1-5-fin-BI": [
+    {
+     "sel": "span",
+     "txt": "+ Receita / Aporte",
+     "fg": "rgb(255,255,255)",
+     "bg": "rgb(5,150,105)",
+     "ratio": 3.77,
+     "min": 4.5,
+     "size": 12,
+     "n": 1
+    },
+    {
+     "sel": "p.text-slate-500.text-xs.py-4",
+     "txt": "Nenhum mecânico com OS finalizada.",
+     "fg": "rgb(91,123,176)",
+     "bg": "rgb(11,27,54)",
+     "ratio": 4.01,
+     "min": 4.5,
+     "size": 12,
+     "n": 4
+    }
+   ],
+   "M1-6-EquipeRH": [
+    {
+     "sel": "span",
+     "txt": "Convidar no WhatsApp",
+     "fg": "rgb(255,255,255)",
+     "bg": "rgb(5,150,105)",
+     "ratio": 3.77,
+     "min": 4.5,
+     "size": 12,
+     "n": 1
+    }
+   ],
+   "M1-6-equipe-folha": [
+    {
+     "sel": "span",
+     "txt": "Convidar no WhatsApp",
+     "fg": "rgb(255,255,255)",
+     "bg": "rgb(5,150,105)",
+     "ratio": 3.77,
+     "min": 4.5,
+     "size": 12,
+     "n": 1
+    }
+   ],
+   "M1-7-DadosdaOfici": []
+  },
+  "favicon": 200
+ },
+ "log": {
+  "step": "Dados da Oficina",
+  "console": [],
+  "pageerrors": [],
+  "net": [],
+  "racing": []
+ }
+}

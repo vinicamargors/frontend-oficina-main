@@ -1,0 +1,256 @@
+{
+ "m3": {
+  "M3-login": {
+   "W": 375,
+   "sw": 375,
+   "over": [],
+   "autotec": 0,
+   "mecanify": 2,
+   "ctx": [],
+   "lowContrast": []
+  },
+  "M3-radar": {
+   "W": 375,
+   "sw": 375,
+   "over": [],
+   "autotec": 0,
+   "mecanify": 1,
+   "ctx": [],
+   "lowContrast": []
+  },
+  "M3-Ordens": {
+   "W": 375,
+   "sw": 375,
+   "over": [],
+   "autotec": 0,
+   "mecanify": 1,
+   "ctx": [],
+   "lowContrast": []
+  },
+  "M3-Estoque": {
+   "W": 375,
+   "sw": 375,
+   "over": [
+    "BUTTON.px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-p r=416",
+    "BUTTON.px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-p r=508",
+    "BUTTON.px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-p r=617",
+    "BUTTON.px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-p r=748",
+    "BUTTON.px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-p r=889",
+    "BUTTON.px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-p r=1003"
+   ],
+   "autotec": 0,
+   "mecanify": 1,
+   "ctx": [],
+   "lowContrast": []
+  },
+  "log": {
+   "step": "m-Estoque",
+   "console": [],
+   "pageerrors": [],
+   "net": [],
+   "racing": []
+  }
+ },
+ "m4": {
+  "holeriteBtns": 6,
+  "M4-holerite": {
+   "autotec": 1,
+   "mecanify": 1,
+   "text": "Pular para o conteúdo principal Equipe & Recursos Humanos 6 Colaboradores Cargos, salários, comissões, convites WhatsApp, folha de pagamento, escalas de folga e ponto eletrônico. Convidar no WhatsApp + Novo Colaborador Colaboradores Folha & Holerites Escalas & Férias Ponto Eletrônico Avaliações (★) Fechamento da Folha de Pagamento Dia oficial de pagamento da oficina: Dia 5 (Adiantamento: Dia 20) Lançar Folha no Contas a Pagar Atendente Teste A ATENDENTE Base Não informado Comissões (OS) +R$ 0,00",
+   "colors": {
+    "rgb(248, 250, 252)": 1,
+    "rgb(255, 255, 255)": 15,
+    "rgb(147, 197, 253)": 7,
+    "rgb(134, 160, 204)": 15,
+    "rgb(7, 18, 38)": 3,
+    "rgb(176, 195, 227)": 4,
+    "rgb(251, 191, 36)": 12,
+    "rgb(52, 211, 153)": 12,
+    "rgb(96, 165, 250)": 6,
+    "rgb(56, 189, 248)": 6,
+    "rgb(0, 0, 0)": 26
+   },
+   "lowContrast": [
+    {
+     "sel": "span",
+     "txt": "Convidar no WhatsApp",
+     "fg": "rgb(255,255,255)",
+     "bg": "rgb(5,150,105)",
+     "ratio": 3.77,
+     "min": 4.5,
+     "size": 12,
+     "n": 1
+    }
+   ]
+  },
+  "etiquetaBtns": 2,
+  "M4-etiqueta": {
+   "autotec": 0,
+   "mecanify": 1,
+   "text": "Pular para o conteúdo principal Estoque & Almoxarifado 2 itens Controle ágil de peças, fluidos, componentes e saldo para a bancada da oficina. Exportar CSV + Nova Peça Total de Itens 2 Produtos no catálogo Estoque Crítico 0 Qtd ≤ Alerta mínimo Capital em Custo R$ 500,00 Patrimônio investido Potencial Venda R$ 1.050,00 Lucro estimado: R$ 550,00 Categorias (7) Todas (2) Crítico (0) PECAS (2) FLUIDOS (0) PNEUS (0) ELETRICA (0) ACESSORIOS (0) FERRAMENTAS (0) DIVERSOS (0) PECAS Filtro de óleo TESTE C",
+   "colors": {
+    "rgb(248, 250, 252)": 1,
+    "rgb(255, 255, 255)": 9,
+    "rgb(176, 195, 227)": 13,
+    "rgb(134, 160, 204)": 13,
+    "rgb(210, 222, 242)": 1,
+    "rgb(7, 18, 38)": 1,
+    "rgb(52, 211, 153)": 5,
+    "rgb(252, 165, 165)": 1,
+    "rgb(110, 231, 183)": 4,
+    "rgb(18, 39, 77)": 1,
+    "rgb(0, 0, 0)": 3,
+    "rgb(38, 69, 119)": 1
+   },
+   "lowContrast": [
+    {
+     "sel": "span",
+     "txt": "Estoque & Almoxarifado",
+     "fg": "rgb(255,255,255)",
+     "bg": "rgb(255,255,255)",
+     "ratio": 1,
+     "min": 3,
+     "size": 24,
+     "n": 1
+    },
+    {
+     "sel": "svg.lucide.lucide-package.w-6",
+     "txt": "[icone]",
+     "fg": "rgb(56,189,248)",
+     "bg": "rgb(255,255,255)",
+     "ratio": 2.14,
+     "min": 3,
+     "size": 24,
+     "n": 1
+    },
+    {
+     "sel": "p.text-xs.sm:text-sm.text-slate-400",
+     "txt": "Controle ágil de peças, fluidos, compone",
+     "fg": "rgb(134,160,204)",
+     "bg": "rgb(255,255,255)",
+     "ratio": 2.65,
+     "min": 4.5,
+     "size": 14,
+     "n": 1
+    }
+   ]
+  },
+  "M4-os": {
+   "autotec": 0,
+   "mecanify": 0,
+   "text": "Pular para o conteúdo principal OFICINA DO TIÃO CNPJ: 45645654465611 • Tel: 11976608449 — CEP 06018-095 ORDEM DE SERVIÇO #9B45576F Status: ORCAMENTO • 09/11/2026, 15:17 CLIENTE: Cliente Teste A • Tel: 11999990001 VEÍCULO: PLACA: TSTA001 • VW Gol 1.0 Relato / Diagnóstico: OS de teste (seed) Peças: R$ 0,00Mão de Obra: R$ 0,00 VALOR TOTAL DA ORDEM DE SERVIÇO R$ 0,00 Assinatura do Responsável Técnico De acordo — Cliente Teste A",
+   "colors": {
+    "rgb(248, 250, 252)": 1,
+    "rgb(0, 0, 0)": 21
+   },
+   "lowContrast": []
+  },
+  "log": {
+   "step": "os",
+   "console": [],
+   "pageerrors": [],
+   "net": [],
+   "racing": []
+  }
+ },
+ "m5": {
+  "mecanico": {
+   "menu": [
+    "Radar do Pátio",
+    "Ordens de Serviço",
+    "Clientes & Veículos",
+    "Estoque de Peças"
+   ],
+   "screens": {
+    "Radar do Pátio": {
+     "autotec": 1,
+     "mecanify": 1,
+     "ctx": [
+      "mecanico.a@homolog-autotec.example.com"
+     ],
+     "lowContrast": []
+    },
+    "Ordens de Serviço": {
+     "autotec": 1,
+     "mecanify": 1,
+     "ctx": [
+      "mecanico.a@homolog-autotec.example.com"
+     ],
+     "lowContrast": []
+    },
+    "Clientes & Veículos": {
+     "autotec": 1,
+     "mecanify": 1,
+     "ctx": [
+      "mecanico.a@homolog-autotec.example.com"
+     ],
+     "lowContrast": []
+    },
+    "Estoque de Peças": {
+     "autotec": 1,
+     "mecanify": 1,
+     "ctx": [
+      "mecanico.a@homolog-autotec.example.com"
+     ],
+     "lowContrast": []
+    }
+   },
+   "log": {
+    "step": "mecanico-Estoque de Peças",
+    "console": [],
+    "pageerrors": [],
+    "net": [],
+    "racing": []
+   }
+  },
+  "atendente": {
+   "menu": [
+    "Radar do Pátio",
+    "Ordens de Serviço",
+    "Clientes & Veículos",
+    "Estoque de Peças"
+   ],
+   "screens": {
+    "Radar do Pátio": {
+     "autotec": 1,
+     "mecanify": 1,
+     "ctx": [
+      "atendente.a@homolog-autotec.example.com"
+     ],
+     "lowContrast": []
+    },
+    "Ordens de Serviço": {
+     "autotec": 1,
+     "mecanify": 1,
+     "ctx": [
+      "atendente.a@homolog-autotec.example.com"
+     ],
+     "lowContrast": []
+    },
+    "Clientes & Veículos": {
+     "autotec": 1,
+     "mecanify": 1,
+     "ctx": [
+      "atendente.a@homolog-autotec.example.com"
+     ],
+     "lowContrast": []
+    },
+    "Estoque de Peças": {
+     "autotec": 1,
+     "mecanify": 1,
+     "ctx": [
+      "atendente.a@homolog-autotec.example.com"
+     ],
+     "lowContrast": []
+    }
+   },
+   "log": {
+    "step": "atendente-Estoque de Peças",
+    "console": [],
+    "pageerrors": [],
+    "net": [],
+    "racing": []
+   }
+  }
+ }
+}

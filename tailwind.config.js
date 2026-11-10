@@ -22,7 +22,7 @@ export default {
         // Neutros com tom azul-marinho: os fundos/bordas/textos slate-* de todas as telas seguem a marca.
         slate: {
           50: '#F4F8FD', 100: '#E8EFFA', 200: '#D2DEF2', 300: '#B0C3E3', 400: '#86A0CC',
-          500: '#5B7BB0', 600: '#3A5C90', 700: '#264577', 800: '#12274D', 900: '#0B1B36', 950: '#071226',
+          500: '#7090C4', 600: '#3A5C90', 700: '#264577', 800: '#12274D', 900: '#0B1B36', 950: '#071226',
         },
       },
     },
