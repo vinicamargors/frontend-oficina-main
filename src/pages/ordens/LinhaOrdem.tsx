@@ -9,8 +9,8 @@ const formatBRL = (valor?: number | null) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(valor || 0));
 
 /**
- * Uma OS na lista: a linha inteira abre a bancada; à direita (abaixo, no celular) a ação única de avançar
- * etapa e o WhatsApp. Um só DOM para todas as larguras.
+ * Uma OS na lista: a linha inteira abre a bancada; à direita o WhatsApp e, só no desktop (≥1024), a ação única
+ * de avançar etapa. No celular não há avanço pela lista (toque acidental mudaria o status): troca-se na bancada.
  */
 export function LinhaOrdem({
   os,
@@ -30,16 +30,14 @@ export function LinhaOrdem({
   const nivel = nivelAtraso(st, dias);
   const prox = proximaEtapa(st);
   const defeito = os.descricao_problema?.trim() || '';
-  // Sem próxima etapa (Pago), o WhatsApp fica à direita da própria linha em vez de abrir uma faixa de ações.
-  const faixaAcoes = Boolean(prox);
 
   return (
     <li className="relative">
       <button
         type="button"
         onClick={aoAbrir}
-        className={`block w-full cursor-pointer pl-4 pt-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand lg:pb-3 lg:pt-3 lg:pr-[19rem] ${
-          faixaAcoes ? 'pb-[3.25rem] pr-4' : fone ? 'pb-3 pr-14' : 'pb-3 pr-4'
+        className={`block w-full cursor-pointer py-2.5 pl-4 text-left lg:py-3 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand lg:pr-[19rem] ${
+          fone ? 'pr-14' : 'pr-4'
         }`}
       >
         <span className="flex items-center gap-3">
@@ -47,7 +45,7 @@ export function LinhaOrdem({
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{modelo}</span>
           <span className="shrink-0 text-sm font-semibold tabular-nums text-ink">{formatBRL(os.total_geral)}</span>
         </span>
-        <span className="mt-1.5 flex min-w-0 items-center gap-2 lg:mt-2">
+        <span className="mt-1 flex min-w-0 items-center gap-2 lg:mt-2">
           <span className="shrink-0">
             <StatusBadge status={st} />
           </span>
@@ -68,16 +66,12 @@ export function LinhaOrdem({
       </button>
 
       {(prox || fone) && (
-        <div
-          className={`pointer-events-none absolute flex items-center justify-between gap-2 lg:inset-x-auto lg:bottom-auto lg:right-2 lg:top-1/2 lg:w-72 lg:-translate-y-1/2 lg:justify-end ${
-            faixaAcoes ? 'inset-x-4 bottom-1' : 'right-1 top-1/2 -translate-y-1/2'
-          }`}
-        >
+        <div className="pointer-events-none absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-2 lg:right-2 lg:w-72 lg:justify-end">
           {prox ? (
             <Button
               variante="secundario"
               tamanho="sm"
-              className="pointer-events-auto"
+              className="pointer-events-auto hidden lg:inline-flex"
               onClick={() => aoAvancar(prox.status)}
             >
               {prox.rotulo}

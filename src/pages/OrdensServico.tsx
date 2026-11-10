@@ -39,10 +39,12 @@ import {
 } from 'lucide-react';
 import { Badge, Button, Field, PageHeader, Panel, PlateChip, Skeleton, StatusBadge, STATUS_OS, Tabs, CLASSE_CAMPO, classesBotao } from '../components/ui';
 import { ConfirmarPagamento } from '../components/ConfirmarPagamento';
+import { ConfirmarEtapa } from '../components/ConfirmarEtapa';
 import { FORMAS_PAGAMENTO } from './ordens/formasPagamento';
 import { ETAPAS_OS, mensagemEtapa } from './ordens/etapas';
 import { LinhaOrdem } from './ordens/LinhaOrdem';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
+import { useMediaQuery } from '../lib/useMediaQuery';
 
 interface OrdensServicoProps {
   empresaId: string;
@@ -111,6 +113,7 @@ export function OrdensServico({
   // Só a resposta da leitura mais recente é aplicada (evita resposta antiga sobrescrever a nova).
   const seqLista = useRef(0);
   const seqContagens = useRef(0);
+  const faixaChipsRef = useRef<HTMLDivElement>(null);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [valorMin, setValorMin] = useState('');
@@ -125,6 +128,9 @@ export function OrdensServico({
   const [contagens, setContagens] = useState<Partial<Record<StatusOS | 'TODAS', number>>>({});
   // Folha obrigatória de forma de pagamento antes de marcar como PAGO
   const [pagamentoPendente, setPagamentoPendente] = useState<{ osId: string; total: number } | null>(null);
+  // Celular: toda troca de etapa na bancada passa por "Mover para…?" (toque acidental não muda o status)
+  const celular = useMediaQuery('(max-width: 1023px)');
+  const [etapaPendente, setEtapaPendente] = useState<{ osId: string; status: StatusOS } | null>(null);
 
   // Estado da OS aberta na Bancada
   const [selectedOsId, setSelectedOsId] = useState<string | null>(
@@ -292,6 +298,17 @@ export function OrdensServico({
       carregarContagens();
     }
   }, [view, carregarContagens]);
+
+  // Celular: o chip ativo fica à vista dentro da faixa rolável (só rola a faixa, nunca a página)
+  useEffect(() => {
+    const faixa = faixaChipsRef.current;
+    const ativo = faixa?.querySelector<HTMLElement>('[data-ativo]');
+    if (!faixa || !ativo || faixa.scrollWidth <= faixa.clientWidth) return;
+    const esq = ativo.offsetLeft - faixa.offsetLeft;
+    const dir = esq + ativo.offsetWidth;
+    if (esq < faixa.scrollLeft + 16) faixa.scrollLeft = Math.max(0, esq - 16);
+    else if (dir > faixa.scrollLeft + faixa.clientWidth - 32) faixa.scrollLeft = dir - faixa.clientWidth + 32;
+  }, [statusFiltro, view]);
 
   // Nova busca aplicada volta à primeira página
   useEffect(() => {
@@ -664,6 +681,18 @@ export function OrdensServico({
     }
     handleMudarStatus(osId, novoStatus);
   };
+
+  const folhaEtapa = (
+    <ConfirmarEtapa
+      etapa={etapaPendente?.status ?? null}
+      aoCancelar={() => setEtapaPendente(null)}
+      aoConfirmar={() => {
+        const pendente = etapaPendente;
+        setEtapaPendente(null);
+        if (pendente) handleMudarStatus(pendente.osId, pendente.status);
+      }}
+    />
+  );
 
   const folhaPagamento = (
     <ConfirmarPagamento
@@ -1926,6 +1955,7 @@ export function OrdensServico({
         {/* ==================================================================== */}
         <div className="print:hidden pb-24 lg:pb-0">
           {folhaPagamento}
+          {folhaEtapa}
           <div className="mb-3 flex items-center justify-between gap-2">
             <Button
               variante="fantasma"
@@ -2057,7 +2087,11 @@ export function OrdensServico({
                     <button
                       type="button"
                       aria-current={ativo ? 'step' : undefined}
-                      onClick={() => pedirMudancaStatus(os.id, st, os.total_geral)}
+                      onClick={() =>
+                        st !== 'PAGO' && celular
+                          ? setEtapaPendente({ osId: os.id, status: st })
+                          : pedirMudancaStatus(os.id, st, os.total_geral)
+                      }
                       className={`flex h-full min-h-11 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-center text-[0.8125rem] font-medium leading-tight sm:flex-row sm:gap-1.5 sm:rounded-full sm:px-3 sm:py-1.5 sm:text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                         ativo
                           ? classe
@@ -2711,7 +2745,7 @@ export function OrdensServico({
   const totalPaginas = Math.max(1, Math.ceil(totalOrdens / ITENS_POR_PAGINA));
   const inicioRegistro =
     totalOrdens === 0 ? 0 : (pagina - 1) * ITENS_POR_PAGINA + 1;
-  const fimRegistro = Math.min(totalOrdens, pagina * ITENS_POR_PAGINA);
+  const fimRegistro = totalOrdens === 0 ? 0 : Math.min(totalOrdens, inicioRegistro + ordens.length - 1);
 
   const qtdFiltrosAtivos =
     (statusFiltro !== 'TODAS' ? 1 : 0) +
@@ -2812,7 +2846,14 @@ export function OrdensServico({
         </div>
 
         {/* Chips de etapa: sempre visíveis, com contagem; quebram linha em vez de rolar */}
-        <div role="group" aria-label="Filtrar por etapa" className="flex flex-wrap gap-1 sm:gap-2">
+        {/* Chips de etapa com contagem. Celular: uma linha só, rolagem só dentro da faixa (sem barra, com
+            esmaecido na borda); desktop: quebram linha como antes. */}
+        <div
+          ref={faixaChipsRef}
+          role="group"
+          aria-label="Filtrar por etapa"
+          className="-mx-4 flex snap-x scroll-px-4 gap-1 overflow-x-auto px-4 [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] [scrollbar-width:none] md:-mx-8 md:scroll-px-8 md:px-8 lg:mx-0 lg:flex-wrap lg:gap-2 lg:overflow-visible lg:px-0 lg:[mask-image:none] [&::-webkit-scrollbar]:hidden"
+        >
           {(['TODAS', ...ETAPAS_OS] as const).map((id) => {
             const ativo = statusFiltro === id;
             const rotulo = id === 'TODAS' ? 'Todas' : STATUS_OS[id].rotulo;
@@ -2822,18 +2863,23 @@ export function OrdensServico({
                 key={id}
                 type="button"
                 aria-pressed={ativo}
+                data-ativo={ativo || undefined}
                 onClick={() => {
                   setStatusFiltro(id);
                   setPagina(1);
                 }}
-                className={`inline-flex h-9 min-h-11 md:min-h-9 items-center gap-1.5 rounded-full px-3 sm:px-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                  ativo ? 'bg-surface text-ink shadow-card dark:bg-line' : 'text-ink-muted hover:bg-muted hover:text-ink'
-                }`}
+                className="group inline-flex min-h-11 shrink-0 snap-start items-center rounded-full focus-visible:outline-none lg:min-h-9"
               >
-                {rotulo}
-                {qtd !== undefined && (
-                  <span className={`tabular-nums ${ativo ? 'text-ink-muted' : 'text-ink-subtle'}`}>{qtd}</span>
-                )}
+                <span
+                  className={`inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-sm font-medium transition-colors group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-brand sm:px-3.5 ${
+                    ativo ? 'bg-surface text-ink shadow-card dark:bg-line' : 'text-ink-muted group-hover:bg-muted group-hover:text-ink'
+                  }`}
+                >
+                  {rotulo}
+                  {qtd !== undefined && (
+                    <span className={`tabular-nums ${ativo ? 'text-ink-muted' : 'text-ink-subtle'}`}>{qtd}</span>
+                  )}
+                </span>
               </button>
             );
           })}
@@ -2992,15 +3038,19 @@ export function OrdensServico({
               className="flex flex-col items-center justify-between gap-3 sm:flex-row"
             >
               <p className="text-sm tabular-nums text-ink-muted">
-                Mostrando <strong className="font-medium text-ink">{inicioRegistro}</strong> a{' '}
-                <strong className="font-medium text-ink">{fimRegistro}</strong> de{' '}
-                <strong className="font-medium text-ink">{totalOrdens}</strong> OS
+                Mostrando{' '}
+                <span className="font-medium text-ink">
+                  {inicioRegistro}–{fimRegistro}
+                </span>{' '}
+                de <span className="font-medium text-ink">{totalOrdens}</span>
               </p>
 
               <div className="flex items-center gap-2">
                 <Button
                   variante="secundario"
                   icone={ChevronLeft}
+                  aria-label="Página anterior"
+                  className="!min-h-11"
                   disabled={pagina <= 1}
                   onClick={() => {
                     setPagina((p) => Math.max(1, p - 1));
@@ -3009,11 +3059,13 @@ export function OrdensServico({
                 >
                   Anterior
                 </Button>
-                <span className="px-2 text-sm tabular-nums text-ink">
-                  Página {pagina} de {totalPaginas}
+                <span className="px-2 text-sm tabular-nums text-ink-muted">
+                  {pagina} de {totalPaginas}
                 </span>
                 <Button
                   variante="secundario"
+                  aria-label="Próxima página"
+                  className="!min-h-11"
                   disabled={pagina >= totalPaginas}
                   onClick={() => {
                     setPagina((p) => Math.min(totalPaginas, p + 1));

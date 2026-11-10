@@ -21,6 +21,7 @@ async function abrirBancada(page: Page, tema: 'claro' | 'escuro') {
 
 const etapas = (page: Page) => page.getByRole('list', { name: 'Etapas da ordem de serviço' });
 const folha = (page: Page) => page.getByRole('dialog', { name: 'Confirmar pagamento' });
+const folhaEtapa = (page: Page) => page.getByRole('dialog', { name: /^Mover para / });
 
 test.describe('bancada: confirmação do Pago', () => {
   test('clicar em Pago abre a folha com o total; confirmar envia a forma escolhida', async ({ page }, info) => {
@@ -32,6 +33,7 @@ test.describe('bancada: confirmação do Pago', () => {
     const dialogo = folha(page);
     await expect(dialogo).toBeVisible();
     await expect(dialogo).toContainText(TOTAL_BANCADA);
+    await expect(folhaEtapa(page)).toHaveCount(0); // Pago usa só a folha de pagamento, nunca as duas
 
     const confirmar = dialogo.getByRole('button', { name: 'Confirmar pagamento' });
     await expect(confirmar).toBeDisabled();
@@ -131,6 +133,12 @@ test.describe('bancada: confirmação do Pago', () => {
 
     await etapas(page).getByRole('button', { name: 'Finalizado', exact: true }).click();
     await expect(folha(page)).toHaveCount(0);
+    if (contextoDoProjeto(info).largura < 1024) {
+      // no celular toda troca de etapa pede confirmação
+      await folhaEtapa(page).getByRole('button', { name: 'Confirmar' }).click();
+    } else {
+      await expect(folhaEtapa(page)).toHaveCount(0);
+    }
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     expect((await ultimaEscrita(page))!.corpo).toEqual({ status: 'FINALIZADO' });
     const aviso = page.getByRole('status').filter({ hasText: 'Finalizado' });
@@ -183,7 +191,8 @@ test.describe('lista de ordens de serviço', () => {
     await expect(chips).toHaveCount(6);
     await expect(chips.first()).toHaveAccessibleName(/Todas.*12/);
     await expect(chips.nth(1)).toHaveAccessibleName(/Orçamento.*3/);
-    for (const chip of await chips.all()) {
+    // no celular a faixa rola na horizontal (teste próprio abaixo); aqui só o desktop
+    for (const chip of info.project.use.viewport!.width >= 1024 ? await chips.all() : []) {
       await expect(chip).toBeVisible();
       const c = (await chip.boundingBox())!;
       expect(c.x).toBeGreaterThanOrEqual(0);
@@ -205,17 +214,16 @@ test.describe('lista de ordens de serviço', () => {
     expect(erros).toEqual([]);
   });
 
-  test('cada linha tem o botão de avançar etapa (inclusive a 390) e WhatsApp com 44px', async ({ page }, info) => {
-    const { tema } = contextoDoProjeto(info);
+  test('desktop: cada linha tem o botão de avançar etapa e WhatsApp com 44px', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    test.skip(largura < 1024, 'só desktop');
     await simularBackend(page, 'cheio');
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
 
     const aprovar = lista(page).getByRole('button', { name: 'Aprovar → Execução' });
     await expect(aprovar).toHaveCount(3);
-    await aprovar.first().scrollIntoViewIfNeeded();
     await expect(aprovar.first()).toBeVisible();
-    expect((await aprovar.first().boundingBox())!.height).toBeGreaterThanOrEqual(info.project.name.endsWith('390') ? 44 : 32);
     // OS pagas não têm próxima etapa
     const pagas = ordens.filter((o) => o.status === 'PAGO').length;
     const avancar = lista(page).getByRole('button', { name: /→ Execução|Concluir Serviço|Receber \/ Dar Baixa/ });
@@ -233,8 +241,30 @@ test.describe('lista de ordens de serviço', () => {
     await expect(folha(page)).toHaveCount(0);
   });
 
+  test('celular: linhas sem botão de avançar etapa (toque acidental); tocar abre a bancada', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    test.skip(largura >= 1024, 'só celular');
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'ordens');
+
+    await expect(lista(page).getByRole('listitem')).toHaveCount(ordens.length);
+    await expect(lista(page).getByRole('button', { name: /→ Execução|Concluir Serviço|Receber \/ Dar Baixa/ })).toHaveCount(0);
+    const whats = lista(page).getByRole('link', { name: /WhatsApp/ }).first();
+    const w = (await whats.boundingBox())!;
+    expect(w.height).toBeGreaterThanOrEqual(44);
+    expect(w.width).toBeGreaterThanOrEqual(44);
+    for (const linha of (await lista(page).getByRole('listitem').all()).slice(0, 4)) {
+      expect((await linha.boundingBox())!.height).toBeLessThanOrEqual(80);
+    }
+    await lista(page).getByRole('listitem').first().getByRole('button').first().click();
+    await expect(etapas(page)).toBeVisible();
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
   test('"Receber / Dar Baixa" na lista também passa pela folha de pagamento', async ({ page }, info) => {
-    const { tema } = contextoDoProjeto(info);
+    const { tema, largura } = contextoDoProjeto(info);
+    test.skip(largura < 1024, 'o avanço pela lista é só no desktop');
     await simularBackend(page, 'cheio');
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
@@ -313,10 +343,12 @@ test('linha mostra o defeito relatado (truncado, com title) e fica compacta no c
   await abrirTela(page, 'ordens');
   const primeira = page.getByRole('list', { name: 'Ordens de serviço' }).getByRole('listitem').first();
   const defeito = primeira.getByText(ordens[0].descricao_problema!, { exact: true });
-  await expect(defeito).toBeVisible();
+  // no desktop aparece; no celular ocupa só a sobra da linha (pode ficar sem espaço), mas está lá com o title
+  if (largura >= 1024) await expect(defeito).toBeVisible();
+  else await expect(defeito).toBeAttached();
   await expect(defeito).toHaveAttribute('title', ordens[0].descricao_problema!);
   const alt = (await primeira.boundingBox())!.height;
-  expect(alt).toBeLessThanOrEqual(largura >= 1024 ? 96 : 120);
+  expect(alt).toBeLessThanOrEqual(largura >= 1024 ? 96 : 80);
 });
 
 test('OS paga antiga sem forma de pagamento não destaca nenhuma forma', async ({ page }, info) => {
@@ -336,4 +368,120 @@ test('OS paga antiga sem forma de pagamento não destaca nenhuma forma', async (
   for (const forma of FORMAS) {
     await expect(page.getByRole('button', { name: forma, exact: true })).toHaveAttribute('aria-pressed', 'false');
   }
+});
+
+test.describe('celular: troca de etapa na bancada pede confirmação', () => {
+  test('tocar numa etapa abre "Mover para…"; nada é escrito até Confirmar', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    test.skip(largura >= 1024, 'só celular');
+    await abrirBancada(page, tema);
+    const finalizado = etapas(page).getByRole('button', { name: 'Finalizado', exact: true });
+
+    await finalizado.click();
+    const f = page.getByRole('dialog', { name: 'Mover para Finalizado?' });
+    await expect(f).toBeVisible();
+    expect(await ultimaEscrita(page)).toBeUndefined();
+    await f.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(f).toBeHidden();
+    expect(await ultimaEscrita(page)).toBeUndefined();
+
+    await finalizado.click();
+    await expect(f).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(f).toBeHidden();
+    expect(await ultimaEscrita(page)).toBeUndefined();
+    await expect(etapas(page).locator('[aria-current="step"]')).toHaveAccessibleName('Em execução');
+
+    await etapas(page).getByRole('button', { name: 'Orçamento', exact: true }).click();
+    const o = page.getByRole('dialog', { name: 'Mover para Orçamento?' });
+    await o.getByRole('button', { name: 'Confirmar' }).click();
+    await expect(o).toBeHidden();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    expect((await ultimaEscrita(page))!.corpo).toEqual({ status: 'ORCAMENTO' });
+    await expect(page.getByRole('status').filter({ hasText: 'Etapa atualizada para Orçamento' })).toBeVisible();
+  });
+});
+
+test('celular: chips de etapa numa linha só, com rolagem só dentro da faixa', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  test.skip(largura >= 1024, 'só celular');
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'ordens');
+
+  const faixa = page.getByRole('group', { name: 'Filtrar por etapa' });
+  const caixa = (await faixa.boundingBox())!;
+  expect(caixa.height).toBeLessThanOrEqual(56);
+  const chips = faixa.getByRole('button');
+  await expect(chips.first()).toHaveAccessibleName(/Todas\s*12/);
+  const ys = new Set<number>();
+  for (const c of await chips.all()) {
+    const b = (await c.boundingBox())!;
+    ys.add(Math.round(b.y));
+    expect(b.height).toBeGreaterThanOrEqual(44);
+  }
+  expect(ys.size).toBe(1);
+  const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(sobra).toBeLessThanOrEqual(0);
+
+  const main = (await page.locator('#conteudo-principal').boundingBox())!;
+  const primeira = (await page.getByRole('list', { name: 'Ordens de serviço' }).getByRole('listitem').first().boundingBox())!;
+  expect(primeira.y - main.y).toBeLessThanOrEqual(320);
+
+  // o chip ativo fica visível dentro da faixa
+  await chips.last().click();
+  await expect(chips.last()).toHaveAttribute('aria-pressed', 'true');
+  const ult = (await chips.last().boundingBox())!;
+  expect(ult.x + ult.width).toBeLessThanOrEqual(largura + 1);
+  expect(ult.x).toBeGreaterThanOrEqual(-1);
+});
+
+test.describe('paginação da lista', () => {
+  const TOTAL = 120;
+  async function comMuitas(page: Page) {
+    await page.route('**/api/v1/os/?*', async (route) => {
+      const q = new URL(route.request().url()).searchParams;
+      if (q.get('status') || q.get('search')) return route.fallback();
+      const skip = Number(q.get('skip') || 0);
+      const limit = Number(q.get('limit') || 50);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify({ items: limit === 1 ? ordens.slice(0, 1) : ordens, total: TOTAL, skip, limit }),
+      });
+    });
+  }
+
+  test('total maior que a página: controles visíveis, Próxima pede skip=50, Anterior desabilitado na 1ª', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await comMuitas(page);
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'ordens');
+
+    const nav = page.getByRole('navigation', { name: 'Paginação de Ordens de Serviço' });
+    await expect(nav).toBeVisible();
+    await expect(nav).toContainText(/Mostrando 1–12 de 120/);
+    const anterior = nav.getByRole('button', { name: 'Página anterior' });
+    const proxima = nav.getByRole('button', { name: 'Próxima página' });
+    await expect(anterior).toBeDisabled();
+    await expect(proxima).toBeEnabled();
+    for (const b of [anterior, proxima]) expect((await b.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+
+    const pedido = page.waitForRequest((r) => /\/os\/\?/.test(r.url()) && new URL(r.url()).searchParams.get('skip') === '50' && new URL(r.url()).searchParams.get('limit') === '50');
+    await proxima.click();
+    await pedido;
+    await expect(nav).toContainText(/Mostrando 51–62 de 120/);
+    await expect(anterior).toBeEnabled();
+  });
+
+  test('total que cabe numa página: sem controles de paginação', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'ordens');
+    await expect(page.getByRole('list', { name: 'Ordens de serviço' }).getByRole('listitem')).toHaveCount(ordens.length);
+    await expect(page.getByRole('navigation', { name: 'Paginação de Ordens de Serviço' })).toHaveCount(0);
+  });
 });
