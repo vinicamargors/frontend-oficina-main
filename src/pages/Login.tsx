@@ -86,10 +86,10 @@ export function Login() {
     window.history.replaceState({}, '', url.toString());
 
     const titles: Record<AuthMode, string> = {
-      login: 'Entrar — Autotec Pro',
-      cadastro: 'Criar Conta da Oficina — Autotec Pro',
-      recuperar: 'Recuperar Senha — Autotec Pro',
-      'nova-senha': 'Definir Nova Senha — Autotec Pro',
+      login: 'Entrar — Mecanify',
+      cadastro: 'Criar Conta da Oficina — Mecanify',
+      recuperar: 'Recuperar Senha — Mecanify',
+      'nova-senha': 'Definir Nova Senha — Mecanify',
     };
     document.title = titles[mode];
   }, [mode]);
@@ -256,13 +256,13 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-dvh w-full bg-[#0B0F17] text-[#F8FAFC] grid grid-cols-1 lg:grid-cols-12">
-      {/* COLUNA ESQUERDA — IDENTIDADE INDUSTRIAL AUTOTEC PRO (Azul Oficina + Laranja) */}
-      <aside className="lg:col-span-5 bg-[#1E3A8A] border-b-4 lg:border-b-0 lg:border-r-4 border-[#F97316] p-6 sm:p-10 lg:p-12 flex flex-col justify-between">
+    <div className="min-h-dvh w-full bg-[#071226] text-[#F8FAFC] grid grid-cols-1 lg:grid-cols-12">
+      {/* COLUNA ESQUERDA — IDENTIDADE INDUSTRIAL MECANIFY (Azul Oficina + Laranja) */}
+      <aside className="lg:col-span-5 bg-[#1E3A8A] border-b-4 lg:border-b-0 lg:border-r-4 border-[#38BDF8] p-6 sm:p-10 lg:p-12 flex flex-col justify-between">
         <div>
-          {/* Marca Autotec Pro */}
+          {/* Marca Mecanify */}
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl bg-[#F97316] text-[#0B0F17] flex items-center justify-center shrink-0">
+            <div className="w-16 h-16 rounded-xl bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
               <Wrench className="w-9 h-9 stroke-[2.5]" aria-hidden="true" />
             </div>
             <div>
@@ -270,7 +270,7 @@ export function Login() {
                 translate="no"
                 className="text-2xl sm:text-3xl font-bold tracking-tight text-white block leading-none"
               >
-                Autotec&nbsp;Pro
+                Mecanify
               </span>
               <span className="text-sm sm:text-base text-blue-100 font-medium mt-1 block">
                 Sistema de Pátio &amp; Gestão Automotiva
@@ -290,7 +290,7 @@ export function Login() {
         {/* Blocos Grandes de Benefícios Operacionais */}
         <div className="mt-8 lg:mt-12 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3.5">
           <div className="bg-[#172554] border-2 border-blue-700 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-[#F97316] text-[#0B0F17] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-lg bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
               <Car className="w-6 h-6 stroke-[2.2]" aria-hidden="true" />
             </div>
             <div>
@@ -314,7 +314,7 @@ export function Login() {
           </div>
 
           <div className="bg-[#172554] border-2 border-blue-700 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-emerald-500 text-[#0B0F17] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-lg bg-emerald-500 text-[#071226] flex items-center justify-center shrink-0">
               <ShieldCheck className="w-6 h-6 stroke-[2.2]" aria-hidden="true" />
             </div>
             <div>
@@ -330,13 +330,13 @@ export function Login() {
       {/* COLUNA DIREITA — FORMULÁRIOS DE ACESSO, CADASTRO E RECUPERAÇÃO DE SENHA */}
       <main
         id="conteudo-principal"
-        className="lg:col-span-7 flex items-center justify-center p-4 sm:p-8 lg:p-12 bg-[#0B0F17]"
+        className="lg:col-span-7 flex items-center justify-center p-4 sm:p-8 lg:p-12 bg-[#071226]"
       >
-        <div className="w-full max-w-2xl bg-[#111827] border-2 border-[#334155] rounded-2xl p-6 sm:p-10">
+        <div className="w-full max-w-2xl bg-[#0B1B36] border-2 border-[#264577] rounded-2xl p-6 sm:p-10">
           {/* 1. TELA PÓS-CADASTRO: CONFIRMAÇÃO DE E-MAIL ENVIADA */}
           {confirmationSentTo ? (
             <div className="space-y-6" aria-live="polite">
-              <div className="w-20 h-20 rounded-2xl bg-[#F97316] text-[#0B0F17] flex items-center justify-center">
+              <div className="w-20 h-20 rounded-2xl bg-[#38BDF8] text-[#071226] flex items-center justify-center">
                 <MailCheck className="w-11 h-11 stroke-[2.2]" aria-hidden="true" />
               </div>
 
@@ -347,16 +347,16 @@ export function Login() {
                 <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
                   Enviamos um link de ativação para:
                 </p>
-                <div className="bg-[#1E293B] border-2 border-[#F97316] rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-bold text-white break-all">
+                <div className="bg-[#12274D] border-2 border-[#38BDF8] rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-bold text-white break-all">
                   {confirmationSentTo}
                 </div>
               </div>
 
-              <div className="bg-[#1E293B] border border-[#334155] rounded-xl p-5 space-y-2 text-slate-200 text-base">
+              <div className="bg-[#12274D] border border-[#264577] rounded-xl p-5 space-y-2 text-slate-200 text-base">
                 <p className="font-semibold text-white">Como ativar agora (leva 10 segundos):</p>
                 <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
                   <li>Abra o aplicativo de e-mail no seu celular ou computador.</li>
-                  <li>Procure pelo e-mail do Autotec Pro (olhe também no Spam).</li>
+                  <li>Procure pelo e-mail do Mecanify (olhe também no Spam).</li>
                   <li>Toque em <strong>Confirmar Meu E-mail</strong> para liberar seu acesso.</li>
                 </ol>
               </div>
@@ -380,7 +380,7 @@ export function Login() {
                   type="button"
                   disabled={resending}
                   onClick={() => handleResendEmail(confirmationSentTo)}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#1E293B] hover:bg-[#334155] border-2 border-[#475569] text-white font-bold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#12274D] hover:bg-[#264577] border-2 border-[#3A5C90] text-white font-bold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
                 >
                   {resending ? (
                     <>
@@ -401,7 +401,7 @@ export function Login() {
                     setEmail(confirmationSentTo);
                     switchMode('login');
                   }}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-bold text-base flex items-center justify-center gap-3 cursor-pointer"
+                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-base flex items-center justify-center gap-3 cursor-pointer"
                 >
                   <span>Já confirmei — Entrar</span>
                   <ArrowRight className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
@@ -422,12 +422,12 @@ export function Login() {
                 <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
                   Enviamos um e-mail com o botão para criar sua nova senha em:
                 </p>
-                <div className="bg-[#1E293B] border-2 border-[#2563EB] rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-bold text-white break-all">
+                <div className="bg-[#12274D] border-2 border-[#2563EB] rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-bold text-white break-all">
                   {resetEmailSentTo}
                 </div>
               </div>
 
-              <div className="bg-[#1E293B] border border-[#334155] rounded-xl p-5 space-y-2 text-slate-200 text-base">
+              <div className="bg-[#12274D] border border-[#264577] rounded-xl p-5 space-y-2 text-slate-200 text-base">
                 <p className="font-semibold text-white">Próximo passo:</p>
                 <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
                   <li>Abra seu e-mail e toque no botão <strong>Redefinir Minha Senha</strong>.</li>
@@ -454,7 +454,7 @@ export function Login() {
                   type="button"
                   disabled={resending}
                   onClick={() => handleResendPasswordReset(resetEmailSentTo)}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#1E293B] hover:bg-[#334155] border-2 border-[#475569] text-white font-bold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#12274D] hover:bg-[#264577] border-2 border-[#3A5C90] text-white font-bold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
                 >
                   {resending ? (
                     <>
@@ -472,7 +472,7 @@ export function Login() {
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-bold text-base flex items-center justify-center gap-3 cursor-pointer"
+                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-base flex items-center justify-center gap-3 cursor-pointer"
                 >
                   <ArrowLeft className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
                   <span>Voltar para o Login</span>
@@ -486,7 +486,7 @@ export function Login() {
                 <div
                   role="tablist"
                   aria-label="Escolha entre entrar ou criar nova conta"
-                  className="grid grid-cols-2 gap-3 bg-[#0B0F17] p-2 rounded-xl border-2 border-[#1E293B] mb-8"
+                  className="grid grid-cols-2 gap-3 bg-[#071226] p-2 rounded-xl border-2 border-[#12274D] mb-8"
                 >
                   <button
                     role="tab"
@@ -495,8 +495,8 @@ export function Login() {
                     onClick={() => switchMode('login')}
                     className={`min-h-[58px] rounded-lg px-4 py-3 font-bold text-base sm:text-lg flex items-center justify-center gap-3 cursor-pointer ${
                       mode === 'login'
-                        ? 'bg-[#F97316] text-[#0B0F17]'
-                        : 'bg-transparent text-slate-300 hover:bg-[#1E293B] hover:text-white'
+                        ? 'bg-[#38BDF8] text-[#071226]'
+                        : 'bg-transparent text-slate-300 hover:bg-[#12274D] hover:text-white'
                     }`}
                   >
                     <LogIn className="w-6 h-6 shrink-0" aria-hidden="true" />
@@ -511,7 +511,7 @@ export function Login() {
                     className={`min-h-[58px] rounded-lg px-4 py-3 font-bold text-base sm:text-lg flex items-center justify-center gap-3 cursor-pointer ${
                       mode === 'cadastro'
                         ? 'bg-[#2563EB] text-white'
-                        : 'bg-transparent text-slate-300 hover:bg-[#1E293B] hover:text-white'
+                        : 'bg-transparent text-slate-300 hover:bg-[#12274D] hover:text-white'
                     }`}
                   >
                     <UserPlus className="w-6 h-6 shrink-0" aria-hidden="true" />
@@ -525,9 +525,9 @@ export function Login() {
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className="mb-6 min-h-[48px] px-4 py-2.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border-2 border-[#334155] text-slate-200 font-bold text-base inline-flex items-center gap-2.5 cursor-pointer"
+                  className="mb-6 min-h-[48px] px-4 py-2.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border-2 border-[#264577] text-slate-200 font-bold text-base inline-flex items-center gap-2.5 cursor-pointer"
                 >
-                  <ArrowLeft className="w-5 h-5 text-[#F97316]" aria-hidden="true" />
+                  <ArrowLeft className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
                   <span>Voltar para o Login</span>
                 </button>
               )}
@@ -547,7 +547,7 @@ export function Login() {
                   {mode === 'recuperar' &&
                     'Informe seu e-mail de acesso e enviaremos um link seguro para você criar outra senha.'}
                   {mode === 'nova-senha' &&
-                    'Digite e confirme sua nova senha abaixo para entrar direto no Autotec Pro.'}
+                    'Digite e confirme sua nova senha abaixo para entrar direto no Mecanify.'}
                 </p>
               </div>
 
@@ -568,7 +568,7 @@ export function Login() {
                         type="button"
                         disabled={resending}
                         onClick={() => handleResendEmail(unconfirmedEmail)}
-                        className="w-full min-h-[52px] px-4 py-3 rounded-lg bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-bold text-base flex items-center justify-center gap-2.5 cursor-pointer"
+                        className="w-full min-h-[52px] px-4 py-3 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-base flex items-center justify-center gap-2.5 cursor-pointer"
                       >
                         {resending ? (
                           <>
@@ -618,7 +618,7 @@ export function Login() {
                         value={nomeOficina}
                         onChange={(e) => setNomeOficina(e.target.value)}
                         placeholder="Ex.: Auto Centro Irmãos Silva…"
-                        className="w-full min-h-[58px] px-4 py-3.5 bg-[#0B0F17] border-2 border-[#334155] focus:border-[#F97316] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                        className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
                       />
                     </div>
 
@@ -640,7 +640,7 @@ export function Login() {
                           value={nome}
                           onChange={(e) => setNome(e.target.value)}
                           placeholder="Ex.: Carlos Mecânico…"
-                          className="w-full min-h-[58px] px-4 py-3.5 bg-[#0B0F17] border-2 border-[#334155] focus:border-[#F97316] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                          className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
                         />
                       </div>
 
@@ -660,7 +660,7 @@ export function Login() {
                           value={telefone}
                           onChange={(e) => setTelefone(e.target.value)}
                           placeholder="Ex.: (11) 99999-0000…"
-                          className="w-full min-h-[58px] px-4 py-3.5 bg-[#0B0F17] border-2 border-[#334155] focus:border-[#F97316] rounded-xl text-white placeholder-slate-500 text-lg font-mono tabular-nums"
+                          className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-mono tabular-nums"
                         />
                       </div>
                     </div>
@@ -688,7 +688,7 @@ export function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seu.email@oficina.com.br…"
-                      className="w-full min-h-[58px] px-4 py-3.5 bg-[#0B0F17] border-2 border-[#334155] focus:border-[#F97316] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                      className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
                     />
                   </div>
                 )}
@@ -709,7 +709,7 @@ export function Login() {
                         <button
                           type="button"
                           onClick={() => switchMode('recuperar')}
-                          className="min-h-[44px] px-2 text-sm sm:text-base font-bold text-[#F97316] hover:text-orange-300 underline underline-offset-4 cursor-pointer"
+                          className="min-h-[44px] px-2 text-sm sm:text-base font-bold text-[#38BDF8] hover:text-sky-300 underline underline-offset-4 cursor-pointer"
                         >
                           Esqueci minha senha
                         </button>
@@ -734,13 +734,13 @@ export function Login() {
                             ? 'Digite sua nova senha…'
                             : 'Digite sua senha…'
                         }
-                        className="w-full min-h-[58px] pl-4 pr-16 py-3.5 bg-[#0B0F17] border-2 border-[#334155] focus:border-[#F97316] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                        className="w-full min-h-[58px] pl-4 pr-16 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
                       />
                       <button
                         type="button"
                         onClick={() => setMostrarSenha((v) => !v)}
                         aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                        className="absolute right-2 min-w-[48px] min-h-[48px] rounded-lg text-slate-300 hover:text-white hover:bg-[#1E293B] flex items-center justify-center cursor-pointer"
+                        className="absolute right-2 min-w-[48px] min-h-[48px] rounded-lg text-slate-300 hover:text-white hover:bg-[#12274D] flex items-center justify-center cursor-pointer"
                       >
                         {mostrarSenha ? (
                           <EyeOff className="w-6 h-6" aria-hidden="true" />
@@ -771,7 +771,7 @@ export function Login() {
                       value={confirmarSenha}
                       onChange={(e) => setConfirmarSenha(e.target.value)}
                       placeholder="Digite a mesma senha novamente…"
-                      className="w-full min-h-[58px] px-4 py-3.5 bg-[#0B0F17] border-2 border-[#334155] focus:border-[#F97316] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                      className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
                     />
                   </div>
                 )}
@@ -781,7 +781,7 @@ export function Login() {
                   disabled={submitting}
                   className={`w-full min-h-[64px] px-6 py-4 rounded-xl font-bold text-lg sm:text-xl flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 ${
                     mode === 'login' || mode === 'nova-senha'
-                      ? 'bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17]'
+                      ? 'bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226]'
                       : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white'
                   }`}
                 >
@@ -800,7 +800,7 @@ export function Login() {
                       {mode === 'login' && (
                         <>
                           <LogIn className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
-                          <span>Entrar no Autotec&nbsp;Pro</span>
+                          <span>Entrar no Mecanify</span>
                         </>
                       )}
                       {mode === 'cadastro' && (

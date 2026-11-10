@@ -97,7 +97,7 @@ const STATUS_LIST: {
     badgeBg: 'bg-amber-950',
     badgeBorder: 'border-amber-500',
     badgeText: 'text-amber-300',
-    activeBtn: 'bg-amber-500 text-[#0B0F17] border-amber-400',
+    activeBtn: 'bg-amber-500 text-[#071226] border-amber-400',
     icon: ClipboardList,
   },
   {
@@ -106,10 +106,10 @@ const STATUS_LIST: {
     shortLabel: 'Ag. Peça',
     nextStatus: 'EXECUCAO',
     nextLabel: 'Peça Chegou → Execução',
-    badgeBg: 'bg-orange-950',
-    badgeBorder: 'border-orange-500',
-    badgeText: 'text-orange-300',
-    activeBtn: 'bg-[#F97316] text-[#0B0F17] border-[#F97316]',
+    badgeBg: 'bg-sky-950',
+    badgeBorder: 'border-sky-500',
+    badgeText: 'text-sky-300',
+    activeBtn: 'bg-[#38BDF8] text-[#071226] border-[#38BDF8]',
     icon: Clock,
   },
   {
@@ -133,7 +133,7 @@ const STATUS_LIST: {
     badgeBg: 'bg-emerald-950',
     badgeBorder: 'border-emerald-500',
     badgeText: 'text-emerald-300',
-    activeBtn: 'bg-emerald-500 text-[#0B0F17] border-emerald-400',
+    activeBtn: 'bg-emerald-500 text-[#071226] border-emerald-400',
     icon: PackageCheck,
   },
   {
@@ -143,7 +143,7 @@ const STATUS_LIST: {
     badgeBg: 'bg-green-950',
     badgeBorder: 'border-green-500',
     badgeText: 'text-green-300',
-    activeBtn: 'bg-green-500 text-[#0B0F17] border-green-400',
+    activeBtn: 'bg-green-500 text-[#071226] border-green-400',
     icon: CheckCircle2,
   },
 ];
@@ -978,7 +978,7 @@ export function OrdensServico({
     const nomeCli = d.ordem.clientes?.nome || 'Cliente';
     const placa = d.ordem.veiculos?.placa || '';
     const modelo = d.ordem.veiculos?.modelo || 'Veículo';
-    const nomeOficina = d.empresa?.nome_fantasia || 'Autotec Pro';
+    const nomeOficina = d.empresa?.nome_fantasia || 'Mecanify';
 
     const linhasItens = d.itens.map(
       (i) =>
@@ -1034,7 +1034,7 @@ export function OrdensServico({
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4 bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-4 bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-5">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white">
               Dar Entrada em Veículo (Nova OS)
@@ -1047,9 +1047,9 @@ export function OrdensServico({
           <button
             type="button"
             onClick={() => setView('lista')}
-            className="min-h-[54px] px-5 py-2.5 rounded-xl bg-[#1E293B] hover:bg-[#334155] border-2 border-[#475569] text-white font-bold text-base flex items-center gap-2 cursor-pointer shrink-0"
+            className="min-h-[54px] px-5 py-2.5 rounded-xl bg-[#12274D] hover:bg-[#264577] border-2 border-[#3A5C90] text-white font-bold text-base flex items-center gap-2 cursor-pointer shrink-0"
           >
-            <ArrowLeft className="w-5 h-5 text-[#F97316]" aria-hidden="true" />
+            <ArrowLeft className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
             <span>Voltar ao Pátio</span>
           </button>
         </div>
@@ -1066,12 +1066,12 @@ export function OrdensServico({
 
         <form
           onSubmit={handleCriarNovaOS}
-          className="bg-[#111827] border-2 border-[#334155] rounded-2xl p-5 sm:p-7 space-y-6"
+          className="bg-[#0B1B36] border-2 border-[#264577] rounded-2xl p-5 sm:p-7 space-y-6"
         >
-          <fieldset className="bg-[#0B0F17] border-2 border-[#334155] rounded-2xl p-5 space-y-4">
+          <fieldset className="bg-[#071226] border-2 border-[#264577] rounded-2xl p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <legend className="text-xl font-bold text-white flex items-center gap-2">
-                <User className="w-6 h-6 text-[#F97316]" aria-hidden="true" />
+                <User className="w-6 h-6 text-[#38BDF8]" aria-hidden="true" />
                 <span>1. Escolher Cliente</span>
               </legend>
 
@@ -1081,8 +1081,8 @@ export function OrdensServico({
                   onClick={() => setModoClienteOS('BUSCAR')}
                   className={`min-h-[46px] px-4 py-2 rounded-xl font-bold text-sm cursor-pointer ${
                     modoClienteOS === 'BUSCAR'
-                      ? 'bg-[#F97316] text-[#0B0F17]'
-                      : 'bg-[#1E293B] text-slate-300 hover:bg-[#334155]'
+                      ? 'bg-[#38BDF8] text-[#071226]'
+                      : 'bg-[#12274D] text-slate-300 hover:bg-[#264577]'
                   }`}
                 >
                   Buscar Cliente ({clientes.length})
@@ -1098,7 +1098,7 @@ export function OrdensServico({
                   className={`min-h-[46px] px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5 cursor-pointer ${
                     modoClienteOS === 'NOVO_CLIENTE'
                       ? 'bg-[#2563EB] text-white'
-                      : 'bg-[#1E293B] text-slate-300 hover:bg-[#334155]'
+                      : 'bg-[#12274D] text-slate-300 hover:bg-[#264577]'
                   }`}
                 >
                   <UserPlus className="w-4 h-4" aria-hidden="true" />
@@ -1131,7 +1131,7 @@ export function OrdensServico({
                       autoCapitalize="off"
                       spellCheck={false}
                       placeholder="Comece a digitar nome, telefone, CPF ou placa (ex.: FUK2555)…"
-                      className="w-full min-h-[56px] pl-11 pr-4 py-2.5 bg-[#111827] border-2 border-[#475569] focus:border-[#F97316] rounded-xl text-white text-base font-medium"
+                      className="w-full min-h-[56px] pl-11 pr-4 py-2.5 bg-[#0B1B36] border-2 border-[#3A5C90] focus:border-[#38BDF8] rounded-xl text-white text-base font-medium"
                     />
                   </div>
                 </div>
@@ -1140,7 +1140,7 @@ export function OrdensServico({
                   <div
                     role="listbox"
                     aria-label="Clientes encontrados"
-                    className="bg-[#111827] border-2 border-[#F97316] rounded-xl divide-y divide-[#1E293B] max-h-72 overflow-y-auto"
+                    className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-xl divide-y divide-[#12274D] max-h-72 overflow-y-auto"
                   >
                     {clientesFiltrados.length === 0 ? (
                       <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1181,12 +1181,12 @@ export function OrdensServico({
                             role="option"
                             aria-selected={clienteSelecionadoId === cli.id}
                             onClick={() => handleSelecionarClienteNaLista(cli)}
-                            className="w-full px-4 py-3 text-left hover:bg-[#1E293B] flex items-center justify-between gap-4 cursor-pointer"
+                            className="w-full px-4 py-3 text-left hover:bg-[#12274D] flex items-center justify-between gap-4 cursor-pointer"
                           >
                             <div className="min-w-0 flex-1">
                               <div className="text-base font-bold text-white truncate">
                                 {cli.nome}{' '}
-                                <span className="text-[#F97316] font-mono">
+                                <span className="text-[#38BDF8] font-mono">
                                   - {cli.telefone || 'Sem telefone'}
                                 </span>
                                 {cli.cpf_cnpj && (
@@ -1199,7 +1199,7 @@ export function OrdensServico({
                                 Veículos: {resumoCarros}
                               </div>
                             </div>
-                            <span className="px-2.5 py-1 rounded bg-[#0B0F17] border border-[#334155] text-xs font-bold text-[#F97316] shrink-0">
+                            <span className="px-2.5 py-1 rounded bg-[#071226] border border-[#264577] text-xs font-bold text-[#38BDF8] shrink-0">
                               Escolher
                             </span>
                           </button>
@@ -1210,14 +1210,14 @@ export function OrdensServico({
                 )}
 
                 {clienteSelecionado && (
-                  <div className="bg-[#1E3A8A]/40 border-2 border-[#F97316] rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="bg-[#1E3A8A]/40 border-2 border-[#38BDF8] rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-bold text-amber-300">
                         Cliente Selecionado
                       </div>
                       <div className="text-lg font-bold text-white">
                         {clienteSelecionado.nome}{' '}
-                        <span className="text-[#F97316] font-mono">
+                        <span className="text-[#38BDF8] font-mono">
                           - {clienteSelecionado.telefone || 'Sem telefone'}
                         </span>
                       </div>
@@ -1229,7 +1229,7 @@ export function OrdensServico({
                         setClienteSelecionadoId('');
                         setVeiculoSelecionadoId('');
                       }}
-                      className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-[#111827] hover:bg-[#1E293B] border border-[#475569] text-slate-200 font-bold text-xs cursor-pointer"
+                      className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-[#0B1B36] hover:bg-[#12274D] border border-[#3A5C90] text-slate-200 font-bold text-xs cursor-pointer"
                     >
                       Trocar Cliente
                     </button>
@@ -1253,7 +1253,7 @@ export function OrdensServico({
                     value={novoClienteNome}
                     onChange={(e) => setNovoClienteNome(e.target.value)}
                     placeholder="Ex.: Marcos Oliveira…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-[#111827] border-2 border-[#334155] rounded-xl text-white text-base"
+                    className="w-full min-h-[52px] px-4 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white text-base"
                   />
                 </div>
 
@@ -1273,7 +1273,7 @@ export function OrdensServico({
                     value={novoClienteTelefone}
                     onChange={(e) => setNovoClienteTelefone(e.target.value)}
                     placeholder="(11) 99999-0000…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-[#111827] border-2 border-[#334155] rounded-xl text-white font-mono text-base tabular-nums"
+                    className="w-full min-h-[52px] px-4 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white font-mono text-base tabular-nums"
                   />
                 </div>
 
@@ -1293,7 +1293,7 @@ export function OrdensServico({
                     value={novoClienteCpf}
                     onChange={(e) => setNovoClienteCpf(e.target.value)}
                     placeholder="000.000.000-00…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-[#111827] border-2 border-[#334155] rounded-xl text-white font-mono text-base tabular-nums"
+                    className="w-full min-h-[52px] px-4 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white font-mono text-base tabular-nums"
                   />
                 </div>
               </div>
@@ -1301,10 +1301,10 @@ export function OrdensServico({
           </fieldset>
 
           {(clienteSelecionado || modoClienteOS === 'NOVO_CLIENTE') && (
-            <fieldset className="bg-[#0B0F17] border-2 border-[#334155] rounded-2xl p-5 space-y-4">
+            <fieldset className="bg-[#071226] border-2 border-[#264577] rounded-2xl p-5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <legend className="text-xl font-bold text-white flex items-center gap-2">
-                  <Car className="w-6 h-6 text-[#F97316]" aria-hidden="true" />
+                  <Car className="w-6 h-6 text-[#38BDF8]" aria-hidden="true" />
                   <span>
                     2. Veículo de{' '}
                     {modoClienteOS === 'NOVO_CLIENTE'
@@ -1320,8 +1320,8 @@ export function OrdensServico({
                       onClick={() => setModoVeiculoCliente('DO_CLIENTE')}
                       className={`min-h-[44px] px-3.5 py-1.5 rounded-xl font-bold text-xs cursor-pointer ${
                         modoVeiculoCliente === 'DO_CLIENTE'
-                          ? 'bg-[#F97316] text-[#0B0F17]'
-                          : 'bg-[#1E293B] text-slate-300 hover:bg-[#334155]'
+                          ? 'bg-[#38BDF8] text-[#071226]'
+                          : 'bg-[#12274D] text-slate-300 hover:bg-[#264577]'
                       }`}
                     >
                       Veículos do Cliente ({carrosDoClienteSelecionado.length})
@@ -1335,7 +1335,7 @@ export function OrdensServico({
                       className={`min-h-[44px] px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer ${
                         modoVeiculoCliente === 'NOVO_VEICULO'
                           ? 'bg-[#2563EB] text-white'
-                          : 'bg-[#1E293B] text-slate-300 hover:bg-[#334155]'
+                          : 'bg-[#12274D] text-slate-300 hover:bg-[#264577]'
                       }`}
                     >
                       <Sparkles className="w-4 h-4" aria-hidden="true" />
@@ -1347,7 +1347,7 @@ export function OrdensServico({
 
               {modoClienteOS === 'BUSCAR' && modoVeiculoCliente === 'DO_CLIENTE' ? (
                 carrosDoClienteSelecionado.length === 0 ? (
-                  <div className="p-4 rounded-xl bg-[#111827] border border-[#334155] flex items-center justify-between gap-4">
+                  <div className="p-4 rounded-xl bg-[#0B1B36] border border-[#264577] flex items-center justify-between gap-4">
                     <span className="text-sm text-slate-300">
                       Este cliente ainda não possui veículos cadastrados.
                     </span>
@@ -1373,14 +1373,14 @@ export function OrdensServico({
                           }}
                           className={`p-3.5 rounded-xl border-2 text-left flex items-center justify-between gap-4 cursor-pointer ${
                             selecionado
-                              ? 'bg-[#1E3A8A] border-[#F97316] text-white'
-                              : 'bg-[#111827] border-[#334155] hover:border-slate-400 text-slate-200'
+                              ? 'bg-[#1E3A8A] border-[#38BDF8] text-white'
+                              : 'bg-[#0B1B36] border-[#264577] hover:border-slate-400 text-slate-200'
                           }`}
                         >
                           <div className="flex flex-wrap items-center gap-3 min-w-0">
                             <span
                               translate="no"
-                              className="px-3 py-1 rounded-lg bg-[#0B0F17] border border-[#F97316] font-mono text-lg font-bold text-[#F97316] uppercase tracking-wider"
+                              className="px-3 py-1 rounded-lg bg-[#071226] border border-[#38BDF8] font-mono text-lg font-bold text-[#38BDF8] uppercase tracking-wider"
                             >
                               {v.placa}
                             </span>
@@ -1401,7 +1401,7 @@ export function OrdensServico({
                           <div
                             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
                               selecionado
-                                ? 'bg-[#F97316] border-[#F97316] text-[#0B0F17]'
+                                ? 'bg-[#38BDF8] border-[#38BDF8] text-[#071226]'
                                 : 'border-slate-500'
                             }`}
                           >
@@ -1433,7 +1433,7 @@ export function OrdensServico({
                         value={novaPlaca}
                         onChange={(e) => setNovaPlaca(e.target.value.toUpperCase())}
                         placeholder="ABC1D23…"
-                        className="w-full min-h-[54px] px-4 py-2.5 bg-[#111827] border-2 border-[#F97316] rounded-xl font-mono text-xl font-bold text-white uppercase tracking-widest"
+                        className="w-full min-h-[54px] px-4 py-2.5 bg-[#0B1B36] border-2 border-[#38BDF8] rounded-xl font-mono text-xl font-bold text-white uppercase tracking-widest"
                       />
                     </div>
 
@@ -1455,7 +1455,7 @@ export function OrdensServico({
                   </div>
 
                   {avisoPlaca && (
-                    <div className="p-3 rounded-lg bg-[#1E293B] border border-[#475569] text-slate-200 text-xs font-medium">
+                    <div className="p-3 rounded-lg bg-[#12274D] border border-[#3A5C90] text-slate-200 text-xs font-medium">
                       {avisoPlaca}
                     </div>
                   )}
@@ -1476,7 +1476,7 @@ export function OrdensServico({
                         value={novoModelo}
                         onChange={(e) => setNovoModelo(e.target.value)}
                         placeholder="Ex.: Onix 1.0 Turbo…"
-                        className="w-full min-h-[48px] px-3.5 py-2 bg-[#111827] border-2 border-[#334155] rounded-xl text-white text-sm"
+                        className="w-full min-h-[48px] px-3.5 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white text-sm"
                       />
                     </div>
 
@@ -1494,7 +1494,7 @@ export function OrdensServico({
                         value={novaMarca}
                         onChange={(e) => setNovaMarca(e.target.value)}
                         placeholder="Chevrolet…"
-                        className="w-full min-h-[48px] px-3.5 py-2 bg-[#111827] border-2 border-[#334155] rounded-xl text-white text-sm"
+                        className="w-full min-h-[48px] px-3.5 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white text-sm"
                       />
                     </div>
 
@@ -1513,7 +1513,7 @@ export function OrdensServico({
                           value={novaCor}
                           onChange={(e) => setNovaCor(e.target.value)}
                           placeholder="Prata"
-                          className="w-full min-h-[48px] px-3 py-2 bg-[#111827] border-2 border-[#334155] rounded-xl text-white text-sm"
+                          className="w-full min-h-[48px] px-3 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white text-sm"
                         />
                       </div>
 
@@ -1533,7 +1533,7 @@ export function OrdensServico({
                           value={novoAno}
                           onChange={(e) => setNovoAno(e.target.value.replace(/\D/g, ''))}
                           placeholder="2022"
-                          className="w-full min-h-[48px] px-3 py-2 bg-[#111827] border-2 border-[#334155] rounded-xl text-white font-mono text-sm tabular-nums"
+                          className="w-full min-h-[48px] px-3 py-2 bg-[#0B1B36] border-2 border-[#264577] rounded-xl text-white font-mono text-sm tabular-nums"
                         />
                       </div>
                     </div>
@@ -1560,7 +1560,7 @@ export function OrdensServico({
                 value={novaOsKm}
                 onChange={(e) => setNovaOsKm(e.target.value.replace(/\D/g, ''))}
                 placeholder="Ex.: 84500…"
-                className="w-full min-h-[54px] px-4 py-2.5 bg-[#0B0F17] border-2 border-[#334155] focus:border-[#F97316] rounded-xl text-white font-mono text-lg tabular-nums"
+                className="w-full min-h-[54px] px-4 py-2.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white font-mono text-lg tabular-nums"
               />
             </div>
 
@@ -1578,7 +1578,7 @@ export function OrdensServico({
                 value={novaOsProblema}
                 onChange={(e) => setNovaOsProblema(e.target.value)}
                 placeholder="Ex.: Barulho na suspensão dianteira e revisão de freios…"
-                className="w-full min-h-[54px] px-4 py-2.5 bg-[#0B0F17] border-2 border-[#334155] focus:border-[#F97316] rounded-xl text-white text-base"
+                className="w-full min-h-[54px] px-4 py-2.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white text-base"
               />
             </div>
           </div>
@@ -1586,7 +1586,7 @@ export function OrdensServico({
           <button
             type="submit"
             disabled={criandoOS}
-            className="w-full min-h-[60px] px-6 py-3.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-bold text-lg flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+            className="w-full min-h-[60px] px-6 py-3.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-lg flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
           >
             <PlusCircle className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
             <span>
@@ -1606,7 +1606,7 @@ export function OrdensServico({
   if (view === 'bancada') {
     if (loadingDossie || !dossie) {
       return (
-        <div className="h-80 bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-8 flex items-center justify-center gap-4 text-lg font-bold text-white">
+        <div className="h-80 bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-8 flex items-center justify-center gap-4 text-lg font-bold text-white">
           <progress aria-label="Carregando bancada" className="loading-spinner" />
           <span>Carregando Ficha Completa da OS…</span>
         </div>
@@ -1664,7 +1664,7 @@ export function OrdensServico({
           <div className="border-b-2 border-black pb-2 flex items-start justify-between gap-4">
             <div>
               <div className="text-base font-black uppercase text-black">
-                {dossie.empresa?.nome_fantasia || 'Autotec Pro Oficina'}
+                {dossie.empresa?.nome_fantasia || 'Mecanify Oficina'}
               </div>
               <div className="text-[10px] text-black">
                 {dossie.empresa?.cnpj ? `CNPJ: ${dossie.empresa.cnpj} • ` : ''}
@@ -1895,7 +1895,7 @@ export function OrdensServico({
         {/* ==================================================================== */}
         <div className="print:hidden space-y-3 sm:space-y-4">
           {/* Topo da Bancada Compacto + Excluir OS como Ícone */}
-          <div className="bg-[#111827] border-2 border-[#334155] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-3">
+          <div className="bg-[#0B1B36] border-2 border-[#264577] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <button
@@ -1905,15 +1905,15 @@ export function OrdensServico({
                     setSelectedOsId(null);
                   }}
                   aria-label="Voltar ao pátio"
-                  className="min-h-[38px] sm:min-h-[44px] px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-[#475569] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shrink-0"
+                  className="min-h-[38px] sm:min-h-[44px] px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#3A5C90] text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
-                  <ArrowLeft className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                  <ArrowLeft className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                   <span className="hidden sm:inline">Pátio</span>
                 </button>
 
                 <span
                   translate="no"
-                  className="px-2.5 py-1 rounded-lg bg-[#1E293B] border border-[#F97316] font-mono text-sm sm:text-lg font-extrabold text-white uppercase tracking-wider shrink-0"
+                  className="px-2.5 py-1 rounded-lg bg-[#12274D] border border-[#38BDF8] font-mono text-sm sm:text-lg font-extrabold text-white uppercase tracking-wider shrink-0"
                 >
                   {os.veiculos?.placa || 'SEM-PLACA'}
                 </span>
@@ -1980,13 +1980,13 @@ export function OrdensServico({
                   onChange={(e) => setMotivoExclusao(e.target.value)}
                   placeholder="Motivo obrigatório do cancelamento da OS…"
                   aria-label="Motivo obrigatório do cancelamento"
-                  className="flex-1 min-h-[38px] px-3 py-1.5 bg-[#0B0F17] border border-red-500 rounded-lg text-white text-xs"
+                  className="flex-1 min-h-[38px] px-3 py-1.5 bg-[#071226] border border-red-500 rounded-lg text-white text-xs"
                 />
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => setMostrarModalExclusao(false)}
-                    className="min-h-[38px] px-3 rounded-lg bg-[#1E293B] text-white font-bold text-xs cursor-pointer"
+                    className="min-h-[38px] px-3 rounded-lg bg-[#12274D] text-white font-bold text-xs cursor-pointer"
                   >
                     Voltar
                   </button>
@@ -2020,7 +2020,7 @@ export function OrdensServico({
           {/* Seletor de Etapa da OS Compacto */}
           <section
             aria-label="Etapa atual da Ordem de Serviço"
-            className="bg-[#111827] border-2 border-[#1E293B] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-2"
+            className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-2"
           >
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-xs sm:text-sm font-bold text-white">
@@ -2044,7 +2044,7 @@ export function OrdensServico({
                     className={`min-h-[38px] sm:min-h-[46px] px-2 py-1.5 rounded-lg sm:rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
                       ativo
                         ? st.activeBtn
-                        : 'bg-[#0B0F17] border-[#334155] text-slate-300 hover:bg-[#1E293B]'
+                        : 'bg-[#071226] border-[#264577] text-slate-300 hover:bg-[#12274D]'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -2055,7 +2055,7 @@ export function OrdensServico({
             </div>
 
             {(statusAtual === 'FINALIZADO' || statusAtual === 'PAGO') && (
-              <div className="pt-2.5 border-t border-[#1E293B] flex flex-wrap items-center gap-2">
+              <div className="pt-2.5 border-t border-[#12274D] flex flex-wrap items-center gap-2">
                 <span className="text-sm font-bold text-slate-200">
                   Forma de Pagamento:
                 </span>
@@ -2071,8 +2071,8 @@ export function OrdensServico({
                     }}
                     className={`min-h-[40px] px-3 py-1.5 rounded-lg font-bold text-xs border cursor-pointer ${
                       editFormaPagamento === fp
-                        ? 'bg-[#F97316] text-[#0B0F17] border-[#F97316]'
-                        : 'bg-[#0B0F17] text-slate-300 border-[#334155]'
+                        ? 'bg-[#38BDF8] text-[#071226] border-[#38BDF8]'
+                        : 'bg-[#071226] text-slate-300 border-[#264577]'
                     }`}
                   >
                     {fp}
@@ -2085,9 +2085,9 @@ export function OrdensServico({
           {/* GRID PRINCIPAL DA BANCADA */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
             {/* COLUNA ESQUERDA (8 COL): LANÇAMENTO + TABELA COMPACTA COM SCROLL */}
-            <section className="xl:col-span-8 bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 space-y-4">
+            <section className="xl:col-span-8 bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-4">
               {/* Abas do Tipo de Item a Lançar */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[#0B0F17] p-1.5 rounded-xl border border-[#1E293B]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[#071226] p-1.5 rounded-xl border border-[#12274D]">
                 {[
                   { id: 'PECA_ESTOQUE', label: 'Peça do Estoque' },
                   { id: 'PECA_AVULSA', label: 'Peça Avulsa' },
@@ -2107,8 +2107,8 @@ export function OrdensServico({
                     }}
                     className={`min-h-[44px] px-3 py-1.5 rounded-lg font-bold text-xs sm:text-sm cursor-pointer ${
                       modoItem === t.id
-                        ? 'bg-[#F97316] text-[#0B0F17]'
-                        : 'text-slate-300 hover:bg-[#1E293B]'
+                        ? 'bg-[#38BDF8] text-[#071226]'
+                        : 'text-slate-300 hover:bg-[#12274D]'
                     }`}
                   >
                     {t.label}
@@ -2119,7 +2119,7 @@ export function OrdensServico({
               {/* Formulário de Adição com Busca Reativa de Estoque + Custo p/ Peça/Terceirizado */}
               <form
                 onSubmit={handleIncluirItemNaFila}
-                className="bg-[#0B0F17] border-2 border-[#334155] rounded-xl p-4 space-y-3"
+                className="bg-[#071226] border-2 border-[#264577] rounded-xl p-4 space-y-3"
               >
                 {modoItem === 'PECA_ESTOQUE' && (
                   <div className="space-y-2">
@@ -2144,7 +2144,7 @@ export function OrdensServico({
                         value={buscaEstoqueTexto}
                         onChange={(e) => setBuscaEstoqueTexto(e.target.value)}
                         placeholder="Comece a digitar o nome da peça ou código SKU…"
-                        className="w-full min-h-[46px] pl-10 pr-4 py-2 bg-[#111827] border border-[#475569] focus:border-[#F97316] rounded-xl text-white text-sm"
+                        className="w-full min-h-[46px] pl-10 pr-4 py-2 bg-[#0B1B36] border border-[#3A5C90] focus:border-[#38BDF8] rounded-xl text-white text-sm"
                       />
                     </div>
 
@@ -2153,7 +2153,7 @@ export function OrdensServico({
                       <div
                         role="listbox"
                         aria-label="Peças encontradas no estoque"
-                        className="bg-[#111827] border-2 border-[#F97316] rounded-xl divide-y divide-[#1E293B] max-h-56 overflow-y-auto"
+                        className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-xl divide-y divide-[#12274D] max-h-56 overflow-y-auto"
                       >
                         {pecasEstoqueFiltradas.length === 0 ? (
                           <div className="p-3 text-xs text-slate-300">
@@ -2171,13 +2171,13 @@ export function OrdensServico({
                                 role="option"
                                 aria-selected={itemEstoqueId === p.id}
                                 onClick={() => handleSelecionarPecaEstoqueReativa(p)}
-                                className="w-full px-3.5 py-2.5 text-left hover:bg-[#1E293B] flex items-center justify-between gap-3 cursor-pointer"
+                                className="w-full px-3.5 py-2.5 text-left hover:bg-[#12274D] flex items-center justify-between gap-3 cursor-pointer"
                               >
                                 <div className="min-w-0">
                                   <div className="text-sm font-bold text-white truncate">
                                     {p.nome}
                                     {sku && (
-                                      <span className="ml-2 px-1.5 py-0.5 rounded bg-[#0B0F17] text-[#F97316] font-mono text-[11px]">
+                                      <span className="ml-2 px-1.5 py-0.5 rounded bg-[#071226] text-[#38BDF8] font-mono text-[11px]">
                                         SKU: {sku}
                                       </span>
                                     )}
@@ -2188,7 +2188,7 @@ export function OrdensServico({
                                     <strong className="text-white">{formatBRL(p.venda)}</strong>
                                   </div>
                                 </div>
-                                <span className="px-2.5 py-1 rounded bg-[#F97316] text-[#0B0F17] font-bold text-xs shrink-0">
+                                <span className="px-2.5 py-1 rounded bg-[#38BDF8] text-[#071226] font-bold text-xs shrink-0">
                                   Usar
                                 </span>
                               </button>
@@ -2199,7 +2199,7 @@ export function OrdensServico({
                     )}
 
                     {pecaEstoqueSelecionada && (
-                      <div className="px-3 py-1.5 rounded-lg bg-[#1E3A8A]/40 border border-[#F97316] flex items-center justify-between text-xs text-amber-200">
+                      <div className="px-3 py-1.5 rounded-lg bg-[#1E3A8A]/40 border border-[#38BDF8] flex items-center justify-between text-xs text-amber-200">
                         <span>
                           Selecionado: <strong>{pecaEstoqueSelecionada.nome}</strong> (Saldo:{' '}
                           {pecaEstoqueSelecionada.quantidade} un.)
@@ -2243,7 +2243,7 @@ export function OrdensServico({
                           ? 'Ex.: Troca de kit embreagem…'
                           : 'Ex.: Jogo de pastilhas dianteiras…'
                       }
-                      className="w-full min-h-[40px] px-3 py-1.5 bg-[#111827] border border-[#334155] rounded-lg text-white text-sm"
+                      className="w-full min-h-[40px] px-3 py-1.5 bg-[#0B1B36] border border-[#264577] rounded-lg text-white text-sm"
                     />
                   </div>
 
@@ -2262,7 +2262,7 @@ export function OrdensServico({
                       inputMode="numeric"
                       value={itemQtd}
                       onChange={(e) => setItemQtd(e.target.value)}
-                      className="w-full min-h-[40px] px-2 py-1.5 bg-[#111827] border border-[#334155] rounded-lg text-white font-mono text-sm text-center tabular-nums"
+                      className="w-full min-h-[40px] px-2 py-1.5 bg-[#0B1B36] border border-[#264577] rounded-lg text-white font-mono text-sm text-center tabular-nums"
                     />
                   </div>
 
@@ -2283,7 +2283,7 @@ export function OrdensServico({
                         value={itemCusto}
                         onChange={(e) => setItemCusto(e.target.value)}
                         placeholder="0,00"
-                        className="w-full min-h-[40px] px-2 py-1.5 bg-[#111827] border border-[#334155] rounded-lg text-slate-200 font-mono text-sm tabular-nums"
+                        className="w-full min-h-[40px] px-2 py-1.5 bg-[#0B1B36] border border-[#264577] rounded-lg text-slate-200 font-mono text-sm tabular-nums"
                       />
                     </div>
                   )}
@@ -2311,26 +2311,26 @@ export function OrdensServico({
                       value={itemVenda}
                       onChange={(e) => setItemVenda(e.target.value)}
                       placeholder="0,00"
-                      className="w-full min-h-[40px] px-2.5 py-1.5 bg-[#111827] border border-[#334155] rounded-lg text-white font-mono text-sm tabular-nums"
+                      className="w-full min-h-[40px] px-2.5 py-1.5 bg-[#0B1B36] border border-[#264577] rounded-lg text-white font-mono text-sm tabular-nums"
                     />
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full min-h-[42px] px-4 py-1.5 rounded-xl bg-[#1E293B] hover:bg-[#334155] border border-[#F97316] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full min-h-[42px] px-4 py-1.5 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#38BDF8] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Plus className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                  <Plus className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                   <span>Incluir na Fila de Lançamento</span>
                 </button>
               </form>
 
               {/* FILA DE ITENS PRONTOS PARA LANÇAR DE UMA SÓ VEZ */}
               {itensPendentes.length > 0 && (
-                <div className="bg-amber-950/40 border-2 border-[#F97316] rounded-xl p-3.5 space-y-3">
+                <div className="bg-amber-950/40 border-2 border-[#38BDF8] rounded-xl p-3.5 space-y-3">
                   <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-amber-300">
                     <span className="flex items-center gap-1.5">
-                      <Layers className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                      <Layers className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                       Fila para Lançar ({itensPendentes.length})
                     </span>
                     <span className="font-mono text-white tabular-nums">
@@ -2338,7 +2338,7 @@ export function OrdensServico({
                     </span>
                   </div>
 
-                  <div className="divide-y divide-[#1E293B] max-h-44 overflow-y-auto bg-[#0B0F17] rounded-lg border border-[#334155]">
+                  <div className="divide-y divide-[#12274D] max-h-44 overflow-y-auto bg-[#071226] rounded-lg border border-[#264577]">
                     {itensPendentes.map((item) => (
                       <div
                         key={item.tempId}
@@ -2387,7 +2387,7 @@ export function OrdensServico({
                     type="button"
                     disabled={lancandoLote}
                     onClick={handleLancarTodosItensNaOS}
-                    className="w-full min-h-[50px] px-4 py-2.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-bold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                    className="w-full min-h-[50px] px-4 py-2.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                   >
                     <CheckCircle2 className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
                     <span>
@@ -2423,7 +2423,7 @@ export function OrdensServico({
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
                           abaItensLancados === tab.id
                             ? 'bg-[#2563EB] text-white'
-                            : 'bg-[#0B0F17] text-slate-300 border border-[#334155]'
+                            : 'bg-[#071226] text-slate-300 border border-[#264577]'
                         }`}
                       >
                         {tab.label}
@@ -2437,17 +2437,17 @@ export function OrdensServico({
                       value={buscaItemLancado}
                       onChange={(e) => setBuscaItemLancado(e.target.value)}
                       placeholder="Filtrar item lançado…"
-                      className="min-h-[34px] px-3 py-1 rounded-lg bg-[#0B0F17] border border-[#334155] text-white text-xs"
+                      className="min-h-[34px] px-3 py-1 rounded-lg bg-[#071226] border border-[#264577] text-white text-xs"
                     />
                   )}
                 </div>
 
                 {itensLancadosFiltrados.length === 0 ? (
-                  <div className="bg-[#0B0F17] border border-[#1E293B] rounded-xl p-5 text-center text-slate-400 text-sm">
+                  <div className="bg-[#071226] border border-[#12274D] rounded-xl p-5 text-center text-slate-400 text-sm">
                     Nenhum item lançado nesta categoria.
                   </div>
                 ) : (
-                  <div className="bg-[#0B0F17] border-2 border-[#334155] rounded-xl divide-y divide-[#1E293B] max-h-[460px] overflow-y-auto">
+                  <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D] max-h-[460px] overflow-y-auto">
                     {itensLancadosFiltrados.map((item) => {
                       const emEdicao = editandoItemId === item.id;
                       const lucroItem =
@@ -2458,7 +2458,7 @@ export function OrdensServico({
 
                       if (emEdicao) {
                         return (
-                          <div key={item.id} className="p-3 bg-[#1E293B]/60 space-y-2">
+                          <div key={item.id} className="p-3 bg-[#12274D]/60 space-y-2">
                             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
                               <div className="sm:col-span-4">
                                 <label className="block text-[10px] font-bold text-slate-300">
@@ -2468,7 +2468,7 @@ export function OrdensServico({
                                   type="text"
                                   value={editItemNome}
                                   onChange={(e) => setEditItemNome(e.target.value)}
-                                  className="w-full px-2.5 py-1.5 rounded bg-[#0B0F17] border border-[#475569] text-white text-xs"
+                                  className="w-full px-2.5 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white text-xs"
                                 />
                               </div>
 
@@ -2481,7 +2481,7 @@ export function OrdensServico({
                                   onChange={(e) =>
                                     setEditItemTipo(e.target.value as TipoItemOS)
                                   }
-                                  className="w-full px-2 py-1.5 rounded bg-[#0B0F17] border border-[#475569] text-white text-xs"
+                                  className="w-full px-2 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white text-xs"
                                 >
                                   <option value="PECA">Peça</option>
                                   <option value="MAO_OBRA">Mão de Obra</option>
@@ -2498,7 +2498,7 @@ export function OrdensServico({
                                   min={1}
                                   value={editItemQtd}
                                   onChange={(e) => setEditItemQtd(e.target.value)}
-                                  className="w-full px-1.5 py-1.5 rounded bg-[#0B0F17] border border-[#475569] text-white font-mono text-xs text-center"
+                                  className="w-full px-1.5 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white font-mono text-xs text-center"
                                 />
                               </div>
 
@@ -2512,7 +2512,7 @@ export function OrdensServico({
                                     step="0.01"
                                     value={editItemCusto}
                                     onChange={(e) => setEditItemCusto(e.target.value)}
-                                    className="w-full px-2 py-1.5 rounded bg-[#0B0F17] border border-[#475569] text-white font-mono text-xs"
+                                    className="w-full px-2 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white font-mono text-xs"
                                   />
                                 </div>
                               )}
@@ -2526,7 +2526,7 @@ export function OrdensServico({
                                   step="0.01"
                                   value={editItemVenda}
                                   onChange={(e) => setEditItemVenda(e.target.value)}
-                                  className="w-full px-2 py-1.5 rounded bg-[#0B0F17] border border-[#475569] text-white font-mono text-xs"
+                                  className="w-full px-2 py-1.5 rounded bg-[#071226] border border-[#3A5C90] text-white font-mono text-xs"
                                 />
                               </div>
 
@@ -2557,7 +2557,7 @@ export function OrdensServico({
                       return (
                         <div
                           key={item.id}
-                          className="px-2.5 sm:px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 hover:bg-[#111827]/70 text-xs"
+                          className="px-2.5 sm:px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 hover:bg-[#0B1B36]/70 text-xs"
                         >
                           <div className="min-w-0 sm:flex-1 flex items-center gap-2">
                             <span
@@ -2597,7 +2597,7 @@ export function OrdensServico({
                             </div>
 
                             <div className="flex items-center gap-1.5 sm:gap-2">
-                              <div className="flex items-center gap-1 bg-[#111827] border border-[#334155] rounded-lg px-1 py-0.5">
+                              <div className="flex items-center gap-1 bg-[#0B1B36] border border-[#264577] rounded-lg px-1 py-0.5">
                                 <button
                                   type="button"
                                   disabled={item.quantidade <= 1}
@@ -2605,7 +2605,7 @@ export function OrdensServico({
                                     handleAlterarQtdItem(item.id, item.quantidade - 1)
                                   }
                                   aria-label={`Diminuir quantidade de ${item.nome_item}`}
-                                  className="w-6 h-6 rounded bg-[#1E293B] text-white flex items-center justify-center disabled:opacity-40 cursor-pointer"
+                                  className="w-6 h-6 rounded bg-[#12274D] text-white flex items-center justify-center disabled:opacity-40 cursor-pointer"
                                 >
                                   <Minus className="w-3.5 h-3.5" />
                                 </button>
@@ -2618,7 +2618,7 @@ export function OrdensServico({
                                     handleAlterarQtdItem(item.id, item.quantidade + 1)
                                   }
                                   aria-label={`Aumentar quantidade de ${item.nome_item}`}
-                                  className="w-6 h-6 rounded bg-[#1E293B] text-white flex items-center justify-center cursor-pointer"
+                                  className="w-6 h-6 rounded bg-[#12274D] text-white flex items-center justify-center cursor-pointer"
                                 >
                                   <Plus className="w-3.5 h-3.5" />
                                 </button>
@@ -2632,7 +2632,7 @@ export function OrdensServico({
                                 type="button"
                                 aria-label={`Editar ${item.nome_item}`}
                                 onClick={() => iniciarEdicaoItem(item)}
-                                className="p-1.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-amber-300 cursor-pointer"
+                                className="p-1.5 rounded-lg bg-[#12274D] hover:bg-[#264577] text-amber-300 cursor-pointer"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
@@ -2657,12 +2657,12 @@ export function OrdensServico({
 
             {/* COLUNA DIREITA (4 COL): RESUMO FINANCEIRO COMPACTO + FICHA TÉCNICA */}
             <div className="xl:col-span-4 space-y-3.5 sm:space-y-4">
-              <section className="bg-[#1E3A8A] border-2 border-[#F97316] rounded-xl sm:rounded-2xl p-3.5 sm:p-4 space-y-2.5">
+              <section className="bg-[#1E3A8A] border-2 border-[#38BDF8] rounded-xl sm:rounded-2xl p-3.5 sm:p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs sm:text-sm font-bold text-blue-100">
                     Resumo Financeiro da OS
                   </span>
-                  <DollarSign className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                  <DollarSign className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs font-mono tabular-nums">
@@ -2704,15 +2704,15 @@ export function OrdensServico({
                   )}
                 </div>
 
-                <div className="bg-[#0B0F17] border-2 border-[#F97316] rounded-xl p-2.5 sm:p-3 flex items-center justify-between">
+                <div className="bg-[#071226] border-2 border-[#38BDF8] rounded-xl p-2.5 sm:p-3 flex items-center justify-between">
                   <span className="text-sm font-bold text-white">TOTAL GERAL</span>
-                  <span className="text-lg sm:text-2xl font-extrabold font-mono text-[#F97316] tabular-nums">
+                  <span className="text-lg sm:text-2xl font-extrabold font-mono text-[#38BDF8] tabular-nums">
                     {formatBRL(os.total_geral)}
                   </span>
                 </div>
               </section>
 
-              <section className="bg-[#111827] border-2 border-[#1E293B] rounded-xl sm:rounded-2xl p-3.5 sm:p-4 space-y-2.5">
+              <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3.5 sm:p-4 space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="text-sm font-bold text-white">
                     Ficha Técnica &amp; Diagnóstico
@@ -2745,7 +2745,7 @@ export function OrdensServico({
                       value={editKm}
                       onChange={(e) => setEditKm(e.target.value.replace(/\D/g, ''))}
                       onBlur={() => salvarDadosTecnicosSilencioso()}
-                      className="w-full min-h-[38px] px-2.5 py-1.5 bg-[#0B0F17] border border-[#334155] rounded-lg text-white font-mono text-xs sm:text-sm tabular-nums"
+                      className="w-full min-h-[38px] px-2.5 py-1.5 bg-[#071226] border border-[#264577] rounded-lg text-white font-mono text-xs sm:text-sm tabular-nums"
                     />
                   </div>
 
@@ -2765,7 +2765,7 @@ export function OrdensServico({
                         setEditMecanicoId(novoMec);
                         salvarDadosTecnicosSilencioso({ mecanicoId: novoMec });
                       }}
-                      className="w-full min-h-[38px] px-2 py-1.5 bg-[#0B0F17] border border-[#334155] rounded-lg text-white text-xs"
+                      className="w-full min-h-[38px] px-2 py-1.5 bg-[#071226] border border-[#264577] rounded-lg text-white text-xs"
                     >
                       <option value="">Selecione…</option>
                       {mecanicos.map((m) => (
@@ -2791,7 +2791,7 @@ export function OrdensServico({
                     value={editProblema}
                     onChange={(e) => setEditProblema(e.target.value)}
                     onBlur={() => salvarDadosTecnicosSilencioso()}
-                    className="w-full p-2.5 bg-[#0B0F17] border border-[#334155] rounded-lg text-white text-xs sm:text-sm resize-y"
+                    className="w-full p-2.5 bg-[#071226] border border-[#264577] rounded-lg text-white text-xs sm:text-sm resize-y"
                   />
                 </div>
               </section>
@@ -2819,7 +2819,7 @@ export function OrdensServico({
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Cabeçalho Compacto + Botão Nova OS */}
-      <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl sm:rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-2.5">
+      <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-2.5">
         <div className="min-w-0">
           <h1 className="text-lg sm:text-2xl font-extrabold text-white leading-tight truncate">
             Ordens de Serviço ({totalOrdens})
@@ -2832,7 +2832,7 @@ export function OrdensServico({
         <button
           type="button"
           onClick={abrirTelaNovaOS}
-          className="min-h-[40px] sm:min-h-[48px] px-3.5 sm:px-5 py-2 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-xs sm:text-base flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shrink-0"
+          className="min-h-[40px] sm:min-h-[48px] px-3.5 sm:px-5 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs sm:text-base flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer shrink-0"
         >
           <PlusCircle className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" aria-hidden="true" />
           <span className="sm:hidden">+ Nova OS</span>
@@ -2841,7 +2841,7 @@ export function OrdensServico({
       </div>
 
       {/* Barra de Busca em 1 única linha + Botão de Filtros + Ícone Atualizar */}
-      <search className="bg-[#111827] border-2 border-[#1E293B] rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 space-y-3">
+      <search className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 space-y-3">
         <div className="flex items-center gap-2">
           <div className="relative flex-1 flex items-center">
             <Search
@@ -2861,7 +2861,7 @@ export function OrdensServico({
                 setPagina(1);
               }}
               placeholder="Placa, cliente ou defeito…"
-              className="w-full min-h-[40px] sm:min-h-[46px] pl-9 pr-3 py-1.5 bg-[#0B0F17] border border-[#334155] focus:border-[#F97316] rounded-lg sm:rounded-xl text-white text-sm"
+              className="w-full min-h-[40px] sm:min-h-[46px] pl-9 pr-3 py-1.5 bg-[#071226] border border-[#264577] focus:border-[#38BDF8] rounded-lg sm:rounded-xl text-white text-sm"
             />
           </div>
 
@@ -2872,15 +2872,15 @@ export function OrdensServico({
             onClick={() => setMostrarFiltros((v) => !v)}
             className={`min-h-[40px] sm:min-h-[46px] px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${
               mostrarFiltros || qtdFiltrosAtivos > 0
-                ? 'bg-[#1E3A8A] border-[#F97316] text-white'
-                : 'bg-[#0B0F17] border-[#334155] text-slate-200 hover:bg-[#1E293B]'
+                ? 'bg-[#1E3A8A] border-[#38BDF8] text-white'
+                : 'bg-[#071226] border-[#264577] text-slate-200 hover:bg-[#12274D]'
             }`}
           >
-            <SlidersHorizontal className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+            <SlidersHorizontal className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
             <span className="hidden sm:inline">Filtros &amp; Ordenação</span>
             <span className="sm:hidden">Filtros</span>
             {qtdFiltrosAtivos > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-[#F97316] text-[#0B0F17] text-[10px] font-extrabold">
+              <span className="px-1.5 py-0.2 rounded-full bg-[#38BDF8] text-[#071226] text-[10px] font-extrabold">
                 {qtdFiltrosAtivos}
               </span>
             )}
@@ -2891,16 +2891,16 @@ export function OrdensServico({
             onClick={carregarOrdens}
             aria-label="Atualizar lista de Ordens de Serviço"
             title="Atualizar"
-            className="min-h-[40px] sm:min-h-[46px] px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl bg-[#1E293B] hover:bg-[#334155] border border-[#475569] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            className="min-h-[40px] sm:min-h-[46px] px-2.5 sm:px-3.5 py-1.5 rounded-lg sm:rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
           >
-            <RefreshCw className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+            <RefreshCw className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
             <span className="hidden md:inline">Atualizar</span>
           </button>
         </div>
 
         {/* FAIXA RECOLHÍVEL DE FILTROS (STATUS, DATA, VALOR E ORDENAÇÃO) */}
         {mostrarFiltros && (
-          <div className="pt-3 border-t border-[#1E293B] space-y-4">
+          <div className="pt-3 border-t border-[#12274D] space-y-4">
             {/* Etapa / Status */}
             <div>
               <span className="block text-xs font-bold text-slate-300 mb-2">
@@ -2915,8 +2915,8 @@ export function OrdensServico({
                   }}
                   className={`min-h-[44px] px-3 py-2 rounded-xl font-bold text-xs sm:text-sm border cursor-pointer ${
                     statusFiltro === 'TODAS'
-                      ? 'bg-[#F97316] text-[#0B0F17] border-[#F97316]'
-                      : 'bg-[#0B0F17] text-slate-300 border-[#334155]'
+                      ? 'bg-[#38BDF8] text-[#071226] border-[#38BDF8]'
+                      : 'bg-[#071226] text-slate-300 border-[#264577]'
                   }`}
                 >
                   Todas as Etapas
@@ -2935,7 +2935,7 @@ export function OrdensServico({
                       className={`min-h-[44px] px-3 py-2 rounded-xl font-bold text-xs sm:text-sm border flex items-center justify-center gap-1.5 cursor-pointer ${
                         ativo
                           ? st.activeBtn
-                          : 'bg-[#0B0F17] text-slate-300 border-[#334155]'
+                          : 'bg-[#071226] text-slate-300 border-[#264577]'
                       }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -2963,7 +2963,7 @@ export function OrdensServico({
                     setDataInicio(e.target.value);
                     setPagina(1);
                   }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white text-sm"
+                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white text-sm"
                 />
               </div>
 
@@ -2982,7 +2982,7 @@ export function OrdensServico({
                     setDataFim(e.target.value);
                     setPagina(1);
                   }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white text-sm"
+                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white text-sm"
                 />
               </div>
 
@@ -3003,7 +3003,7 @@ export function OrdensServico({
                     setValorMin(e.target.value);
                     setPagina(1);
                   }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-mono text-sm"
+                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-mono text-sm"
                 />
               </div>
 
@@ -3024,7 +3024,7 @@ export function OrdensServico({
                     setValorMax(e.target.value);
                     setPagina(1);
                   }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white font-mono text-sm"
+                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white font-mono text-sm"
                 />
               </div>
 
@@ -3042,7 +3042,7 @@ export function OrdensServico({
                     setOrdenacao(e.target.value as OrdenacaoOS);
                     setPagina(1);
                   }}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#0B0F17] border border-[#334155] text-white text-sm font-semibold"
+                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-[#071226] border border-[#264577] text-white text-sm font-semibold"
                 >
                   <option value="data_desc">Mais recentes primeiro</option>
                   <option value="data_asc">Mais antigas primeiro</option>
@@ -3059,21 +3059,21 @@ export function OrdensServico({
                 <button
                   type="button"
                   onClick={() => aplicarAtalhoPeriodo(0)}
-                  className="px-3 py-1 rounded-lg bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-xs font-bold text-slate-200 cursor-pointer"
+                  className="px-3 py-1 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-xs font-bold text-slate-200 cursor-pointer"
                 >
                   Hoje
                 </button>
                 <button
                   type="button"
                   onClick={() => aplicarAtalhoPeriodo(7)}
-                  className="px-3 py-1 rounded-lg bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-xs font-bold text-slate-200 cursor-pointer"
+                  className="px-3 py-1 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-xs font-bold text-slate-200 cursor-pointer"
                 >
                   Últimos 7 dias
                 </button>
                 <button
                   type="button"
                   onClick={() => aplicarAtalhoPeriodo(30)}
-                  className="px-3 py-1 rounded-lg bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-xs font-bold text-slate-200 cursor-pointer"
+                  className="px-3 py-1 rounded-lg bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-xs font-bold text-slate-200 cursor-pointer"
                 >
                   Últimos 30 dias
                 </button>
@@ -3103,7 +3103,7 @@ export function OrdensServico({
 
       {/* Lista de Cards de OS */}
       {loadingLista ? (
-        <div className="h-56 bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-8 flex items-center justify-center gap-3 text-base font-bold text-slate-200">
+        <div className="h-56 bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-8 flex items-center justify-center gap-3 text-base font-bold text-slate-200">
           <progress aria-label="Carregando" className="loading-spinner" />
           <span>Carregando veículos do pátio…</span>
         </div>
@@ -3113,13 +3113,13 @@ export function OrdensServico({
           <button
             type="button"
             onClick={carregarOrdens}
-            className="min-h-[48px] px-5 py-2 rounded-xl bg-[#F97316] text-[#0B0F17] font-bold"
+            className="min-h-[48px] px-5 py-2 rounded-xl bg-[#38BDF8] text-[#071226] font-bold"
           >
             Tentar Novamente
           </button>
         </div>
       ) : ordens.length === 0 ? (
-        <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-8 text-center space-y-3">
+        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-8 text-center space-y-3">
           <Car className="w-12 h-12 text-slate-500 mx-auto" aria-hidden="true" />
           <h2 className="text-xl font-bold text-white">
             Nenhuma Ordem de Serviço encontrada neste filtro
@@ -3139,14 +3139,14 @@ export function OrdensServico({
             return (
               <article
                 key={os.id}
-                className="bg-[#111827] border border-[#334155] hover:border-[#F97316] rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5"
+                className="bg-[#0B1B36] border border-[#264577] hover:border-[#38BDF8] rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5"
               >
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
                       <span
                         translate="no"
-                        className="px-2 py-0.5 rounded bg-[#0B0F17] border border-slate-500 font-mono text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider shrink-0"
+                        className="px-2 py-0.5 rounded bg-[#071226] border border-slate-500 font-mono text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider shrink-0"
                       >
                         {placa}
                       </span>
@@ -3161,7 +3161,7 @@ export function OrdensServico({
                       </span>
                     </div>
 
-                    <span className="lg:hidden font-mono text-sm sm:text-base font-extrabold text-[#F97316] tabular-nums shrink-0">
+                    <span className="lg:hidden font-mono text-sm sm:text-base font-extrabold text-[#38BDF8] tabular-nums shrink-0">
                       {formatBRL(os.total_geral)}
                     </span>
                   </div>
@@ -3196,7 +3196,7 @@ export function OrdensServico({
                       <button
                         type="button"
                         onClick={() => abrirBancadaOS(os.id)}
-                        className="h-8 px-2.5 rounded-lg bg-[#F97316] text-[#0B0F17] font-extrabold text-xs flex items-center gap-1 cursor-pointer shrink-0"
+                        className="h-8 px-2.5 rounded-lg bg-[#38BDF8] text-[#071226] font-extrabold text-xs flex items-center gap-1 cursor-pointer shrink-0"
                       >
                         <Wrench className="w-3.5 h-3.5 stroke-[2.3]" aria-hidden="true" />
                         <span>Abrir</span>
@@ -3207,9 +3207,9 @@ export function OrdensServico({
 
                 {/* Ações Desktop */}
                 <div className="hidden lg:flex items-center gap-2 shrink-0">
-                  <div className="bg-[#0B0F17] border border-[#334155] rounded-xl px-3 py-1.5 text-right">
+                  <div className="bg-[#071226] border border-[#264577] rounded-xl px-3 py-1.5 text-right">
                     <div className="text-[10px] font-bold text-slate-400">Total OS</div>
-                    <div className="font-mono text-base font-bold text-[#F97316] tabular-nums">
+                    <div className="font-mono text-base font-bold text-[#38BDF8] tabular-nums">
                       {formatBRL(os.total_geral)}
                     </div>
                   </div>
@@ -3218,10 +3218,10 @@ export function OrdensServico({
                     <button
                       type="button"
                       onClick={() => handleMudarStatus(os.id, stMeta.nextStatus!)}
-                      className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#1E293B] hover:bg-[#334155] border border-[#475569] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                      className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       <span>{stMeta.nextLabel}</span>
-                      <ArrowRight className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                      <ArrowRight className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                     </button>
                   )}
 
@@ -3241,7 +3241,7 @@ export function OrdensServico({
                   <button
                     type="button"
                     onClick={() => abrirBancadaOS(os.id)}
-                    className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                    className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <Wrench className="w-4 h-4 stroke-[2.3]" aria-hidden="true" />
                     <span>Abrir OS</span>
@@ -3254,12 +3254,12 @@ export function OrdensServico({
           {totalOrdens > ITENS_POR_PAGINA && (
             <nav
               aria-label="Paginação de Ordens de Serviço"
-              className="bg-[#111827] border-2 border-[#334155] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3"
+              className="bg-[#0B1B36] border-2 border-[#264577] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3"
             >
               <div className="text-sm text-slate-300 font-mono tabular-nums">
                 Mostrando <strong className="text-white">{inicioRegistro}</strong> a{' '}
                 <strong className="text-white">{fimRegistro}</strong> de{' '}
-                <strong className="text-[#F97316]">{totalOrdens}</strong> OS
+                <strong className="text-[#38BDF8]">{totalOrdens}</strong> OS
               </div>
 
               <div className="flex items-center gap-2">
@@ -3270,13 +3270,13 @@ export function OrdensServico({
                     setPagina((p) => Math.max(1, p - 1));
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="min-h-[46px] px-3.5 py-2 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-[#475569] text-white font-bold text-sm flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                  className="min-h-[46px] px-3.5 py-2 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#3A5C90] text-white font-bold text-sm flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
                 >
-                  <ChevronLeft className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                  <ChevronLeft className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                   <span>Anterior</span>
                 </button>
 
-                <span className="min-h-[46px] px-3.5 py-2 rounded-xl bg-[#1E293B] border border-[#F97316] text-white font-mono font-bold text-sm flex items-center tabular-nums">
+                <span className="min-h-[46px] px-3.5 py-2 rounded-xl bg-[#12274D] border border-[#38BDF8] text-white font-mono font-bold text-sm flex items-center tabular-nums">
                   Página {pagina} de {totalPaginas}
                 </span>
 
@@ -3287,10 +3287,10 @@ export function OrdensServico({
                     setPagina((p) => Math.min(totalPaginas, p + 1));
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="min-h-[46px] px-3.5 py-2 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-[#475569] text-white font-bold text-sm flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+                  className="min-h-[46px] px-3.5 py-2 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#3A5C90] text-white font-bold text-sm flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
                 >
                   <span>Próxima</span>
-                  <ChevronRight className="w-4 h-4 text-[#F97316]" aria-hidden="true" />
+                  <ChevronRight className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
                 </button>
               </div>
             </nav>

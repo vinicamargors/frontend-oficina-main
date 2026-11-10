@@ -43,8 +43,8 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
 
   if (enviado) {
     return (
-      <div className="min-h-screen bg-[#0B0F17] flex items-center justify-center p-4">
-        <div className="bg-[#111827] border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-4 shadow-2xl">
+      <div className="min-h-screen bg-[#071226] flex items-center justify-center p-4">
+        <div className="bg-[#0B1B36] border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-4 shadow-2xl">
           <div className="w-16 h-16 rounded-full bg-emerald-950 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-10 h-10" />
           </div>
@@ -52,9 +52,9 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
           <p className="text-slate-300 text-sm">
             Muito obrigado pelo seu feedback! Sua opinião é fundamental para aprimorarmos continuamente nosso atendimento e a qualidade do serviço dos nossos mecânicos.
           </p>
-          <div className="pt-4 border-t border-[#1E293B]">
+          <div className="pt-4 border-t border-[#12274D]">
             <span className="text-xs text-slate-400 flex items-center justify-center gap-1">
-              <span>Feito com carinho pela equipe Autotec Pro</span>
+              <span>Feito com carinho pela equipe Mecanify</span>
               <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
             </span>
           </div>
@@ -64,10 +64,10 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] flex items-center justify-center p-4">
-      <div className="bg-[#111827] border-2 border-[#1E3A8A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl">
+    <div className="min-h-screen bg-[#071226] flex items-center justify-center p-4">
+      <div className="bg-[#0B1B36] border-2 border-[#1E3A8A] rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl">
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-[#1E3A8A] border-2 border-[#F97316] text-[#F97316] flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-[#1E3A8A] border-2 border-[#38BDF8] text-[#38BDF8] flex items-center justify-center mx-auto">
             <Wrench className="w-7 h-7 stroke-[2.5]" />
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-white">Como foi o serviço no seu carro?</h1>
@@ -78,7 +78,7 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* SELETOR DE 1 A 5 ESTRELAS */}
-          <div className="bg-[#0B0F17] border border-[#334155] rounded-2xl p-4 text-center space-y-2">
+          <div className="bg-[#071226] border border-[#264577] rounded-2xl p-4 text-center space-y-2">
             <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">
               Sua nota para o serviço e atendimento
             </div>
@@ -123,7 +123,7 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
               value={nomeCliente}
               onChange={(e) => setNomeCliente(e.target.value)}
               placeholder="Ex: João da Silva"
-              className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white text-xs sm:text-sm"
+              className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white text-xs sm:text-sm"
             />
           </div>
 
@@ -134,7 +134,7 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
               value={veiculo}
               onChange={(e) => setVeiculo(e.target.value)}
               placeholder="Ex: Chevrolet Onix 1.4"
-              className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white text-xs sm:text-sm"
+              className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white text-xs sm:text-sm"
             />
           </div>
 
@@ -147,14 +147,14 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
               placeholder="Conte como foi o atendimento, a agilidade ou o diagnóstico do carro…"
-              className="w-full p-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white text-xs sm:text-sm resize-none"
+              className="w-full p-3 bg-[#071226] border border-[#264577] rounded-xl text-white text-xs sm:text-sm resize-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={enviando}
-            className="w-full min-h-[48px] rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-black text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-orange-950/40 disabled:opacity-50"
+            className="w-full min-h-[48px] rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-black text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-sky-950/40 disabled:opacity-50"
           >
             <Send className="w-4 h-4 stroke-[2.5]" />
             <span>{enviando ? 'Enviando…' : 'Enviar Avaliação'}</span>

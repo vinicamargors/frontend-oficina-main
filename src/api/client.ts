@@ -422,7 +422,7 @@ export const api = {
     const emp: Record<string, any> = empresas.find((e) => e.id === empresaId) || {};
     return {
       empresa_id: empresaId,
-      nome_fantasia: emp.nome_fantasia || 'Autotec Pro Oficina',
+      nome_fantasia: emp.nome_fantasia || 'Mecanify Oficina',
       razao_social: emp.razao_social || '',
       cnpj: emp.cnpj || '',
       inscricao_estadual: cfg.inscricao_estadual || '',
@@ -432,7 +432,7 @@ export const api = {
       endereco: emp.endereco || '',
       chave_pix: cfg.chave_pix || '',
       cor_primaria: cfg.cor_primaria || '#1e3a8a',
-      cor_secundaria: cfg.cor_secundaria || '#f97316',
+      cor_secundaria: cfg.cor_secundaria || '#38BDF8',
       logo_b64: cfg.logo_b64 || null,
       latitude_gps: cfg.latitude_gps ?? null,
       longitude_gps: cfg.longitude_gps ?? null,

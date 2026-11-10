@@ -394,7 +394,7 @@ export function Equipe({ empresaId }: EquipeProps) {
   const handleEnviarConviteWhatsApp = () => {
     if (!linkConviteGerado) handleGerarConvite();
     const tel = telConvite.replace(/\D/g, '');
-    const msg = `Olá ${nomeConvite || 'Colaborador'}, você foi convidado para a equipe no Autotec Pro (${cargoConvite}). Crie sua senha e acesse seu painel aqui: ${linkConviteGerado}`;
+    const msg = `Olá ${nomeConvite || 'Colaborador'}, você foi convidado para a equipe no Mecanify (${cargoConvite}). Crie sua senha e acesse seu painel aqui: ${linkConviteGerado}`;
     const waUrl = tel
       ? `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`
       : `https://wa.me/?text=${encodeURIComponent(msg)}`;
@@ -535,7 +535,7 @@ export function Equipe({ empresaId }: EquipeProps) {
 
   if (!isGestor) {
     return (
-      <div className="bg-[#111827] border-2 border-red-900/60 rounded-2xl p-6 sm:p-10 max-w-xl mx-auto my-8 text-center space-y-4">
+      <div className="bg-[#0B1B36] border-2 border-red-900/60 rounded-2xl p-6 sm:p-10 max-w-xl mx-auto my-8 text-center space-y-4">
         <div className="w-16 h-16 rounded-2xl bg-red-950/80 border-2 border-red-500 text-red-400 mx-auto flex items-center justify-center">
           <AlertTriangle className="w-8 h-8" />
         </div>
@@ -550,9 +550,9 @@ export function Equipe({ empresaId }: EquipeProps) {
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-12">
       {/* CABEÇALHO DA EQUIPE & RH */}
-      <header className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <header className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#F97316] text-[#F97316] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#38BDF8] text-[#38BDF8] flex items-center justify-center shrink-0">
             <Users className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
           </div>
           <div>
@@ -574,9 +574,9 @@ export function Equipe({ empresaId }: EquipeProps) {
             onClick={carregarTudo}
             disabled={carregando}
             title="Atualizar dados da equipe"
-            className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[#0B0F17] hover:bg-[#1E293B] border border-[#334155] text-slate-300 flex items-center justify-center cursor-pointer disabled:opacity-50"
+            className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-300 flex items-center justify-center cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-[#F97316]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-[#38BDF8]' : ''}`} />
           </button>
 
           <button
@@ -594,7 +594,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           <button
             type="button"
             onClick={abrirModalCadastroColaborador}
-            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-orange-950/40"
+            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-sky-950/40"
           >
             <UserPlus className="w-4 h-4 stroke-[2.5]" />
             <span>+ Novo Colaborador</span>
@@ -621,15 +621,15 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* 5 ABAS DA EQUIPE */}
       <nav
         aria-label="Abas da Equipe"
-        className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 bg-[#0B0F17] p-1.5 rounded-2xl border-2 border-[#1E293B]"
+        className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 bg-[#071226] p-1.5 rounded-2xl border-2 border-[#12274D]"
       >
         <button
           type="button"
           onClick={() => setActiveTab('colaboradores')}
           className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'colaboradores'
-              ? 'bg-[#F97316] text-[#0B0F17]'
-              : 'text-slate-300 hover:bg-[#1E293B]'
+              ? 'bg-[#38BDF8] text-[#071226]'
+              : 'text-slate-300 hover:bg-[#12274D]'
           }`}
         >
           <Users className="w-4 h-4" />
@@ -641,8 +641,8 @@ export function Equipe({ empresaId }: EquipeProps) {
           onClick={() => setActiveTab('folha')}
           className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'folha'
-              ? 'bg-[#F97316] text-[#0B0F17]'
-              : 'text-slate-300 hover:bg-[#1E293B]'
+              ? 'bg-[#38BDF8] text-[#071226]'
+              : 'text-slate-300 hover:bg-[#12274D]'
           }`}
         >
           <DollarSign className="w-4 h-4" />
@@ -654,8 +654,8 @@ export function Equipe({ empresaId }: EquipeProps) {
           onClick={() => setActiveTab('escalas')}
           className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'escalas'
-              ? 'bg-[#F97316] text-[#0B0F17]'
-              : 'text-slate-300 hover:bg-[#1E293B]'
+              ? 'bg-[#38BDF8] text-[#071226]'
+              : 'text-slate-300 hover:bg-[#12274D]'
           }`}
         >
           <Calendar className="w-4 h-4" />
@@ -667,8 +667,8 @@ export function Equipe({ empresaId }: EquipeProps) {
           onClick={() => setActiveTab('ponto')}
           className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'ponto'
-              ? 'bg-[#F97316] text-[#0B0F17]'
-              : 'text-slate-300 hover:bg-[#1E293B]'
+              ? 'bg-[#38BDF8] text-[#071226]'
+              : 'text-slate-300 hover:bg-[#12274D]'
           }`}
         >
           <Clock className="w-4 h-4" />
@@ -680,8 +680,8 @@ export function Equipe({ empresaId }: EquipeProps) {
           onClick={() => setActiveTab('avaliacoes')}
           className={`col-span-2 sm:col-span-1 min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'avaliacoes'
-              ? 'bg-[#F97316] text-[#0B0F17]'
-              : 'text-slate-300 hover:bg-[#1E293B]'
+              ? 'bg-[#38BDF8] text-[#071226]'
+              : 'text-slate-300 hover:bg-[#12274D]'
           }`}
         >
           <Star className="w-4 h-4" />
@@ -695,7 +695,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       {activeTab === 'colaboradores' && (
         <div className="space-y-3">
           {usuariosInativos.length > 0 && (
-            <div className="flex items-center justify-between text-xs text-slate-400 bg-[#0B0F17]/70 border border-[#1E293B] px-3.5 py-2 rounded-xl">
+            <div className="flex items-center justify-between text-xs text-slate-400 bg-[#071226]/70 border border-[#12274D] px-3.5 py-2 rounded-xl">
               <span>
                 Exibindo <strong>{usuariosAtivos.length}</strong> colaboradores ativos
                 {mostrarInativos && ` e ${usuariosInativos.length} desativado(s)`}.
@@ -703,7 +703,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               <button
                 type="button"
                 onClick={() => setMostrarInativos((p) => !p)}
-                className="text-[#F97316] hover:text-[#EA580C] font-bold text-xs cursor-pointer flex items-center gap-1 transition-colors"
+                className="text-[#38BDF8] hover:text-[#0EA5E9] font-bold text-xs cursor-pointer flex items-center gap-1 transition-colors"
               >
                 {mostrarInativos
                   ? 'Ocultar Desativados'
@@ -712,7 +712,7 @@ export function Equipe({ empresaId }: EquipeProps) {
             </div>
           )}
 
-          <div className="bg-[#0B0F17] border-2 border-[#334155] rounded-xl divide-y divide-[#1E293B]">
+          <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
             {colaboradoresVisiveis.map((u) => {
               const estrelas = u.estrelas_media ?? 5.0;
               const temSalario = u.salario_base && u.salario_base > 0;
@@ -720,11 +720,11 @@ export function Equipe({ empresaId }: EquipeProps) {
               return (
                 <article
                   key={u.id}
-                  className="p-3 sm:px-4 sm:py-3 hover:bg-[#111827]/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="p-3 sm:px-4 sm:py-3 hover:bg-[#0B1B36]/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="min-w-0 sm:flex-1 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#1E293B] text-blue-300 border border-blue-500/60 uppercase">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#12274D] text-blue-300 border border-blue-500/60 uppercase">
                         {u.cargo}
                       </span>
                       <span
@@ -751,7 +751,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                   </div>
 
                   {/* Lado Direito: Salário, Comissões e Ações */}
-                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#1E293B]">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#12274D]">
                     <div className="text-right font-mono tabular-nums text-xs">
                       <div className="text-slate-400 text-[10px]">Salário Base</div>
                       <div className="text-sm font-bold text-white">
@@ -777,7 +777,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                           setModalHoleriteAberto(true);
                         }}
                         title="Ver Holerite"
-                        className="h-8 px-2.5 rounded-lg bg-[#1E293B] hover:bg-[#334155] border border-slate-600 text-blue-300 font-bold text-xs flex items-center gap-1 cursor-pointer"
+                        className="h-8 px-2.5 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-blue-300 font-bold text-xs flex items-center gap-1 cursor-pointer"
                       >
                         <FileText className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Holerite</span>
@@ -787,7 +787,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                         type="button"
                         onClick={() => abrirModalEdicaoColaborador(u)}
                         title="Editar Colaborador & RH"
-                        className="w-8 h-8 rounded-lg bg-[#1E293B] hover:bg-[#334155] border border-slate-600 text-amber-300 flex items-center justify-center cursor-pointer"
+                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-amber-300 flex items-center justify-center cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -827,10 +827,10 @@ export function Equipe({ empresaId }: EquipeProps) {
       {activeTab === 'folha' && (
         <div className="space-y-4">
           {/* BARRA DE CONTROLE DA FOLHA */}
-          <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-[#F97316]" />
+                <DollarSign className="w-5 h-5 text-[#38BDF8]" />
                 <span>Fechamento da Folha de Pagamento</span>
               </h3>
               <p className="text-xs text-slate-400">
@@ -843,13 +843,13 @@ export function Equipe({ empresaId }: EquipeProps) {
                 type="month"
                 value={mesFolhaRef}
                 onChange={(e) => setMesFolhaRef(e.target.value)}
-                className="min-h-[40px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono text-xs"
+                className="min-h-[40px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-xs"
               />
 
               <button
                 type="button"
                 onClick={handleLancarFolhaContasPagar}
-                className="min-h-[40px] px-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                className="min-h-[40px] px-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
                 <span>Lançar Folha no Contas a Pagar</span>
@@ -858,7 +858,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           </div>
 
           {/* LISTA DA FOLHA DOS COLABORADORES (APENAS ATIVOS) */}
-          <div className="bg-[#0B0F17] border-2 border-[#334155] rounded-xl divide-y divide-[#1E293B]">
+          <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
             {usuariosAtivos.map((u) => {
               const temSalario = u.salario_base && u.salario_base > 0;
               const salarioBase = temSalario ? u.salario_base! : 0;
@@ -871,7 +871,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               return (
                 <div
                   key={u.id}
-                  className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#111827]/70 text-xs font-mono tabular-nums"
+                  className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#0B1B36]/70 text-xs font-mono tabular-nums"
                 >
                   <div className="font-sans">
                     <strong className="text-sm font-bold text-white block">{u.nome}</strong>
@@ -903,7 +903,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     </div>
 
                     <div>
-                      <div className="text-[10px] text-[#F97316] font-sans font-bold">Líquido a Pagar</div>
+                      <div className="text-[10px] text-[#38BDF8] font-sans font-bold">Líquido a Pagar</div>
                       <div className="text-base font-black text-white">
                         {temSalario || totalLiquido > 0 ? (
                           formatBRL(totalLiquido)
@@ -919,7 +919,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                         setColaboradorHolerite(u);
                         setModalHoleriteAberto(true);
                       }}
-                      className="min-h-[36px] px-3 rounded-lg bg-[#1E293B] hover:bg-[#334155] text-white font-sans font-bold text-xs flex items-center gap-1 cursor-pointer"
+                      className="min-h-[36px] px-3 rounded-lg bg-[#12274D] hover:bg-[#264577] text-white font-sans font-bold text-xs flex items-center gap-1 cursor-pointer"
                     >
                       <FileText className="w-3.5 h-3.5" />
                       <span>Ver Holerite</span>
@@ -960,7 +960,7 @@ export function Equipe({ empresaId }: EquipeProps) {
 
           {/* LISTA DE FÉRIAS E ESCALAS */}
           {escalas.length === 0 ? (
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-8 text-center text-slate-400 space-y-2">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
               <Calendar className="w-8 h-8 text-slate-500 mx-auto" />
               <p className="text-sm font-bold text-white">Nenhuma escala ou férias agendadas</p>
               <p className="text-xs text-slate-400">
@@ -968,7 +968,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               </p>
             </div>
           ) : (
-            <div className="bg-[#0B0F17] border-2 border-[#334155] rounded-xl divide-y divide-[#1E293B]">
+            <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
               {escalas.map((esc) => (
                 <div
                   key={esc.id}
@@ -1013,7 +1013,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       {activeTab === 'ponto' && (
         <div className="space-y-4">
           {/* CARD DE BATIDA DE PONTO MOBILE */}
-          <div className="bg-gradient-to-br from-[#1E3A8A]/50 to-[#111827] border-2 border-blue-500 rounded-2xl p-5 sm:p-6 text-center space-y-4">
+          <div className="bg-gradient-to-br from-[#1E3A8A]/50 to-[#0B1B36] border-2 border-blue-500 rounded-2xl p-5 sm:p-6 text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-blue-900/50">
               <Clock className="w-8 h-8" />
             </div>
@@ -1030,7 +1030,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               type="button"
               disabled={registrandoPonto}
               onClick={handleBaterPonto}
-              className="min-h-[50px] px-8 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-black text-base inline-flex items-center gap-2 cursor-pointer shadow-lg shadow-orange-950/40 disabled:opacity-50"
+              className="min-h-[50px] px-8 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-black text-base inline-flex items-center gap-2 cursor-pointer shadow-lg shadow-sky-950/40 disabled:opacity-50"
             >
               <Navigation className="w-5 h-5 stroke-[2.5]" />
               <span>{registrandoPonto ? 'Verificando GPS…' : 'Bater Ponto Agora'}</span>
@@ -1050,7 +1050,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           </div>
 
           {/* HISTÓRICO DE PONTOS REGISTRADOS */}
-          <div className="bg-[#111827] border-2 border-[#1E293B] rounded-2xl p-4 space-y-3">
+          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 space-y-3">
             <h4 className="text-sm font-bold text-white flex items-center gap-2">
               <Clock className="w-4 h-4 text-blue-400" />
               <span>Últimos Registros de Ponto</span>
@@ -1059,7 +1059,7 @@ export function Equipe({ empresaId }: EquipeProps) {
             {pontos.length === 0 ? (
               <p className="text-xs text-slate-500 py-4 text-center">Nenhum ponto registrado hoje.</p>
             ) : (
-              <div className="bg-[#0B0F17] rounded-xl border border-[#334155] divide-y divide-[#1E293B]">
+              <div className="bg-[#071226] rounded-xl border border-[#264577] divide-y divide-[#12274D]">
                 {pontos.slice(0, 10).map((p) => (
                   <div
                     key={p.id}
@@ -1096,7 +1096,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           ======================================================== */}
       {activeTab === 'avaliacoes' && (
         <div className="space-y-4">
-          <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
@@ -1113,7 +1113,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                 const url = `${window.location.origin}/?modo=avaliar&osId=EXEMPLO-OS`;
                 window.open(url, '_blank');
               }}
-              className="min-h-[38px] px-3.5 rounded-xl bg-[#1E293B] hover:bg-[#334155] text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer border border-[#475569]"
+              className="min-h-[38px] px-3.5 rounded-xl bg-[#12274D] hover:bg-[#264577] text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer border border-[#3A5C90]"
             >
               <Star className="w-4 h-4 fill-amber-400" />
               <span>Ver Tela Pública de Avaliação</span>
@@ -1122,7 +1122,7 @@ export function Equipe({ empresaId }: EquipeProps) {
 
           {/* LISTA DE DEPOIMENTOS & NOTAS */}
           {avaliacoes.length === 0 ? (
-            <div className="bg-[#111827] border-2 border-[#1E293B] rounded-xl p-8 text-center text-slate-400 space-y-2">
+            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
               <Star className="w-8 h-8 text-slate-500 mx-auto" />
               <p className="text-sm font-bold text-white">Nenhuma avaliação recebida ainda</p>
               <p className="text-xs text-slate-400">
@@ -1134,7 +1134,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               {avaliacoes.map((av) => (
                 <div
                   key={av.id}
-                  className="bg-[#0B0F17] border border-[#334155] rounded-xl p-4 space-y-2 text-xs"
+                  className="bg-[#071226] border border-[#264577] rounded-xl p-4 space-y-2 text-xs"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1 text-amber-400">
@@ -1159,7 +1159,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                   </div>
 
                   {av.comentario && (
-                    <p className="text-slate-200 italic bg-[#111827] p-2.5 rounded-lg border border-[#1E293B]">
+                    <p className="text-slate-200 italic bg-[#0B1B36] p-2.5 rounded-lg border border-[#12274D]">
                       &ldquo;{av.comentario}&rdquo;
                     </p>
                   )}
@@ -1173,8 +1173,8 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* MODAL: CONVITE POR WHATSAPP & E-MAIL */}
       {modalConviteAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#111827] border-2 border-emerald-500 rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-2">
+          <div className="bg-[#0B1B36] border-2 border-emerald-500 rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-emerald-400" />
                 <span>Convidar Colaborador por WhatsApp</span>
@@ -1196,7 +1196,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                   value={nomeConvite}
                   onChange={(e) => setNomeConvite(e.target.value)}
                   placeholder="Ex: Carlos Mecânico"
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
                 />
               </div>
 
@@ -1207,7 +1207,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                   value={telConvite}
                   onChange={(e) => setTelConvite(e.target.value)}
                   placeholder="Ex: 11999998888"
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                 />
               </div>
 
@@ -1216,7 +1216,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                 <select
                   value={cargoConvite}
                   onChange={(e) => setCargoConvite(e.target.value as CargoUsuario)}
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-bold"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
                 >
                   {CARGOS_DISPONIVEIS.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -1244,10 +1244,10 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* MODAL: CADASTRO / EDIÇÃO DE COLABORADOR */}
       {modalColaboradorAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#111827] border-2 border-[#F97316] rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-3">
+          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#12274D] pb-3">
               <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-[#F97316]" />
+                <Users className="w-5 h-5 text-[#38BDF8]" />
                 <span>{colaboradorEmEdicao ? 'Editar Colaborador & RH' : 'Novo Colaborador'}</span>
               </h3>
               <button
@@ -1268,7 +1268,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     required
                     value={formNome}
                     onChange={(e) => setFormNome(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
                   />
                 </div>
 
@@ -1279,7 +1279,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     required
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
                   />
                 </div>
               </div>
@@ -1291,7 +1291,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     type="tel"
                     value={formTelefone}
                     onChange={(e) => setFormTelefone(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                   />
                 </div>
 
@@ -1300,7 +1300,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                   <select
                     value={formCargo}
                     onChange={(e) => setFormCargo(e.target.value as CargoUsuario)}
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-bold"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
                   >
                     {CARGOS_DISPONIVEIS.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -1319,7 +1319,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     value={formSalario}
                     onChange={(e) => setFormSalario(e.target.value)}
                     placeholder="Ex: 2800.00 (opcional)"
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                   />
                 </div>
 
@@ -1330,7 +1330,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     value={formComissaoServico}
                     onChange={(e) => setFormComissaoServico(e.target.value)}
                     placeholder="Ex: 15"
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                   />
                 </div>
 
@@ -1341,7 +1341,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     value={formComissaoPeca}
                     onChange={(e) => setFormComissaoPeca(e.target.value)}
                     placeholder="Ex: 5"
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                   />
                 </div>
               </div>
@@ -1354,7 +1354,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     value={formVT}
                     onChange={(e) => setFormVT(e.target.value)}
                     placeholder="0.00"
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                   />
                 </div>
 
@@ -1365,7 +1365,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     value={formVR}
                     onChange={(e) => setFormVR(e.target.value)}
                     placeholder="0.00"
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                   />
                 </div>
               </div>
@@ -1379,11 +1379,11 @@ export function Equipe({ empresaId }: EquipeProps) {
                   placeholder="Mínimo 6 caracteres"
                   value={formSenha}
                   onChange={(e) => setFormSenha(e.target.value)}
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#1E293B]">
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#12274D]">
                 {colaboradorEmEdicao ? (
                   <button
                     type="button"
@@ -1402,13 +1402,13 @@ export function Equipe({ empresaId }: EquipeProps) {
                   <button
                     type="button"
                     onClick={() => setModalColaboradorAberto(false)}
-                    className="min-h-[42px] px-4 rounded-xl bg-[#1E293B] text-white font-bold cursor-pointer"
+                    className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="min-h-[42px] px-5 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-[#0B0F17] font-extrabold cursor-pointer"
+                    className="min-h-[42px] px-5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold cursor-pointer"
                   >
                     Salvar Colaborador
                   </button>
@@ -1422,8 +1422,8 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* MODAL: HOLERITE / DEMONSTRATIVO DE PAGAMENTO IMPRIMÍVEL */}
       {modalHoleriteAberto && colaboradorHolerite && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#111827] border-2 border-blue-500 rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-2 print:hidden">
+          <div className="bg-[#0B1B36] border-2 border-blue-500 rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#12274D] pb-2 print:hidden">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-400" />
                 <span>Demonstrativo de Pagamento (Holerite)</span>
@@ -1443,7 +1443,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               className="bg-white text-black p-5 rounded-xl border-2 border-black space-y-4 font-mono text-xs select-all"
             >
               <div className="text-center border-b-2 border-black pb-2">
-                <h2 className="text-base font-black uppercase">AUTOTEC PRO &bull; OFICINA MECÂNICA</h2>
+                <h2 className="text-base font-black uppercase">MECANIFY &bull; OFICINA MECÂNICA</h2>
                 <div className="text-[11px] font-bold">RECIBO DE PAGAMENTO DE SALÁRIO E COMISSÕES</div>
                 <div className="text-[10px]">Mês de Referência: {mesFolhaRef}</div>
               </div>
@@ -1545,7 +1545,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               <button
                 type="button"
                 onClick={() => setModalHoleriteAberto(false)}
-                className="min-h-[40px] px-3.5 rounded-xl bg-[#1E293B] text-white font-bold text-xs cursor-pointer"
+                className="min-h-[40px] px-3.5 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
               >
                 Fechar
               </button>
@@ -1565,8 +1565,8 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* MODAL: AGENDAR ESCALA / FÉRIAS */}
       {modalEscalaAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#111827] border-2 border-blue-500 rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#1E293B] pb-2">
+          <div className="bg-[#0B1B36] border-2 border-blue-500 rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-blue-400" />
                 <span>Agendar Férias / Folga de Colaborador</span>
@@ -1587,7 +1587,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                   required
                   value={escalaUsuarioId}
                   onChange={(e) => setEscalaUsuarioId(e.target.value)}
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-bold"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
                 >
                   <option value="">Selecione o profissional…</option>
                   {usuarios.map((u) => (
@@ -1603,7 +1603,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                 <select
                   value={escalaTipo}
                   onChange={(e) => setEscalaTipo(e.target.value as any)}
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-bold"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
                 >
                   <option value="FERIAS">Férias</option>
                   <option value="FOLGA">Folga / Escala Revezamento</option>
@@ -1620,7 +1620,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     required
                     value={escalaInicio}
                     onChange={(e) => setEscalaInicio(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                   />
                 </div>
 
@@ -1631,7 +1631,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                     required
                     value={escalaFim}
                     onChange={(e) => setEscalaFim(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
                   />
                 </div>
               </div>
@@ -1643,15 +1643,15 @@ export function Equipe({ empresaId }: EquipeProps) {
                   value={escalaObs}
                   onChange={(e) => setEscalaObs(e.target.value)}
                   placeholder="Ex: 15 dias de férias aprovadas…"
-                  className="w-full min-h-[42px] px-3 bg-[#0B0F17] border border-[#334155] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1E293B]">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#12274D]">
                 <button
                   type="button"
                   onClick={() => setModalEscalaAberto(false)}
-                  className="min-h-[40px] px-4 rounded-xl bg-[#1E293B] text-white font-bold cursor-pointer"
+                  className="min-h-[40px] px-4 rounded-xl bg-[#12274D] text-white font-bold cursor-pointer"
                 >
                   Cancelar
                 </button>
