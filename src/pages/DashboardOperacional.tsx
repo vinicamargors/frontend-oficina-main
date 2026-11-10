@@ -53,37 +53,37 @@ const STATUS_META: Record<
 > = {
   ORCAMENTO: {
     label: 'Orçamento',
-    badgeBg: 'bg-amber-950',
-    badgeBorder: 'border-amber-500',
-    badgeText: 'text-amber-300',
+    badgeBg: 'bg-warning/15',
+    badgeBorder: 'border-warning',
+    badgeText: 'text-warning',
     icon: ClipboardList,
   },
   AGUARDANDO_PECA: {
     label: 'Aguardando Peça',
-    badgeBg: 'bg-sky-950',
-    badgeBorder: 'border-sky-500',
-    badgeText: 'text-sky-300',
+    badgeBg: 'bg-info/15',
+    badgeBorder: 'border-info',
+    badgeText: 'text-info',
     icon: Clock,
   },
   EXECUCAO: {
     label: 'Em Execução',
-    badgeBg: 'bg-blue-950',
-    badgeBorder: 'border-blue-500',
-    badgeText: 'text-blue-200',
+    badgeBg: 'bg-info/15',
+    badgeBorder: 'border-info',
+    badgeText: 'text-info',
     icon: Wrench,
   },
   FINALIZADO: {
     label: 'Finalizado',
-    badgeBg: 'bg-emerald-950',
-    badgeBorder: 'border-emerald-500',
-    badgeText: 'text-emerald-300',
+    badgeBg: 'bg-success/15',
+    badgeBorder: 'border-success',
+    badgeText: 'text-success',
     icon: PackageCheck,
   },
   PAGO: {
     label: 'Pago / Entregue',
-    badgeBg: 'bg-green-950',
-    badgeBorder: 'border-green-500',
-    badgeText: 'text-green-300',
+    badgeBg: 'bg-success/15',
+    badgeBorder: 'border-success',
+    badgeText: 'text-success',
     icon: CheckCircle2,
   },
 };
@@ -122,14 +122,14 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           {[1, 2, 3, 4].map((n) => (
             <div
               key={n}
-              className="h-40 rounded-2xl bg-[#0B1B36] border-2 border-[#12274D] p-6 flex flex-col justify-between"
+              className="h-40 rounded-lg bg-surface border-2 border-line p-6 flex flex-col justify-between"
             >
-              <div className="h-6 w-40 bg-[#12274D] rounded" />
-              <div className="h-12 w-24 bg-[#12274D] rounded" />
+              <div className="h-6 w-40 bg-surface rounded" />
+              <div className="h-12 w-24 bg-surface rounded" />
             </div>
           ))}
         </div>
-        <div className="h-80 rounded-2xl bg-[#0B1B36] border-2 border-[#12274D] p-6 flex items-center justify-center gap-3 text-slate-300 text-lg font-medium">
+        <div className="h-80 rounded-lg bg-surface border-2 border-line p-6 flex items-center justify-center gap-3 text-ink-muted text-lg font-medium">
           <progress aria-label="Carregando dados" className="loading-spinner" />
           <span>Sincronizando pátio com o servidor…</span>
         </div>
@@ -139,22 +139,22 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
 
   if (error) {
     return (
-      <div className="bg-[#0B1B36] border-2 border-red-500 rounded-2xl p-8 space-y-5">
+      <div className="bg-surface border-2 border-danger rounded-lg p-8 space-y-5">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-xl bg-red-950 border-2 border-red-500 text-red-300 flex items-center justify-center shrink-0">
+          <div className="w-14 h-14 rounded-xl bg-danger/15 border-2 border-danger text-danger flex items-center justify-center shrink-0">
             <AlertOctagon className="w-8 h-8" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-2xl font-semibold text-ink">
               Falha ao comunicar com o servidor da oficina
             </h2>
-            <p className="text-base text-slate-300 mt-1">{error}</p>
+            <p className="text-base text-ink-muted mt-1">{error}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={carregarRadar}
-          className="min-h-[58px] px-6 py-3.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-lg flex items-center gap-3 cursor-pointer"
+          className="min-h-[58px] px-6 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-lg flex items-center gap-3 cursor-pointer"
         >
           <RefreshCw className="w-6 h-6" aria-hidden="true" />
           <span>Tentar Novamente Agora</span>
@@ -174,18 +174,18 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   return (
     <div className="space-y-3.5 sm:space-y-5">
       {/* CABEÇALHO DE AÇÃO RÁPIDA COMPACTO NO MOBILE */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 bg-surface border-2 border-line rounded-xl sm:rounded-lg p-3 sm:p-5">
         <div className="flex items-center justify-between gap-2">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-lg sm:text-2xl font-extrabold text-white leading-tight">
+              <h1 className="text-lg sm:text-2xl font-semibold text-ink leading-tight">
                 Radar do Pátio
               </h1>
-              <span className="px-2 py-0.5 rounded-md bg-[#1E3A8A] border border-blue-400 text-[11px] font-bold text-blue-100">
+              <span className="px-2 py-0.5 rounded-md bg-muted border border-info text-xs font-semibold text-info">
                 30 dias
               </span>
             </div>
-            <p className="hidden sm:block text-sm text-slate-300 mt-0.5">
+            <p className="hidden sm:block text-sm text-ink-muted mt-0.5">
               Toque em qualquer bloco para filtrar os veículos ou abrir uma nova OS.
             </p>
           </div>
@@ -195,9 +195,9 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
             onClick={carregarRadar}
             aria-label="Atualizar Radar do Pátio"
             title="Atualizar"
-            className="sm:hidden min-h-[38px] px-2.5 py-1.5 rounded-lg bg-[#12274D] border border-[#3A5C90] text-white flex items-center justify-center cursor-pointer shrink-0"
+            className="sm:hidden min-h-[38px] px-2.5 py-1.5 rounded-lg bg-surface border border-line-strong text-ink flex items-center justify-center cursor-pointer shrink-0"
           >
-            <RefreshCw className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+            <RefreshCw className="w-4 h-4 text-brand-ink" aria-hidden="true" />
           </button>
         </div>
 
@@ -205,16 +205,16 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={carregarRadar}
-            className="hidden sm:flex min-h-[46px] px-3.5 py-2 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-sm items-center justify-center gap-2 cursor-pointer"
+            className="hidden sm:flex min-h-[46px] px-3.5 py-2 rounded-xl bg-surface hover:bg-muted border border-line-strong text-ink font-semibold text-sm items-center justify-center gap-2 cursor-pointer"
           >
-            <RefreshCw className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+            <RefreshCw className="w-4 h-4 text-brand-ink" aria-hidden="true" />
             <span>Atualizar</span>
           </button>
 
           <button
             type="button"
             onClick={() => onNavigateTab('os', undefined, 'NOVA_OS')}
-            className="w-full sm:w-auto min-h-[42px] sm:min-h-[48px] px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto min-h-[42px] sm:min-h-[48px] px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer"
           >
             <PlusCircle className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
             <span>+ Nova Ordem de Serviço</span>
@@ -229,26 +229,26 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('os', 'EXECUCAO')}
-            className="text-left bg-[#0B1B36] hover:bg-[#12274D] border-2 border-[#38BDF8] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
+            className="text-left bg-surface hover:bg-muted border-2 border-brand rounded-xl sm:rounded-lg p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
           >
             <div className="flex items-start justify-between w-full gap-1.5">
               <div className="min-w-0">
-                <span className="text-xs sm:text-base font-bold text-white block leading-tight">
+                <span className="text-xs sm:text-base font-semibold text-ink block leading-tight">
                   Veículos no Pátio
                 </span>
-                <span className="text-[10px] sm:text-xs text-slate-400 block truncate mt-0.5">
+                <span className="text-xs sm:text-xs text-ink-subtle block truncate mt-0.5">
                   Ag. Peça + Exec. + Final.
                 </span>
               </div>
-              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-brand text-on-brand flex items-center justify-center shrink-0">
                 <Car className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.3]" aria-hidden="true" />
               </div>
             </div>
             <div className="mt-2 sm:mt-3 flex items-baseline justify-between w-full">
-              <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono tabular-nums">
+              <span className="text-2xl sm:text-4xl font-semibold text-ink font-mono tabular-nums">
                 {veiculosNoPatio}
               </span>
-              <span className="text-[11px] sm:text-xs font-bold text-[#38BDF8]">
+              <span className="text-xs sm:text-xs font-semibold text-brand-ink">
                 Ver →
               </span>
             </div>
@@ -258,26 +258,26 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('os', 'EXECUCAO')}
-            className="text-left bg-[#0B1B36] hover:bg-[#12274D] border-2 border-[#2563EB] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
+            className="text-left bg-surface hover:bg-muted border-2 border-brand rounded-xl sm:rounded-lg p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
           >
             <div className="flex items-start justify-between w-full gap-1.5">
               <div className="min-w-0">
-                <span className="text-xs sm:text-base font-bold text-white block leading-tight">
+                <span className="text-xs sm:text-base font-semibold text-ink block leading-tight">
                   Em Execução
                 </span>
-                <span className="text-[10px] sm:text-xs text-slate-400 block truncate mt-0.5">
+                <span className="text-xs sm:text-xs text-ink-subtle block truncate mt-0.5">
                   Na bancada (30d)
                 </span>
               </div>
-              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-[#2563EB] text-white flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-muted text-ink flex items-center justify-center shrink-0">
                 <Wrench className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.3]" aria-hidden="true" />
               </div>
             </div>
             <div className="mt-2 sm:mt-3 flex items-baseline justify-between w-full">
-              <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono tabular-nums">
+              <span className="text-2xl sm:text-4xl font-semibold text-ink font-mono tabular-nums">
                 {emExecucao}
               </span>
-              <span className="text-[11px] sm:text-xs font-bold text-blue-400">
+              <span className="text-xs sm:text-xs font-semibold text-info">
                 Ver →
               </span>
             </div>
@@ -287,26 +287,26 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('os', 'ORCAMENTO')}
-            className="text-left bg-[#0B1B36] hover:bg-[#12274D] border-2 border-amber-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
+            className="text-left bg-surface hover:bg-muted border-2 border-warning rounded-xl sm:rounded-lg p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer"
           >
             <div className="flex items-start justify-between w-full gap-1.5">
               <div className="min-w-0">
-                <span className="text-xs sm:text-base font-bold text-white block leading-tight">
+                <span className="text-xs sm:text-base font-semibold text-ink block leading-tight">
                   Orçamentos
                 </span>
-                <span className="text-[10px] sm:text-xs text-slate-400 block truncate mt-0.5">
+                <span className="text-xs sm:text-xs text-ink-subtle block truncate mt-0.5">
                   Abertos (30d)
                 </span>
               </div>
-              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-amber-500 text-[#071226] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-warning text-on-brand flex items-center justify-center shrink-0">
                 <Clock className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.3]" aria-hidden="true" />
               </div>
             </div>
             <div className="mt-2 sm:mt-3 flex items-baseline justify-between w-full">
-              <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono tabular-nums">
+              <span className="text-2xl sm:text-4xl font-semibold text-ink font-mono tabular-nums">
                 {orcamentos}
               </span>
-              <span className="text-[11px] sm:text-xs font-bold text-amber-400">
+              <span className="text-xs sm:text-xs font-semibold text-warning">
                 Ver →
               </span>
             </div>
@@ -316,36 +316,36 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('estoque')}
-            className={`text-left bg-[#0B1B36] hover:bg-[#12274D] border-2 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer ${
-              criticosCount > 0 ? 'border-red-500' : 'border-emerald-500'
+            className={`text-left bg-surface hover:bg-muted border-2 rounded-xl sm:rounded-lg p-3 sm:p-5 flex flex-col justify-between min-h-[96px] sm:min-h-[144px] cursor-pointer ${
+              criticosCount > 0 ? 'border-danger' : 'border-success'
             }`}
           >
             <div className="flex items-start justify-between w-full gap-1.5">
               <div className="min-w-0">
-                <span className="text-xs sm:text-base font-bold text-white block leading-tight">
+                <span className="text-xs sm:text-base font-semibold text-ink block leading-tight">
                   Alerta Estoque
                 </span>
-                <span className="text-[10px] sm:text-xs text-slate-400 block truncate mt-0.5">
+                <span className="text-xs sm:text-xs text-ink-subtle block truncate mt-0.5">
                   Reposição mínima
                 </span>
               </div>
               <div
                 className={`w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${
                   criticosCount > 0
-                    ? 'bg-red-500 text-white'
-                    : 'bg-emerald-500 text-[#071226]'
+                    ? 'bg-danger-solid text-white'
+                    : 'bg-success-solid text-on-brand'
                 }`}
               >
                 <Package className="w-4 h-4 sm:w-6 sm:h-6 stroke-[2.3]" aria-hidden="true" />
               </div>
             </div>
             <div className="mt-2 sm:mt-3 flex items-baseline justify-between w-full">
-              <span className="text-2xl sm:text-4xl font-extrabold text-white font-mono tabular-nums">
+              <span className="text-2xl sm:text-4xl font-semibold text-ink font-mono tabular-nums">
                 {criticosCount}
               </span>
               <span
-                className={`text-[11px] sm:text-xs font-bold truncate ${
-                  criticosCount > 0 ? 'text-red-400' : 'text-emerald-400'
+                className={`text-xs sm:text-xs font-semibold truncate ${
+                  criticosCount > 0 ? 'text-danger' : 'text-success'
                 }`}
               >
                 {criticosCount > 0 ? 'Repor →' : `${concluidas} pagas`}
@@ -357,7 +357,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
 
       {/* ESTEIRA DE STATUS COMPACTA */}
       <section aria-label="Quantidade de veículos por etapa nos últimos 30 dias">
-        <h2 className="text-sm sm:text-lg font-bold text-white mb-2">
+        <h2 className="text-sm sm:text-lg font-semibold text-ink mb-2">
           Etapas da Oficina — 30 dias (Toque para filtrar)
         </h2>
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
@@ -378,15 +378,15 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                 key={st}
                 type="button"
                 onClick={() => onNavigateTab('os', st)}
-                className="bg-[#0B1B36] hover:bg-[#12274D] border border-[#264577] hover:border-[#38BDF8] rounded-xl p-2.5 sm:p-4 flex flex-col justify-between min-h-[64px] sm:min-h-[96px] text-left cursor-pointer"
+                className="bg-surface hover:bg-muted border border-line hover:border-brand rounded-xl p-2.5 sm:p-4 flex flex-col justify-between min-h-[64px] sm:min-h-[96px] text-left cursor-pointer"
               >
                 <div className="flex items-center justify-between gap-1">
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#38BDF8] shrink-0" aria-hidden="true" />
-                  <span className="text-lg sm:text-2xl font-extrabold font-mono tabular-nums text-white">
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-brand-ink shrink-0" aria-hidden="true" />
+                  <span className="text-lg sm:text-2xl font-semibold font-mono tabular-nums text-ink">
                     {qtd}
                   </span>
                 </div>
-                <span className="text-[11px] sm:text-sm font-bold text-slate-200 mt-1 truncate block">
+                <span className="text-xs sm:text-sm font-semibold text-ink mt-1 truncate block">
                   {meta.label}
                 </span>
               </button>
@@ -400,28 +400,28 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         {/* ÚLTIMAS ORDENS NO PÁTIO (8 COLUNAS) */}
         <section
           aria-label="Últimas Ordens de Serviço"
-          className="xl:col-span-8 bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between"
+          className="xl:col-span-8 bg-surface border-2 border-line rounded-xl sm:rounded-lg p-3 sm:p-5 flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between gap-2 mb-3">
               <div>
-                <h2 className="text-base sm:text-xl font-bold text-white">
+                <h2 className="text-base sm:text-xl font-semibold text-ink">
                   Últimos Veículos (30 dias)
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => onNavigateTab('os')}
-                className="min-h-[36px] sm:min-h-[42px] px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs sm:text-sm cursor-pointer shrink-0"
+                className="min-h-[36px] sm:min-h-[42px] px-3 py-1.5 rounded-lg bg-muted hover:bg-muted text-ink font-semibold text-xs sm:text-sm cursor-pointer shrink-0"
               >
                 Ver Todas
               </button>
             </div>
 
             {!data?.ultimas_os || data.ultimas_os.length === 0 ? (
-              <div className="bg-[#071226] border border-[#12274D] rounded-xl p-6 text-center space-y-2">
-                <Car className="w-10 h-10 text-slate-500 mx-auto" aria-hidden="true" />
-                <p className="text-sm sm:text-base font-bold text-white">
+              <div className="bg-sunken border border-line rounded-xl p-6 text-center space-y-2">
+                <Car className="w-10 h-10 text-ink-subtle mx-auto" aria-hidden="true" />
+                <p className="text-sm sm:text-base font-semibold text-ink">
                   Nenhuma Ordem de Serviço aberta nos últimos 30 dias
                 </p>
               </div>
@@ -440,38 +440,38 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                   return (
                     <div
                       key={os.id}
-                      className="bg-[#071226] border border-[#264577] rounded-xl p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                      className="bg-sunken border border-line rounded-xl p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                     >
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center justify-between sm:justify-start gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <span
                               translate="no"
-                              className="px-2 py-0.5 rounded bg-[#12274D] border border-slate-500 font-mono text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider shrink-0"
+                              className="px-2 py-0.5 rounded bg-surface border border-line-strong font-mono text-xs sm:text-sm font-semibold text-ink uppercase tracking-wider shrink-0"
                             >
                               {placa}
                             </span>
-                            <span className="text-sm sm:text-base font-bold text-white truncate">
+                            <span className="text-sm sm:text-base font-semibold text-ink truncate">
                               {modelo}
                             </span>
                           </div>
 
-                          <span className="sm:hidden font-mono font-extrabold text-sm text-[#38BDF8] tabular-nums shrink-0">
+                          <span className="sm:hidden font-mono font-semibold text-sm text-brand-ink tabular-nums shrink-0">
                             {formatBRL(os.total_geral)}
                           </span>
                         </div>
 
-                        <div className="flex items-center justify-between gap-2 text-xs text-slate-300">
+                        <div className="flex items-center justify-between gap-2 text-xs text-ink-muted">
                           <span className="truncate">
-                            <strong className="text-white">{clienteNome}</strong> &bull;{' '}
-                            <span className="text-slate-400 tabular-nums">
+                            <strong className="text-ink">{clienteNome}</strong> &bull;{' '}
+                            <span className="text-ink-subtle tabular-nums">
                               {formatDataCurta(os.data_abertura)}
                             </span>
                           </span>
 
                           <div className="flex sm:hidden items-center gap-1.5 shrink-0">
                             <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border font-bold text-[10px] ${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText}`}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border font-semibold text-xs ${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText}`}
                             >
                               <span>{meta.label}</span>
                             </span>
@@ -481,7 +481,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                                 target="_blank"
                                 rel="noreferrer"
                                 aria-label={`WhatsApp de ${clienteNome}`}
-                                className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0"
+                                className="w-8 h-8 rounded-lg bg-success-solid text-white flex items-center justify-center shrink-0"
                               >
                                 <MessageCircle className="w-4 h-4" aria-hidden="true" />
                               </a>
@@ -489,7 +489,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                             <button
                               type="button"
                               onClick={() => onNavigateTab('os', undefined, os.id)}
-                              className="h-8 px-2.5 rounded-lg bg-[#38BDF8] text-[#071226] font-extrabold text-xs flex items-center gap-1 shrink-0 cursor-pointer"
+                              className="h-8 px-2.5 rounded-lg bg-brand text-on-brand font-semibold text-xs flex items-center gap-1 shrink-0 cursor-pointer"
                             >
                               <Wrench className="w-3.5 h-3.5" aria-hidden="true" />
                               <span>Abrir</span>
@@ -500,15 +500,15 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
 
                       <div className="hidden sm:flex items-center gap-2 shrink-0">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border font-bold text-xs ${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText}`}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border font-semibold text-xs ${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText}`}
                         >
                           <StatusIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                           <span>{meta.label}</span>
                         </span>
 
-                        <div className="px-2.5 py-1 rounded-lg bg-[#0B1B36] border border-[#264577] font-mono font-bold text-sm text-white tabular-nums flex items-center gap-1">
+                        <div className="px-2.5 py-1 rounded-lg bg-surface border border-line font-mono font-semibold text-sm text-ink tabular-nums flex items-center gap-1">
                           <DollarSign
-                            className="w-3.5 h-3.5 text-[#38BDF8] shrink-0"
+                            className="w-3.5 h-3.5 text-brand-ink shrink-0"
                             aria-hidden="true"
                           />
                           <span>{formatBRL(os.total_geral)}</span>
@@ -521,7 +521,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                             rel="noreferrer"
                             aria-label={`Conversar no WhatsApp com ${clienteNome}`}
                             title="WhatsApp"
-                            className="min-h-[38px] px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shrink-0"
+                            className="min-h-[38px] px-2.5 py-1.5 rounded-lg bg-success-solid hover:bg-success-solid text-white font-semibold text-xs flex items-center gap-1.5 shrink-0"
                           >
                             <MessageCircle className="w-4 h-4" aria-hidden="true" />
                           </a>
@@ -530,7 +530,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
                         <button
                           type="button"
                           onClick={() => onNavigateTab('os', undefined, os.id)}
-                          className="min-h-[38px] px-3 py-1.5 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+                          className="min-h-[38px] px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-on-brand font-semibold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
                         >
                           <Wrench className="w-3.5 h-3.5 stroke-[2.5]" aria-hidden="true" />
                           <span>Abrir OS</span>
@@ -547,42 +547,42 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         {/* ALERTA DE ESTOQUE CRÍTICO (4 COLUNAS) */}
         <section
           aria-label="Itens com estoque baixo"
-          className="xl:col-span-4 bg-[#0B1B36] border-2 border-[#12274D] rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-col justify-between"
+          className="xl:col-span-4 bg-surface border-2 border-line rounded-xl sm:rounded-lg p-3 sm:p-5 flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between gap-2 mb-3">
-              <h2 className="text-base sm:text-xl font-bold text-white">
+              <h2 className="text-base sm:text-xl font-semibold text-ink">
                 Reposição de Peças
               </h2>
-              <span className="text-xs text-slate-400">Abaixo do mínimo</span>
+              <span className="text-xs text-ink-subtle">Abaixo do mínimo</span>
             </div>
 
             {!data?.itens_criticos || data.itens_criticos.length === 0 ? (
-              <div className="bg-[#071226] border border-emerald-700 rounded-xl p-4 text-center space-y-1">
+              <div className="bg-sunken border border-success rounded-xl p-4 text-center space-y-1">
                 <CheckCircle2
-                  className="w-8 h-8 text-emerald-400 mx-auto"
+                  className="w-8 h-8 text-success mx-auto"
                   aria-hidden="true"
                 />
-                <p className="text-sm font-bold text-white">Estoque em Dia</p>
+                <p className="text-sm font-semibold text-ink">Estoque em Dia</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {data.itens_criticos.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-[#071226] border border-red-600/80 rounded-xl p-2.5 flex items-center justify-between gap-2"
+                    className="bg-sunken border border-danger/80 rounded-xl p-2.5 flex items-center justify-between gap-2"
                   >
                     <div className="min-w-0">
-                      <div className="text-xs sm:text-sm font-bold text-white truncate">
+                      <div className="text-xs sm:text-sm font-semibold text-ink truncate">
                         {item.nome}
                       </div>
-                      <div className="text-[11px] text-slate-400">
+                      <div className="text-xs text-ink-subtle">
                         {item.categoria} (Mín: {item.minimo_alerta})
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0 bg-red-950 border border-red-500 rounded-lg px-2.5 py-1">
-                      <div className="font-mono text-xs sm:text-sm font-bold text-red-200 tabular-nums">
+                    <div className="text-right shrink-0 bg-danger/15 border border-danger rounded-lg px-2.5 py-1">
+                      <div className="font-mono text-xs sm:text-sm font-semibold text-danger tabular-nums">
                         {item.quantidade} un.
                       </div>
                     </div>
@@ -595,9 +595,9 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <button
             type="button"
             onClick={() => onNavigateTab('estoque')}
-            className="mt-3 w-full min-h-[42px] px-4 py-2 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer"
+            className="mt-3 w-full min-h-[42px] px-4 py-2 rounded-xl bg-surface hover:bg-muted border border-line-strong text-ink font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer"
           >
-            <Package className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+            <Package className="w-4 h-4 text-brand-ink" aria-hidden="true" />
             <span>Abrir Estoque Completo</span>
           </button>
         </section>

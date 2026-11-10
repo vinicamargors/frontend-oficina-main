@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { api } from '../api/client';
+import { api, COR_PRIMARIA_PADRAO, COR_SECUNDARIA_PADRAO } from '../api/client';
 import {
   Building2,
   Save,
@@ -34,8 +34,8 @@ export function Oficina({ empresaId }: OficinaProps) {
   const [chavePix, setChavePix] = useState('');
 
   // Identidade Visual
-  const [corPrimaria, setCorPrimaria] = useState('#1e3a8a');
-  const [corSecundaria, setCorSecundaria] = useState('#38BDF8');
+  const [corPrimaria, setCorPrimaria] = useState(COR_PRIMARIA_PADRAO);
+  const [corSecundaria, setCorSecundaria] = useState(COR_SECUNDARIA_PADRAO);
 
   // Coordenadas GPS e Raio do Pátio (automáticos)
   const [latGps, setLatGps] = useState<number | null>(null);
@@ -83,8 +83,8 @@ export function Oficina({ empresaId }: OficinaProps) {
       setEmail(cfg.email || '');
       setEndereco(cfg.endereco || '');
       setChavePix(cfg.chave_pix || '');
-      setCorPrimaria(cfg.cor_primaria || '#1e3a8a');
-      setCorSecundaria(cfg.cor_secundaria || '#38BDF8');
+      setCorPrimaria(cfg.cor_primaria || COR_PRIMARIA_PADRAO);
+      setCorSecundaria(cfg.cor_secundaria || COR_SECUNDARIA_PADRAO);
       setLatGps(cfg.latitude_gps ?? null);
       setLonGps(cfg.longitude_gps ?? null);
       setRaioGps(cfg.raio_gps_metros || 100);
@@ -206,16 +206,16 @@ export function Oficina({ empresaId }: OficinaProps) {
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto pb-12">
-      <header className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <header className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#38BDF8] text-[#38BDF8] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-muted border-2 border-brand text-brand-ink flex items-center justify-center shrink-0">
             <Building2 className="w-6 h-6 stroke-[2.5]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight">
               Dados da Oficina &amp; Parâmetros
             </h1>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-ink-subtle">
               Cadastros fiscais, chave PIX, localização GPS para ponto eletrônico e regras globais de folha.
             </p>
           </div>
@@ -226,9 +226,9 @@ export function Oficina({ empresaId }: OficinaProps) {
           onClick={carregarDados}
           disabled={carregando}
           title="Recarregar dados"
-          className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-300 flex items-center gap-2 cursor-pointer disabled:opacity-50 text-xs font-bold"
+          className="min-h-[40px] px-3 py-1.5 rounded-xl bg-sunken hover:bg-muted border border-line text-ink-muted flex items-center gap-2 cursor-pointer disabled:opacity-50 text-xs font-semibold"
         >
-          <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-[#38BDF8]' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-brand-ink' : ''}`} />
           <span>Atualizar</span>
         </button>
       </header>
@@ -236,14 +236,14 @@ export function Oficina({ empresaId }: OficinaProps) {
       {/* FEEDBACK DE SUCESSO / ERRO */}
       <div aria-live="polite">
         {sucessoMsg && (
-          <div className="p-3 rounded-xl bg-emerald-950 border border-emerald-500 text-emerald-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-success/15 border border-success text-success flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
             <span>{sucessoMsg}</span>
           </div>
         )}
         {erro && (
-          <div className="p-3 rounded-xl bg-red-950 border border-red-500 text-red-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-danger/15 border border-danger text-danger flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
             <span>{erro}</span>
           </div>
         )}
@@ -251,119 +251,119 @@ export function Oficina({ empresaId }: OficinaProps) {
 
       <form onSubmit={handleSalvar} className="space-y-4">
         {/* SEÇÃO 1: DADOS CADASTRAIS & FISCAIS */}
-        <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-4">
-          <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-[#12274D] pb-2">
-            <Building2 className="w-4 h-4 text-[#38BDF8]" />
+        <section className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-4">
+          <h2 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2 border-b border-line pb-2">
+            <Building2 className="w-4 h-4 text-brand-ink" />
             <span>Identificação da Empresa &amp; Contato</span>
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Nome Fantasia da Oficina *</label>
+              <label className="block font-semibold text-ink mb-1">Nome Fantasia da Oficina *</label>
               <input
                 type="text"
                 required
                 value={nomeFantasia}
                 onChange={(e) => setNomeFantasia(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-semibold"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Razão Social</label>
+              <label className="block font-semibold text-ink mb-1">Razão Social</label>
               <input
                 type="text"
                 value={razaoSocial}
                 onChange={(e) => setRazaoSocial(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">CNPJ</label>
+              <label className="block font-semibold text-ink mb-1">CNPJ</label>
               <input
                 type="text"
                 value={cnpj}
                 onChange={(e) => setCnpj(e.target.value)}
                 placeholder="00.000.000/0001-00"
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Inscrição Estadual (IE)</label>
+              <label className="block font-semibold text-ink mb-1">Inscrição Estadual (IE)</label>
               <input
                 type="text"
                 value={inscricaoEstadual}
                 onChange={(e) => setInscricaoEstadual(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">WhatsApp da Oficina (com DDD)</label>
+              <label className="block font-semibold text-ink mb-1">WhatsApp da Oficina (com DDD)</label>
               <input
                 type="tel"
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
                 placeholder="Ex: 11999998888"
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Telefone Fixo</label>
+              <label className="block font-semibold text-ink mb-1">Telefone Fixo</label>
               <input
                 type="tel"
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">E-mail Comercial</label>
+              <label className="block font-semibold text-ink mb-1">E-mail Comercial</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Chave PIX Oficial (sai nas OS)</label>
+              <label className="block font-semibold text-ink mb-1">Chave PIX Oficial (sai nas OS)</label>
               <input
                 type="text"
                 value={chavePix}
                 onChange={(e) => setChavePix(e.target.value)}
                 placeholder="CNPJ, E-mail, Celular ou Chave Aleatória"
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:col-span-2">
               <div className="sm:col-span-1">
-                <label className="block font-bold text-slate-200 mb-1">CEP da Oficina</label>
+                <label className="block font-semibold text-ink mb-1">CEP da Oficina</label>
                 <input
                   type="text"
                   value={cep}
                   onChange={(e) => handleCepChange(e.target.value)}
                   placeholder="00000-000"
                   maxLength={9}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block font-bold text-slate-200 mb-1">Endereço Completo</label>
+                <label className="block font-semibold text-ink mb-1">Endereço Completo</label>
                 <input
                   type="text"
                   value={endereco}
                   onChange={(e) => setEndereco(e.target.value)}
                   onBlur={() => resolverCoordenadasAutomaticas(endereco)}
                   placeholder="Rua, Número, Bairro, Cidade - UF"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                 />
               </div>
             </div>
@@ -371,14 +371,14 @@ export function Oficina({ empresaId }: OficinaProps) {
         </section>
 
         {/* SEÇÃO 2: ÁREA DO PÁTIO DA OFICINA & TRAVA DO PONTO ELETRÔNICO */}
-        <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#12274D] pb-2">
+        <section className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-2">
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-blue-400" />
+              <h2 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-info" />
                 <span>Área do Pátio &amp; Trava do Ponto Eletrônico</span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-subtle">
                 Ponto geográfico e raio delimitador para garantir que a equipe só registre ponto dentro do pátio.
               </p>
             </div>
@@ -388,7 +388,7 @@ export function Oficina({ empresaId }: OficinaProps) {
                 href={`https://www.google.com/maps/search/?api=1&query=${latGps},${lonGps}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                className="text-xs font-semibold text-info hover:text-info flex items-center gap-1 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>Ver no Google Maps ↗</span>
@@ -398,7 +398,7 @@ export function Oficina({ empresaId }: OficinaProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
             <div className="sm:col-span-1">
-              <label className="block font-bold text-slate-200 mb-1 text-xs sm:text-sm">
+              <label className="block font-semibold text-ink mb-1 text-xs sm:text-sm">
                 Raio de Cobertura do Pátio
               </label>
               <div className="flex items-center gap-2">
@@ -408,25 +408,25 @@ export function Oficina({ empresaId }: OficinaProps) {
                   max={1000}
                   value={raioGps}
                   onChange={(e) => setRaioGps(parseInt(e.target.value, 10) || 100)}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono font-bold text-sm"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono font-semibold text-sm"
                 />
-                <span className="text-xs text-slate-400 font-semibold shrink-0">metros</span>
+                <span className="text-xs text-ink-subtle font-semibold shrink-0">metros</span>
               </div>
             </div>
 
-            <div className="sm:col-span-2 text-xs text-slate-400 pb-2">
+            <div className="sm:col-span-2 text-xs text-ink-subtle pb-2">
               {resolvendoLocalizacao ? (
-                <span className="text-blue-400 flex items-center gap-1.5 animate-pulse font-medium">
+                <span className="text-info flex items-center gap-1.5 animate-pulse font-medium">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   Identificando pátio no mapa pelo CEP/endereço...
                 </span>
               ) : latGps != null && lonGps != null ? (
-                <span className="text-emerald-400 flex items-center gap-1 font-medium">
+                <span className="text-success flex items-center gap-1 font-medium">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Pátio localizado e delimitado com raio de {raioGps}m de tolerância.
                 </span>
               ) : (
-                <span className="text-amber-400">
+                <span className="text-warning">
                   Preencha o CEP ou endereço da oficina para gerar automaticamente o mapa do pátio.
                 </span>
               )}
@@ -435,7 +435,7 @@ export function Oficina({ empresaId }: OficinaProps) {
 
           {/* MAPA AUTOMÁTICO DO PÁTIO */}
           {latGps != null && lonGps != null && (
-            <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden border border-[#264577] relative bg-[#071226]">
+            <div className="w-full h-52 sm:h-64 rounded-xl overflow-hidden border border-line relative bg-sunken">
               <iframe
                 title="Pátio da Oficina"
                 width="100%"
@@ -452,72 +452,72 @@ export function Oficina({ empresaId }: OficinaProps) {
         </section>
 
         {/* SEÇÃO 3: PARÂMETROS DA FOLHA DE PAGAMENTO & REGRAS DE COMISSÃO */}
-        <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3.5">
-          <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 border-b border-[#12274D] pb-2">
-            <DollarSign className="w-4 h-4 text-emerald-400" />
+        <section className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3.5">
+          <h2 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2 border-b border-line pb-2">
+            <DollarSign className="w-4 h-4 text-success" />
             <span>Parâmetros Padrão da Folha &amp; Comissões da Oficina</span>
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs sm:text-sm">
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Dia de Pagamento da Folha</label>
+              <label className="block font-semibold text-ink mb-1">Dia de Pagamento da Folha</label>
               <input
                 type="number"
                 min={1}
                 max={31}
                 value={diaPagamento}
                 onChange={(e) => setDiaPagamento(parseInt(e.target.value, 10) || 5)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono text-center font-semibold"
               />
-              <span className="text-[11px] text-slate-400 mt-0.5 block">Ex: Dia 5 do mês seguinte</span>
+              <span className="text-xs text-ink-subtle mt-0.5 block">Ex: Dia 5 do mês seguinte</span>
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Dia do Vale / Adiantamento</label>
+              <label className="block font-semibold text-ink mb-1">Dia do Vale / Adiantamento</label>
               <input
                 type="number"
                 min={1}
                 max={31}
                 value={diaAdiantamento}
                 onChange={(e) => setDiaAdiantamento(parseInt(e.target.value, 10) || 20)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono text-center font-semibold"
               />
-              <span className="text-[11px] text-slate-400 mt-0.5 block">Ex: Dia 20 do mês</span>
+              <span className="text-xs text-ink-subtle mt-0.5 block">Ex: Dia 20 do mês</span>
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Comissão Global Mão de Obra (%)</label>
+              <label className="block font-semibold text-ink mb-1">Comissão Global Mão de Obra (%)</label>
               <input
                 type="number"
                 min={0}
                 max={100}
                 value={comissaoServico}
                 onChange={(e) => setComissaoServico(parseFloat(e.target.value) || 0)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold text-emerald-400"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono text-center font-semibold text-success"
               />
-              <span className="text-[11px] text-slate-400 mt-0.5 block">Usado quando o mecânico não tem taxa individual</span>
+              <span className="text-xs text-ink-subtle mt-0.5 block">Usado quando o mecânico não tem taxa individual</span>
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Comissão Global Peças (%)</label>
+              <label className="block font-semibold text-ink mb-1">Comissão Global Peças (%)</label>
               <input
                 type="number"
                 min={0}
                 max={100}
                 value={comissaoPeca}
                 onChange={(e) => setComissaoPeca(parseFloat(e.target.value) || 0)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold text-emerald-400"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono text-center font-semibold text-success"
               />
             </div>
 
             <div>
-              <label className="block font-bold text-slate-200 mb-1">Valor Padrão Hora Extra (R$/h)</label>
+              <label className="block font-semibold text-ink mb-1">Valor Padrão Hora Extra (R$/h)</label>
               <input
                 type="number"
                 min={0}
                 value={valorHoraExtra}
                 onChange={(e) => setValorHoraExtra(parseFloat(e.target.value) || 0)}
-                className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center"
+                className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono text-center"
               />
             </div>
 
@@ -527,9 +527,9 @@ export function Oficina({ empresaId }: OficinaProps) {
                 id="chk-paga-he"
                 checked={pagaHoraExtra}
                 onChange={(e) => setPagaHoraExtra(e.target.checked)}
-                className="w-4 h-4 rounded text-[#38BDF8] cursor-pointer"
+                className="w-4 h-4 rounded text-brand-ink cursor-pointer"
               />
-              <label htmlFor="chk-paga-he" className="font-bold text-slate-200 cursor-pointer select-none">
+              <label htmlFor="chk-paga-he" className="font-semibold text-ink cursor-pointer select-none">
                 Pagar hora extra por padrão
               </label>
             </div>
@@ -541,7 +541,7 @@ export function Oficina({ empresaId }: OficinaProps) {
           <button
             type="submit"
             disabled={salvando}
-            className="min-h-[50px] px-8 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-black text-base flex items-center gap-2 cursor-pointer shadow-lg shadow-sky-950/40 disabled:opacity-50"
+            className="min-h-[50px] px-8 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-base flex items-center gap-2 cursor-pointer shadow-lg shadow-info/40 disabled:opacity-50"
           >
             <Save className="w-5 h-5 stroke-[2.5]" />
             <span>{salvando ? 'Salvando Alterações…' : 'Salvar Dados da Oficina'}</span>

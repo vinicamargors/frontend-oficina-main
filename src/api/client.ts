@@ -431,8 +431,8 @@ export const api = {
       email: emp.email || '',
       endereco: emp.endereco || '',
       chave_pix: cfg.chave_pix || '',
-      cor_primaria: cfg.cor_primaria || '#1e3a8a',
-      cor_secundaria: cfg.cor_secundaria || '#38BDF8',
+      cor_primaria: cfg.cor_primaria || COR_PRIMARIA_PADRAO,
+      cor_secundaria: cfg.cor_secundaria || COR_SECUNDARIA_PADRAO,
       logo_b64: cfg.logo_b64 || null,
       latitude_gps: cfg.latitude_gps ?? null,
       longitude_gps: cfg.longitude_gps ?? null,
@@ -595,3 +595,7 @@ export async function migrarConfigLocal(empresaId: string): Promise<void> {
   localStorage.removeItem(chaveCustom);
   localStorage.removeItem(chaveFolha);
 }
+
+// Cores de marca padrão da oficina (dado de configuração, não estilo de tela).
+export const COR_PRIMARIA_PADRAO = '#1e3a8a';
+export const COR_SECUNDARIA_PADRAO = '#38BDF8';

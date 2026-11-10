@@ -590,14 +590,14 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
   if (!canSeeFinanceiro) {
     return (
-      <div className="bg-[#0B1B36] border-2 border-red-600 rounded-2xl p-6 sm:p-10 text-center space-y-4 max-w-xl mx-auto my-8">
-        <div className="w-16 h-16 rounded-2xl bg-red-950 border border-red-500 text-red-400 flex items-center justify-center mx-auto">
+      <div className="bg-surface border-2 border-danger rounded-lg p-6 sm:p-10 text-center space-y-4 max-w-xl mx-auto my-8">
+        <div className="w-16 h-16 rounded-lg bg-danger/15 border border-danger text-danger flex items-center justify-center mx-auto">
           <ShieldAlert className="w-8 h-8" />
         </div>
-        <h2 className="text-xl sm:text-2xl font-black text-white">
+        <h2 className="text-xl sm:text-2xl font-semibold text-ink">
           Acesso Restrito ao Módulo Financeiro
         </h2>
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-ink-muted">
           Este painel contém informações estratégicas, DRE, margens e dados contábeis da oficina.
           Seu perfil ({user?.cargo}) não possui permissão para visualizar estes números.
         </p>
@@ -608,20 +608,20 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-12">
       {/* CABEÇALHO FINANCEIRO & BARRA GLOBAL DE PERÍODO */}
-      <header className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-3.5 sm:p-5 space-y-3.5">
+      <header className="bg-surface border-2 border-line rounded-lg p-3.5 sm:p-5 space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#38BDF8] text-[#38BDF8] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-muted border-2 border-brand text-brand-ink flex items-center justify-center shrink-0">
               <DollarSign className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight flex items-center gap-2">
                 <span>Gestão Financeira &amp; BI</span>
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500 text-[11px] font-mono font-bold text-emerald-300">
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-success/15 border border-success text-xs font-mono font-semibold text-success">
                   DRE &bull; Balanço
                 </span>
               </h1>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-subtle">
                 Controle de caixa, receitas, custos variáveis, contas a pagar e inteligência de oficina.
               </p>
             </div>
@@ -634,10 +634,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               disabled={carregando}
               title="Atualizar dados financeiros"
               aria-label="Atualizar dados financeiros"
-              className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-300 flex items-center justify-center cursor-pointer disabled:opacity-50"
+              className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-sunken hover:bg-muted border border-line text-ink-muted flex items-center justify-center cursor-pointer disabled:opacity-50"
             >
               <RefreshCw
-                className={`w-4 h-4 ${carregando ? 'animate-spin text-[#38BDF8]' : ''}`}
+                className={`w-4 h-4 ${carregando ? 'animate-spin text-brand-ink' : ''}`}
                 aria-hidden="true"
               />
             </button>
@@ -651,16 +651,16 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 else handleExportarCsv('BALANCO');
               }}
               title="Exportar dados da aba atual para CSV/Excel"
-              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-sunken hover:bg-muted border border-line text-ink font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <Download className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+              <Download className="w-4 h-4 text-brand-ink" aria-hidden="true" />
               <span>Exportar CSV</span>
             </button>
 
             <button
               type="button"
               onClick={() => abrirModalCadastroTransacao('DESPESA')}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-red-950/40"
+              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-danger-solid hover:bg-danger-solid text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-danger/40"
             >
               <ArrowDownRight className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
               <span>+ Despesa</span>
@@ -669,7 +669,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             <button
               type="button"
               onClick={() => abrirModalCadastroTransacao('RECEITA')}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/40"
+              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-success-solid hover:bg-success-solid text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-success/40"
             >
               <ArrowUpRight className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
               <span>+ Receita / Aporte</span>
@@ -678,7 +678,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         </div>
 
         {/* BARRA DE ATALHOS DE PERÍODO */}
-        <div className="pt-2 border-t border-[#12274D] flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="pt-2 border-t border-line flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
             {(
               [
@@ -694,10 +694,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 key={at.id}
                 type="button"
                 onClick={() => aplicarAtalhoPeriodo(at.id)}
-                className={`px-2.5 py-1 rounded-lg font-bold shrink-0 cursor-pointer transition-colors ${
+                className={`px-2.5 py-1 rounded-lg font-semibold shrink-0 cursor-pointer transition-colors ${
                   periodoAtalho === at.id
-                    ? 'bg-[#2563EB] text-white'
-                    : 'bg-[#071226] text-slate-300 border border-[#264577] hover:bg-[#12274D]'
+                    ? 'bg-muted text-ink'
+                    : 'bg-sunken text-ink-muted border border-line hover:bg-muted'
                 }`}
               >
                 {at.label}
@@ -705,8 +705,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-[11px] text-slate-300">
-            <Calendar className="w-3.5 h-3.5 text-[#38BDF8] shrink-0" aria-hidden="true" />
+          <div className="flex items-center gap-2 font-mono text-xs text-ink-muted">
+            <Calendar className="w-3.5 h-3.5 text-brand-ink shrink-0" aria-hidden="true" />
             <input
               type="date"
               value={dataInicio}
@@ -714,7 +714,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 setDataInicio(e.target.value);
                 setPeriodoAtalho('CUSTOM');
               }}
-              className="px-2 py-0.5 rounded bg-[#071226] border border-[#264577] text-white text-xs"
+              className="px-2 py-0.5 rounded bg-sunken border border-line text-ink text-xs"
             />
             <span>até</span>
             <input
@@ -724,7 +724,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 setDataFim(e.target.value);
                 setPeriodoAtalho('CUSTOM');
               }}
-              className="px-2 py-0.5 rounded bg-[#071226] border border-[#264577] text-white text-xs"
+              className="px-2 py-0.5 rounded bg-sunken border border-line text-ink text-xs"
             />
           </div>
         </div>
@@ -733,14 +733,14 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {/* FEEDBACK DE SUCESSO / ERRO */}
       <div aria-live="polite">
         {sucessoMsg && (
-          <div className="p-3 rounded-xl bg-emerald-950 border border-emerald-500 text-emerald-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-success/15 border border-success text-success flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
             <span>{sucessoMsg}</span>
           </div>
         )}
         {erro && (
-          <div className="p-3 rounded-xl bg-red-950 border border-red-500 text-red-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-danger/15 border border-danger text-danger flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
             <span>{erro}</span>
           </div>
         )}
@@ -749,15 +749,15 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {/* 4 ABAS PRINCIPAIS DO MÓDULO FINANCEIRO */}
       <nav
         aria-label="Abas Financeiras"
-        className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 bg-[#071226] p-1.5 rounded-2xl border-2 border-[#12274D]"
+        className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 bg-sunken p-1.5 rounded-lg border-2 border-line"
       >
         <button
           type="button"
           onClick={() => setActiveTab('balanco')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'balanco'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
+              ? 'bg-brand text-on-brand'
+              : 'text-ink-muted hover:bg-muted'
           }`}
         >
           <PieChart className="w-4 h-4" aria-hidden="true" />
@@ -767,10 +767,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         <button
           type="button"
           onClick={() => setActiveTab('dre')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'dre'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
+              ? 'bg-brand text-on-brand'
+              : 'text-ink-muted hover:bg-muted'
           }`}
         >
           <FileSpreadsheet className="w-4 h-4" aria-hidden="true" />
@@ -780,26 +780,26 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         <button
           type="button"
           onClick={() => setActiveTab('contas')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'contas'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
+              ? 'bg-brand text-on-brand'
+              : 'text-ink-muted hover:bg-muted'
           }`}
         >
           <CreditCard className="w-4 h-4" aria-hidden="true" />
           <span>Contas a Pagar &amp; Receber</span>
           {resumoFinanceiro.despesasPendentes > 0 && (
-            <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+            <span className="w-2 h-2 rounded-full bg-danger shrink-0" />
           )}
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('bi')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'bi'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
+              ? 'bg-brand text-on-brand'
+              : 'text-ink-muted hover:bg-muted'
           }`}
         >
           <TrendingUp className="w-4 h-4" aria-hidden="true" />
@@ -817,50 +817,50 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             aria-label="Indicadores Financeiros Executivos"
             className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3"
           >
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+            <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-ink-subtle text-xs font-semibold">
                 <span>Caixa Realizado</span>
-                <ArrowUpRight className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+                <ArrowUpRight className="w-4 h-4 text-success" aria-hidden="true" />
               </div>
-              <div className="text-lg sm:text-2xl font-black font-mono text-emerald-400 mt-1 tabular-nums">
+              <div className="text-lg sm:text-2xl font-semibold font-mono text-success mt-1 tabular-nums">
                 {formatBRL(resumoFinanceiro.caixaTotal)}
               </div>
-              <div className="text-[11px] text-slate-400">OS Pagas + Aportes recebidos</div>
+              <div className="text-xs text-ink-subtle">OS Pagas + Aportes recebidos</div>
             </div>
 
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+            <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-ink-subtle text-xs font-semibold">
                 <span>A Receber (Projetado)</span>
-                <Clock className="w-4 h-4 text-blue-400" aria-hidden="true" />
+                <Clock className="w-4 h-4 text-info" aria-hidden="true" />
               </div>
-              <div className="text-lg sm:text-2xl font-black font-mono text-blue-400 mt-1 tabular-nums">
+              <div className="text-lg sm:text-2xl font-semibold font-mono text-info mt-1 tabular-nums">
                 {formatBRL(resumoFinanceiro.totalAReceber)}
               </div>
-              <div className="text-[11px] text-slate-400">OS em execução / a faturar</div>
+              <div className="text-xs text-ink-subtle">OS em execução / a faturar</div>
             </div>
 
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+            <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-ink-subtle text-xs font-semibold">
                 <span>Despesas Pagas</span>
-                <ArrowDownRight className="w-4 h-4 text-red-400" aria-hidden="true" />
+                <ArrowDownRight className="w-4 h-4 text-danger" aria-hidden="true" />
               </div>
-              <div className="text-lg sm:text-2xl font-black font-mono text-red-400 mt-1 tabular-nums">
+              <div className="text-lg sm:text-2xl font-semibold font-mono text-danger mt-1 tabular-nums">
                 {formatBRL(resumoFinanceiro.despesasPagas)}
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-xs text-ink-subtle">
                 Pendente: {formatBRL(resumoFinanceiro.despesasPendentes)}
               </div>
             </div>
 
-            <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-xl p-3 sm:p-4 flex flex-col justify-between shadow-lg shadow-sky-950/20">
-              <div className="flex items-center justify-between text-[#38BDF8] text-xs font-bold">
+            <div className="bg-surface border-2 border-brand rounded-xl p-3 sm:p-4 flex flex-col justify-between shadow-lg shadow-info/20">
+              <div className="flex items-center justify-between text-brand-ink text-xs font-semibold">
                 <span>Lucro Líquido Real</span>
-                <TrendingUp className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+                <TrendingUp className="w-4 h-4 text-brand-ink" aria-hidden="true" />
               </div>
-              <div className="text-lg sm:text-2xl font-black font-mono text-white mt-1 tabular-nums">
+              <div className="text-lg sm:text-2xl font-semibold font-mono text-ink mt-1 tabular-nums">
                 {formatBRL(resumoFinanceiro.lucroLiquidoReal)}
               </div>
-              <div className="text-[11px] text-emerald-400 font-bold">
+              <div className="text-xs text-success font-semibold">
                 Margem Líquida: {resumoFinanceiro.margemLiquida.toFixed(1)}%
               </div>
             </div>
@@ -869,63 +869,63 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           {/* ESTRUTURA DO BALANÇO PATRIMONIAL ATIVO VS PASSIVO */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* ATIVO CIRCULANTE */}
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
-                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-line pb-2.5">
+                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-success" />
                   <span>Ativo Circulante (Bens e Direitos)</span>
                 </h3>
-                <span className="font-mono font-bold text-sm text-emerald-400">
+                <span className="font-mono font-semibold text-sm text-success">
                   {formatBRL(resumoFinanceiro.totalAtivo)}
                 </span>
               </div>
 
               <div className="space-y-2 text-xs sm:text-sm font-mono tabular-nums">
-                <div className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between">
-                  <span className="text-slate-300 font-sans">Caixa &amp; Bancos Realizado</span>
-                  <strong className="text-white">{formatBRL(resumoFinanceiro.caixaTotal)}</strong>
+                <div className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between">
+                  <span className="text-ink-muted font-sans">Caixa &amp; Bancos Realizado</span>
+                  <strong className="text-ink">{formatBRL(resumoFinanceiro.caixaTotal)}</strong>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between">
-                  <span className="text-slate-300 font-sans">Contas a Receber (OS em Aberto)</span>
-                  <strong className="text-blue-300">{formatBRL(resumoFinanceiro.totalAReceber)}</strong>
+                <div className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between">
+                  <span className="text-ink-muted font-sans">Contas a Receber (OS em Aberto)</span>
+                  <strong className="text-info">{formatBRL(resumoFinanceiro.totalAReceber)}</strong>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between">
-                  <span className="text-slate-300 font-sans">Patrimônio em Peças (Estoque Almoxarifado)</span>
-                  <strong className="text-amber-300">{formatBRL(patrimonioEstoque)}</strong>
+                <div className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between">
+                  <span className="text-ink-muted font-sans">Patrimônio em Peças (Estoque Almoxarifado)</span>
+                  <strong className="text-warning">{formatBRL(patrimonioEstoque)}</strong>
                 </div>
               </div>
             </div>
 
             {/* PASSIVO CIRCULANTE & POSIÇÃO LÍQUIDA */}
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
-                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-line pb-2.5">
+                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-danger" />
                   <span>Passivo Circulante (Obrigações)</span>
                 </h3>
-                <span className="font-mono font-bold text-sm text-red-400">
+                <span className="font-mono font-semibold text-sm text-danger">
                   {formatBRL(resumoFinanceiro.totalPassivo)}
                 </span>
               </div>
 
               <div className="space-y-2 text-xs sm:text-sm font-mono tabular-nums">
-                <div className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between">
-                  <span className="text-slate-300 font-sans">Contas a Pagar Pendentes / A Vencer</span>
-                  <strong className="text-red-300">{formatBRL(resumoFinanceiro.despesasPendentes)}</strong>
+                <div className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between">
+                  <span className="text-ink-muted font-sans">Contas a Pagar Pendentes / A Vencer</span>
+                  <strong className="text-danger">{formatBRL(resumoFinanceiro.despesasPendentes)}</strong>
                 </div>
 
-                <div className="p-3 rounded-xl bg-sky-950/30 border-2 border-[#38BDF8] flex items-center justify-between mt-3">
+                <div className="p-3 rounded-xl bg-info/30 border-2 border-brand flex items-center justify-between mt-3">
                   <div className="font-sans">
-                    <div className="text-xs font-bold text-[#38BDF8] uppercase tracking-wider">
+                    <div className="text-xs font-semibold text-brand-ink uppercase tracking-wider">
                       Posição Patrimonial Líquida
                     </div>
-                    <div className="text-[11px] text-slate-300 mt-0.5">
+                    <div className="text-xs text-ink-muted mt-0.5">
                       Ativo Circulante Total &minus; Passivo Pendente
                     </div>
                   </div>
-                  <strong className="text-lg sm:text-xl font-extrabold text-white">
+                  <strong className="text-lg sm:text-xl font-semibold text-ink">
                     {formatBRL(resumoFinanceiro.posicaoLiquida)}
                   </strong>
                 </div>
@@ -939,23 +939,23 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           ABA 2: DRE OPERACIONAL DA OFICINA (DEMONSTRATIVO)
           ======================================================== */}
       {activeTab === 'dre' && (
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#12274D] pb-3">
+        <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
+              <h2 className="text-base sm:text-lg font-semibold text-ink flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-brand-ink" aria-hidden="true" />
                 <span>Demonstrativo do Resultado do Exercício (DRE)</span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-subtle">
                 Detalhamento vertical de receitas, CMV de peças, despesas fixas/variáveis e lucro líquido.
               </p>
             </div>
             <button
               type="button"
               onClick={() => handleExportarCsv('DRE')}
-              className="min-h-[38px] px-3.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+              className="min-h-[38px] px-3.5 rounded-xl bg-sunken hover:bg-muted border border-line text-ink font-semibold text-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
             >
-              <Download className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+              <Download className="w-4 h-4 text-brand-ink" aria-hidden="true" />
               <span>Baixar DRE (Excel)</span>
             </button>
           </div>
@@ -963,70 +963,70 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           {/* TABELA VERTICAL DE DRE ESTRUTURADA */}
           <div className="space-y-2 text-xs sm:text-sm font-mono tabular-nums">
             {/* 1. RECEITA BRUTA */}
-            <div className="p-3 rounded-xl bg-[#071226] border border-blue-900/60 flex items-center justify-between font-bold">
-              <span className="font-sans text-blue-300 flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-sunken border border-info/60 flex items-center justify-between font-semibold">
+              <span className="font-sans text-info flex items-center gap-2">
                 <span>1. RECEITA BRUTA TOTAL</span>
               </span>
-              <span className="text-base text-blue-300 font-extrabold">
+              <span className="text-base text-info font-semibold">
                 {formatBRL(resumoFinanceiro.receitaBrutaTotal)}
               </span>
             </div>
 
-            <div className="pl-4 pr-3 py-1.5 flex items-center justify-between text-slate-300 text-xs">
+            <div className="pl-4 pr-3 py-1.5 flex items-center justify-between text-ink-muted text-xs">
               <span className="font-sans">(+) Faturamento de Ordens de Serviço (Peças + Mão de Obra)</span>
               <span>{formatBRL(resumoFinanceiro.faturamentoOS)}</span>
             </div>
 
             {resumoFinanceiro.receitasAvulsasRecebidas > 0 && (
-              <div className="pl-4 pr-3 py-1.5 flex items-center justify-between text-slate-300 text-xs">
+              <div className="pl-4 pr-3 py-1.5 flex items-center justify-between text-ink-muted text-xs">
                 <span className="font-sans">(+) Receitas Avulsas Liquidadas (Aportes, Sucata, etc.)</span>
                 <span>{formatBRL(resumoFinanceiro.receitasAvulsasRecebidas)}</span>
               </div>
             )}
 
             {/* 2. CUSTO VARIÁVEL (CMV) */}
-            <div className="p-3 rounded-xl bg-[#071226] border border-red-950 flex items-center justify-between font-bold">
-              <span className="font-sans text-red-300">
+            <div className="p-3 rounded-xl bg-sunken border border-danger flex items-center justify-between font-semibold">
+              <span className="font-sans text-danger">
                 2. (-) CUSTOS VARIÁVEIS DIRETOS (CMV / PEÇAS DAS OS)
               </span>
-              <span className="text-red-400 font-bold">
+              <span className="text-danger font-semibold">
                 &minus; {formatBRL(resumoFinanceiro.custoPecasOS)}
               </span>
             </div>
 
             {/* 3. LUCRO BRUTO */}
-            <div className="p-3.5 rounded-xl bg-amber-950/40 border-2 border-amber-600/70 flex items-center justify-between font-bold">
+            <div className="p-3.5 rounded-xl bg-warning/40 border-2 border-warning/70 flex items-center justify-between font-semibold">
               <div className="font-sans">
-                <span className="text-amber-200">3. (=) LUCRO BRUTO OPERACIONAL</span>
-                <span className="ml-2 text-[11px] text-amber-400 font-mono">
+                <span className="text-warning">3. (=) LUCRO BRUTO OPERACIONAL</span>
+                <span className="ml-2 text-xs text-warning font-mono">
                   (Margem Bruta: {resumoFinanceiro.margemBruta.toFixed(1)}%)
                 </span>
               </div>
-              <span className="text-base text-amber-200 font-black">
+              <span className="text-base text-warning font-semibold">
                 {formatBRL(resumoFinanceiro.lucroBrutoOperacional)}
               </span>
             </div>
 
             {/* 4. DESPESAS OPERACIONAIS / CONTAS A PAGAR */}
-            <div className="p-3 rounded-xl bg-[#071226] border border-red-950 flex items-center justify-between font-bold mt-2">
-              <span className="font-sans text-red-300">
+            <div className="p-3 rounded-xl bg-sunken border border-danger flex items-center justify-between font-semibold mt-2">
+              <span className="font-sans text-danger">
                 4. (-) DESPESAS OPERACIONAIS LIQUIDADAS (CONTAS PAGAS)
               </span>
-              <span className="text-red-400 font-bold">
+              <span className="text-danger font-semibold">
                 &minus; {formatBRL(resumoFinanceiro.despesasPagas)}
               </span>
             </div>
 
             {/* Detalhamento por Categoria de Despesa */}
             {Object.keys(resumoFinanceiro.despesasPorCategoria).length === 0 ? (
-              <div className="pl-4 pr-3 py-1 text-slate-500 text-xs italic font-sans">
+              <div className="pl-4 pr-3 py-1 text-ink-subtle text-xs italic font-sans">
                 Nenhuma conta a pagar liquidada no período.
               </div>
             ) : (
               Object.entries(resumoFinanceiro.despesasPorCategoria).map(([cat, val]) => (
                 <div
                   key={cat}
-                  className="pl-4 pr-3 py-1 flex items-center justify-between text-slate-400 text-xs"
+                  className="pl-4 pr-3 py-1 flex items-center justify-between text-ink-subtle text-xs"
                 >
                   <span className="font-sans">(&minus;) {cat}</span>
                   <span>&minus; {formatBRL(val)}</span>
@@ -1035,20 +1035,20 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             )}
 
             {/* 5. LUCRO LÍQUIDO REAL */}
-            <div className="p-4 rounded-xl bg-[#071226] border-2 border-emerald-500 flex items-center justify-between font-bold shadow-lg shadow-emerald-950/40 mt-3">
+            <div className="p-4 rounded-xl bg-sunken border-2 border-success flex items-center justify-between font-semibold shadow-lg shadow-success/40 mt-3">
               <div className="font-sans">
-                <span className="text-base sm:text-lg text-emerald-400 font-black block">
+                <span className="text-base sm:text-lg text-success font-semibold block">
                   5. (=) LUCRO LÍQUIDO REAL DO PERÍODO
                 </span>
-                <span className="text-xs text-slate-300">
+                <span className="text-xs text-ink-muted">
                   Sobrou no caixa após todas as peças e contas pagas
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-xl sm:text-2xl text-emerald-400 font-black font-mono">
+                <span className="text-xl sm:text-2xl text-success font-semibold font-mono">
                   {formatBRL(resumoFinanceiro.lucroLiquidoReal)}
                 </span>
-                <div className="text-xs font-mono text-emerald-300">
+                <div className="text-xs font-mono text-success">
                   Margem Líquida: {resumoFinanceiro.margemLiquida.toFixed(1)}%
                 </div>
               </div>
@@ -1063,10 +1063,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {activeTab === 'contas' && (
         <div className="space-y-3.5">
           {/* BARRA DE FILTROS & AÇÕES DE LANÇAMENTOS */}
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 space-y-3">
+          <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 space-y-3">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
               <search className="flex-1 relative">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" aria-hidden="true" />
+                <Search className="w-4 h-4 absolute left-3 top-3 text-ink-subtle" aria-hidden="true" />
                 <input
                   type="search"
                   value={buscaTransacao}
@@ -1075,7 +1075,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck="false"
-                  className="w-full min-h-[40px] pl-9 pr-3 bg-[#071226] border border-[#264577] rounded-xl text-white text-xs sm:text-sm"
+                  className="w-full min-h-[40px] pl-9 pr-3 bg-sunken border border-line rounded-xl text-ink text-xs sm:text-sm"
                 />
               </search>
 
@@ -1083,7 +1083,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 <button
                   type="button"
                   onClick={() => abrirModalCadastroTransacao('DESPESA')}
-                  className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer"
+                  className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-danger-solid hover:bg-danger-solid text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>+ Despesa</span>
@@ -1092,7 +1092,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 <button
                   type="button"
                   onClick={() => abrirModalCadastroTransacao('RECEITA')}
-                  className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer"
+                  className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-success-solid hover:bg-success-solid text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>+ Receita</span>
@@ -1101,7 +1101,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* SUB-FILTROS DE TIPO E STATUS */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#12274D] text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line text-xs">
               <div className="flex items-center gap-1.5">
                 {(
                   [
@@ -1114,10 +1114,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     key={f.id}
                     type="button"
                     onClick={() => setFiltroTipoTransacao(f.id)}
-                    className={`px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-colors ${
                       filtroTipoTransacao === f.id
-                        ? 'bg-[#2563EB] text-white'
-                        : 'bg-[#071226] text-slate-300 border border-[#264577]'
+                        ? 'bg-muted text-ink'
+                        : 'bg-sunken text-ink-muted border border-line'
                     }`}
                   >
                     {f.label}
@@ -1138,10 +1138,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     key={s.id}
                     type="button"
                     onClick={() => setFiltroStatusTransacao(s.id)}
-                    className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer text-[11px] transition-colors ${
+                    className={`px-2.5 py-1 rounded-lg font-semibold cursor-pointer text-xs transition-colors ${
                       filtroStatusTransacao === s.id
-                        ? 'bg-[#38BDF8] text-[#071226]'
-                        : 'bg-[#071226] text-slate-300 border border-[#264577]'
+                        ? 'bg-brand text-on-brand'
+                        : 'bg-sunken text-ink-muted border border-line'
                     }`}
                   >
                     {s.label}
@@ -1153,15 +1153,15 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
           {/* LISTA DE TRANSAÇÕES */}
           {transacoesFiltradas.length === 0 ? (
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
-              <CreditCard className="w-8 h-8 text-slate-500 mx-auto" />
-              <p className="text-sm font-bold text-white">Nenhum lançamento no filtro atual</p>
-              <p className="text-xs text-slate-400">
+            <div className="bg-surface border-2 border-line rounded-xl p-8 text-center text-ink-subtle space-y-2">
+              <CreditCard className="w-8 h-8 text-ink-subtle mx-auto" />
+              <p className="text-sm font-semibold text-ink">Nenhum lançamento no filtro atual</p>
+              <p className="text-xs text-ink-subtle">
                 Cadastre contas de aluguel, luz, taxas, folha de pagamento ou aportes para controlar seu fluxo.
               </p>
             </div>
           ) : (
-            <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
+            <div className="bg-sunken border-2 border-line rounded-xl divide-y divide-line">
               {transacoesFiltradas.map((t) => {
                 const isDespesa = t.tipo === 'DESPESA';
                 const isLiquidado = t.status === 'LIQUIDADO';
@@ -1170,32 +1170,32 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 return (
                   <article
                     key={t.id}
-                    className="p-3 sm:px-4 sm:py-3 hover:bg-[#0B1B36]/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    className="p-3 sm:px-4 sm:py-3 hover:bg-surface/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                   >
                     {/* Linha 1: Descrição e Badges */}
                     <div className="min-w-0 sm:flex-1 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
                             isDespesa
-                              ? 'bg-red-950 text-red-300 border border-red-600'
-                              : 'bg-emerald-950 text-emerald-300 border border-emerald-500'
+                              ? 'bg-danger/15 text-danger border border-danger'
+                              : 'bg-success/15 text-success border border-success'
                           }`}
                         >
                           {isDespesa ? 'A PAGAR' : 'A RECEBER'}
                         </span>
 
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#12274D] text-slate-300 border border-[#264577]">
+                        <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-surface text-ink-muted border border-line">
                           {t.categoria}
                         </span>
 
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
                             isLiquidado
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
+                              ? 'bg-success/15 text-success border border-success'
                               : isAtrasado
-                              ? 'bg-red-950 text-red-300 border border-red-500 animate-pulse'
-                              : 'bg-amber-950 text-amber-300 border border-amber-600'
+                              ? 'bg-danger/15 text-danger border border-danger animate-pulse'
+                              : 'bg-warning/15 text-warning border border-warning'
                           }`}
                         >
                           {isLiquidado
@@ -1208,14 +1208,14 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                         </span>
                       </div>
 
-                      <h4 className="text-sm font-bold text-white break-words">
+                      <h4 className="text-sm font-semibold text-ink break-words">
                         {t.descricao}
                       </h4>
 
-                      <div className="text-xs text-slate-400 font-mono">
+                      <div className="text-xs text-ink-subtle font-mono">
                         Vencimento: <strong>{formatData(t.data_vencimento)}</strong>
                         {t.data_liquidacao && (
-                          <span className="ml-2 text-emerald-400">
+                          <span className="ml-2 text-success">
                             &bull; Liquidado em: {formatData(t.data_liquidacao)}
                           </span>
                         )}
@@ -1224,17 +1224,17 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     </div>
 
                     {/* Linha 2 (Mobile) / Lado Direito: Valor e Ações */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#12274D]">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-line">
                       <div className="text-right font-mono tabular-nums">
                         <div
-                          className={`text-base sm:text-lg font-black ${
-                            isDespesa ? 'text-red-400' : 'text-emerald-400'
+                          className={`text-base sm:text-lg font-semibold ${
+                            isDespesa ? 'text-danger' : 'text-success'
                           }`}
                         >
                           {isDespesa ? '-' : '+'} {formatBRL(t.valor)}
                         </div>
                         {t.forma_pagamento && (
-                          <div className="text-[10px] text-slate-400">{t.forma_pagamento}</div>
+                          <div className="text-xs text-ink-subtle">{t.forma_pagamento}</div>
                         )}
                       </div>
 
@@ -1244,7 +1244,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                             type="button"
                             onClick={() => handleLiquidar(t)}
                             title={isDespesa ? 'Marcar como Pago' : 'Marcar como Recebido'}
-                            className="h-8 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 cursor-pointer"
+                            className="h-8 px-2.5 rounded-lg bg-success-solid hover:bg-success-solid text-white font-semibold text-xs flex items-center gap-1 cursor-pointer"
                           >
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                             <span className="hidden sm:inline">
@@ -1258,7 +1258,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                           onClick={() => abrirModalEdicaoTransacao(t)}
                           title="Editar Lançamento"
                           aria-label={`Editar ${t.descricao}`}
-                          className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-amber-300 flex items-center justify-center cursor-pointer"
+                          className="w-8 h-8 rounded-lg bg-surface hover:bg-muted border border-line-strong text-warning flex items-center justify-center cursor-pointer"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -1268,7 +1268,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                           onClick={() => setItemParaExcluir(t)}
                           title="Excluir Lançamento"
                           aria-label={`Excluir ${t.descricao}`}
-                          className="w-8 h-8 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-700 text-red-200 flex items-center justify-center cursor-pointer"
+                          className="w-8 h-8 rounded-lg bg-danger/60 hover:bg-danger/15 border border-danger text-danger flex items-center justify-center cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1289,68 +1289,68 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         <div className="space-y-4">
           {/* CARDS DE EFICIÊNCIA OPERACIONAL */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3.5 flex flex-col justify-between">
-              <span className="text-slate-400 text-xs font-bold">Ticket Médio por OS</span>
-              <div className="text-xl sm:text-2xl font-black font-mono text-white mt-1 tabular-nums">
+            <div className="bg-surface border-2 border-line rounded-xl p-3.5 flex flex-col justify-between">
+              <span className="text-ink-subtle text-xs font-semibold">Ticket Médio por OS</span>
+              <div className="text-xl sm:text-2xl font-semibold font-mono text-ink mt-1 tabular-nums">
                 {formatBRL(dadosFinanceiros?.ticket_medio)}
               </div>
-              <span className="text-[11px] text-slate-400">Gasto médio por veículo</span>
+              <span className="text-xs text-ink-subtle">Gasto médio por veículo</span>
             </div>
 
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3.5 flex flex-col justify-between">
-              <span className="text-slate-400 text-xs font-bold">Taxa de Conversão</span>
-              <div className="text-xl sm:text-2xl font-black font-mono text-emerald-400 mt-1 tabular-nums">
+            <div className="bg-surface border-2 border-line rounded-xl p-3.5 flex flex-col justify-between">
+              <span className="text-ink-subtle text-xs font-semibold">Taxa de Conversão</span>
+              <div className="text-xl sm:text-2xl font-semibold font-mono text-success mt-1 tabular-nums">
                 {biData?.taxa_conversao_orcamentos ?? 0}%
               </div>
-              <span className="text-[11px] text-slate-400">Orçamentos que viraram serviço</span>
+              <span className="text-xs text-ink-subtle">Orçamentos que viraram serviço</span>
             </div>
 
-            <div className="col-span-2 sm:col-span-1 bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3.5 flex flex-col justify-between">
-              <span className="text-slate-400 text-xs font-bold">Giro Médio no Pátio</span>
-              <div className="text-xl sm:text-2xl font-black font-mono text-amber-400 mt-1 tabular-nums">
+            <div className="col-span-2 sm:col-span-1 bg-surface border-2 border-line rounded-xl p-3.5 flex flex-col justify-between">
+              <span className="text-ink-subtle text-xs font-semibold">Giro Médio no Pátio</span>
+              <div className="text-xl sm:text-2xl font-semibold font-mono text-warning mt-1 tabular-nums">
                 {biData?.lead_time_medio_horas ?? 0}h
               </div>
-              <span className="text-[11px] text-slate-400">Tempo médio de permanência</span>
+              <span className="text-xs text-ink-subtle">Tempo médio de permanência</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* RANKING DE PRODUTIVIDADE POR MECÂNICO */}
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
-                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-line pb-2.5">
+                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-brand-ink" aria-hidden="true" />
                   <span>Produtividade &amp; Lucro por Mecânico</span>
                 </h3>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-ink-subtle font-mono">
                   {biData?.produtividade_mecanicos?.length || 0} profissionais
                 </span>
               </div>
 
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {(biData?.produtividade_mecanicos || []).length === 0 ? (
-                  <p className="text-slate-500 text-xs py-4 text-center">Nenhum mecânico com OS finalizada.</p>
+                  <p className="text-ink-subtle text-xs py-4 text-center">Nenhum mecânico com OS finalizada.</p>
                 ) : (
                   biData?.produtividade_mecanicos.map((mec, idx) => (
                     <div
                       key={mec.nome}
-                      className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between text-xs"
+                      className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-[#12274D] text-slate-300 font-bold flex items-center justify-center text-[10px]">
+                        <span className="w-5 h-5 rounded-full bg-surface text-ink-muted font-semibold flex items-center justify-center text-xs">
                           {idx + 1}
                         </span>
                         <div>
-                          <strong className="text-white block">{mec.nome}</strong>
-                          <span className="text-slate-400 text-[11px]">{mec.qtd_os} OS entregues</span>
+                          <strong className="text-ink block">{mec.nome}</strong>
+                          <span className="text-ink-subtle text-xs">{mec.qtd_os} OS entregues</span>
                         </div>
                       </div>
 
                       <div className="text-right font-mono tabular-nums">
-                        <div className="text-emerald-400 font-bold">
+                        <div className="text-success font-semibold">
                           Lucro: {formatBRL(mec.lucro_gerado)}
                         </div>
-                        <div className="text-slate-400 text-[11px]">
+                        <div className="text-ink-subtle text-xs">
                           Fat: {formatBRL(mec.faturamento_gerado)}
                         </div>
                       </div>
@@ -1361,17 +1361,17 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* FORMAS DE PAGAMENTO UTILIZADAS */}
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
-                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-blue-400" aria-hidden="true" />
+            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-line pb-2.5">
+                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-info" aria-hidden="true" />
                   <span>Distribuição por Meio de Pagamento</span>
                 </h3>
               </div>
 
               <div className="space-y-2.5">
                 {(biData?.metodos_pagamento || []).length === 0 ? (
-                  <p className="text-slate-500 text-xs py-4 text-center">Nenhum pagamento registrado no período.</p>
+                  <p className="text-ink-subtle text-xs py-4 text-center">Nenhum pagamento registrado no período.</p>
                 ) : (
                   biData?.metodos_pagamento.map((mp) => {
                     const totalGeral = biData.metodos_pagamento.reduce(
@@ -1382,15 +1382,15 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
                     return (
                       <div key={mp.forma} className="space-y-1 text-xs">
-                        <div className="flex items-center justify-between text-slate-300">
-                          <span className="font-bold text-white">{mp.forma}</span>
+                        <div className="flex items-center justify-between text-ink-muted">
+                          <span className="font-semibold text-ink">{mp.forma}</span>
                           <span className="font-mono tabular-nums">
                             {formatBRL(mp.valor_total)} ({pct.toFixed(0)}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-[#071226] overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-sunken overflow-hidden">
                           <div
-                            className="h-full bg-blue-500 rounded-full"
+                            className="h-full bg-info rounded-full"
                             style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}
                           />
                         </div>
@@ -1402,30 +1402,30 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* RENTABILIDADE POR MARCA DE VEÍCULO */}
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
-                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                  <Car className="w-4 h-4 text-amber-400" aria-hidden="true" />
+            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-line pb-2.5">
+                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
+                  <Car className="w-4 h-4 text-warning" aria-hidden="true" />
                   <span>Rentabilidade por Marca de Veículo</span>
                 </h3>
               </div>
 
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {(biData?.rentabilidade_marcas || []).length === 0 ? (
-                  <p className="text-slate-500 text-xs py-4 text-center">Nenhum veículo faturado.</p>
+                  <p className="text-ink-subtle text-xs py-4 text-center">Nenhum veículo faturado.</p>
                 ) : (
                   biData?.rentabilidade_marcas.map((marca) => (
                     <div
                       key={marca.marca}
-                      className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between text-xs"
+                      className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between text-xs"
                     >
                       <div>
-                        <strong className="text-white block uppercase">{marca.marca}</strong>
-                        <span className="text-slate-400 text-[11px]">{marca.qtd_os} veículos atendidos</span>
+                        <strong className="text-ink block uppercase">{marca.marca}</strong>
+                        <span className="text-ink-subtle text-xs">{marca.qtd_os} veículos atendidos</span>
                       </div>
                       <div className="text-right font-mono tabular-nums">
-                        <div className="text-emerald-400 font-bold">{formatBRL(marca.lucro)}</div>
-                        <div className="text-slate-400 text-[11px]">Fat: {formatBRL(marca.faturamento)}</div>
+                        <div className="text-success font-semibold">{formatBRL(marca.lucro)}</div>
+                        <div className="text-ink-subtle text-xs">Fat: {formatBRL(marca.faturamento)}</div>
                       </div>
                     </div>
                   ))
@@ -1434,37 +1434,37 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             </div>
 
             {/* TOP 10 CLIENTES (CURVA ABC) */}
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-[#12274D] pb-2.5">
-                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                  <Users className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-line pb-2.5">
+                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
+                  <Users className="w-4 h-4 text-success" aria-hidden="true" />
                   <span>Top Clientes Mais Lucrativos (Curva ABC)</span>
                 </h3>
               </div>
 
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {(biData?.top_10_clientes || []).length === 0 ? (
-                  <p className="text-slate-500 text-xs py-4 text-center">Nenhum cliente faturado no período.</p>
+                  <p className="text-ink-subtle text-xs py-4 text-center">Nenhum cliente faturado no período.</p>
                 ) : (
                   biData?.top_10_clientes.map((cli, idx) => (
                     <div
                       key={cli.nome}
-                      className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between text-xs"
+                      className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-emerald-950 text-emerald-300 font-bold flex items-center justify-center text-[10px] border border-emerald-500">
+                        <span className="w-5 h-5 rounded-full bg-success/15 text-success font-semibold flex items-center justify-center text-xs border border-success">
                           {idx + 1}
                         </span>
                         <div>
-                          <strong className="text-white block">{cli.nome}</strong>
-                          <span className="text-slate-400 text-[11px]">{cli.qtd_os} OS atendidas</span>
+                          <strong className="text-ink block">{cli.nome}</strong>
+                          <span className="text-ink-subtle text-xs">{cli.qtd_os} OS atendidas</span>
                         </div>
                       </div>
                       <div className="text-right font-mono tabular-nums">
-                        <div className="text-emerald-400 font-bold">
+                        <div className="text-success font-semibold">
                           Lucro: {formatBRL(cli.lucro)}
                         </div>
-                        <div className="text-slate-400 text-[11px]">
+                        <div className="text-ink-subtle text-xs">
                           Total: {formatBRL(cli.faturamento)}
                         </div>
                       </div>
@@ -1480,13 +1480,13 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {/* MODAL: CADASTRO / EDIÇÃO DE TRANSAÇÃO (DESPESA OU RECEITA AVULSA) */}
       {modalTransacaoAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-3">
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+          <div className="bg-surface border-2 border-brand rounded-lg w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h2 className="text-base sm:text-lg font-semibold text-ink flex items-center gap-2">
                 {formTipo === 'DESPESA' ? (
-                  <ArrowDownRight className="w-5 h-5 text-red-400" />
+                  <ArrowDownRight className="w-5 h-5 text-danger" />
                 ) : (
-                  <ArrowUpRight className="w-5 h-5 text-emerald-400" />
+                  <ArrowUpRight className="w-5 h-5 text-success" />
                 )}
                 <span>
                   {transacaoEmEdicao
@@ -1499,7 +1499,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               <button
                 type="button"
                 onClick={() => setModalTransacaoAberto(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-ink-subtle hover:text-ink"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1507,7 +1507,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
             <form onSubmit={handleSalvarTransacao} className="space-y-3.5 text-xs sm:text-sm">
               <div>
-                <label className="block font-bold text-slate-200 mb-1">
+                <label className="block font-semibold text-ink mb-1">
                   Descrição do Lançamento *
                 </label>
                 <input
@@ -1520,17 +1520,17 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                       ? 'Ex: Aluguel do Galpão, Conta de Luz Enel…'
                       : 'Ex: Aporte Sócio Roberto, Venda de Sucata/Baterias…'
                   }
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Categoria *</label>
+                  <label className="block font-semibold text-ink mb-1">Categoria *</label>
                   <select
                     value={formCategoria}
                     onChange={(e) => setFormCategoria(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-semibold"
                   >
                     {(formTipo === 'DESPESA' ? CATEGORIAS_DESPESA : CATEGORIAS_RECEITA).map(
                       (cat) => (
@@ -1543,7 +1543,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Valor (R$) *</label>
+                  <label className="block font-semibold text-ink mb-1">Valor (R$) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1552,14 +1552,14 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     value={formValor}
                     onChange={(e) => setFormValor(e.target.value)}
                     placeholder="0,00"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono font-bold"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono font-semibold"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">
+                  <label className="block font-semibold text-ink mb-1">
                     Data de Vencimento *
                   </label>
                   <input
@@ -1567,18 +1567,18 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                     required
                     value={formVencimento}
                     onChange={(e) => setFormVencimento(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">
+                  <label className="block font-semibold text-ink mb-1">
                     Forma de Pagamento
                   </label>
                   <select
                     value={formForma}
                     onChange={(e) => setFormForma(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                   >
                     {FORMAS_PAGAMENTO.map((fp) => (
                       <option key={fp} value={fp}>
@@ -1590,27 +1590,27 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-200 mb-1">Observações / Detalhes</label>
+                <label className="block font-semibold text-ink mb-1">Observações / Detalhes</label>
                 <input
                   type="text"
                   value={formObservacoes}
                   onChange={(e) => setFormObservacoes(e.target.value)}
                   placeholder="Número de nota fiscal, recibo ou detalhes…"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                 />
               </div>
 
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#071226] border border-[#264577]">
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-sunken border border-line">
                 <input
                   type="checkbox"
                   id="chk-ja-liquidado"
                   checked={formJaPago}
                   onChange={(e) => setFormJaPago(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#38BDF8] cursor-pointer"
+                  className="w-4 h-4 rounded text-brand-ink cursor-pointer"
                 />
                 <label
                   htmlFor="chk-ja-liquidado"
-                  className="text-xs font-bold text-white cursor-pointer select-none"
+                  className="text-xs font-semibold text-ink cursor-pointer select-none"
                 >
                   {formTipo === 'DESPESA'
                     ? 'Já foi paga hoje (dar baixa imediata no caixa)'
@@ -1618,18 +1618,18 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#12274D]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setModalTransacaoAberto(false)}
-                  className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold cursor-pointer"
+                  className="min-h-[42px] px-4 rounded-xl bg-surface text-ink font-semibold cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={salvandoTransacao}
-                  className="min-h-[42px] px-5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold cursor-pointer disabled:opacity-50"
+                  className="min-h-[42px] px-5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold cursor-pointer disabled:opacity-50"
                 >
                   {salvandoTransacao ? 'Salvando…' : 'Salvar Lançamento'}
                 </button>
@@ -1642,20 +1642,20 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {/* MODAL: CONFIRMAÇÃO DE EXCLUSÃO */}
       {itemParaExcluir && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-red-600 rounded-2xl w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
+          <div className="bg-surface border-2 border-danger rounded-lg w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-950 border border-red-500 text-red-400 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-danger/15 border border-danger text-danger flex items-center justify-center shrink-0">
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Excluir Lançamento?</h3>
-                <p className="text-xs text-slate-400">Esta ação não poderá ser desfeita.</p>
+                <h3 className="text-base font-semibold text-ink">Excluir Lançamento?</h3>
+                <p className="text-xs text-ink-subtle">Esta ação não poderá ser desfeita.</p>
               </div>
             </div>
 
-            <div className="p-3 bg-[#071226] rounded-xl border border-[#264577]">
-              <div className="text-sm font-bold text-white">{itemParaExcluir.descricao}</div>
-              <div className="text-xs text-slate-400 font-mono mt-0.5">
+            <div className="p-3 bg-sunken rounded-xl border border-line">
+              <div className="text-sm font-semibold text-ink">{itemParaExcluir.descricao}</div>
+              <div className="text-xs text-ink-subtle font-mono mt-0.5">
                 Valor: {formatBRL(itemParaExcluir.valor)} &bull; Venc: {formatData(itemParaExcluir.data_vencimento)}
               </div>
             </div>
@@ -1664,7 +1664,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               <button
                 type="button"
                 onClick={() => setItemParaExcluir(null)}
-                className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
+                className="min-h-[42px] px-4 rounded-xl bg-surface text-ink font-semibold text-xs cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1672,7 +1672,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 type="button"
                 disabled={excluindo}
                 onClick={handleConfirmarExclusao}
-                className="min-h-[42px] px-4.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs cursor-pointer disabled:opacity-50"
+                className="min-h-[42px] px-4.5 rounded-xl bg-danger-solid hover:bg-danger-solid text-white font-semibold text-xs cursor-pointer disabled:opacity-50"
               >
                 {excluindo ? 'Excluindo…' : 'Sim, Excluir'}
               </button>

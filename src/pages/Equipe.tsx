@@ -535,12 +535,12 @@ export function Equipe({ empresaId }: EquipeProps) {
 
   if (!isGestor) {
     return (
-      <div className="bg-[#0B1B36] border-2 border-red-900/60 rounded-2xl p-6 sm:p-10 max-w-xl mx-auto my-8 text-center space-y-4">
-        <div className="w-16 h-16 rounded-2xl bg-red-950/80 border-2 border-red-500 text-red-400 mx-auto flex items-center justify-center">
+      <div className="bg-surface border-2 border-danger/60 rounded-lg p-6 sm:p-10 max-w-xl mx-auto my-8 text-center space-y-4">
+        <div className="w-16 h-16 rounded-lg bg-danger/80 border-2 border-danger text-danger mx-auto flex items-center justify-center">
           <AlertTriangle className="w-8 h-8" />
         </div>
-        <h1 className="text-xl sm:text-2xl font-black text-white">Acesso Restrito à Gestão</h1>
-        <p className="text-sm text-slate-300">
+        <h1 className="text-xl sm:text-2xl font-semibold text-ink">Acesso Restrito à Gestão</h1>
+        <p className="text-sm text-ink-muted">
           O módulo de Equipe &amp; RH contém informações salariais e de gestão da oficina. Seu perfil atual (<strong>{user?.cargo || 'Colaborador'}</strong>) não possui permissão para visualizar ou editar estes dados.
         </p>
       </div>
@@ -550,19 +550,19 @@ export function Equipe({ empresaId }: EquipeProps) {
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-12">
       {/* CABEÇALHO DA EQUIPE & RH */}
-      <header className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <header className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] border-2 border-[#38BDF8] text-[#38BDF8] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-muted border-2 border-brand text-brand-ink flex items-center justify-center shrink-0">
             <Users className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight flex items-center gap-2">
               <span>Equipe &amp; Recursos Humanos</span>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-blue-950 border border-blue-500 text-[11px] font-mono font-bold text-blue-300">
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-info/15 border border-info text-xs font-mono font-semibold text-info">
                 {usuariosAtivos.length} Colaboradores
               </span>
             </h1>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-ink-subtle">
               Cargos, salários, comissões, convites WhatsApp, folha de pagamento, escalas de folga e ponto eletrônico.
             </p>
           </div>
@@ -574,9 +574,9 @@ export function Equipe({ empresaId }: EquipeProps) {
             onClick={carregarTudo}
             disabled={carregando}
             title="Atualizar dados da equipe"
-            className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-300 flex items-center justify-center cursor-pointer disabled:opacity-50"
+            className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-sunken hover:bg-muted border border-line text-ink-muted flex items-center justify-center cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-[#38BDF8]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-brand-ink' : ''}`} />
           </button>
 
           <button
@@ -585,7 +585,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               handleGerarConvite();
               setModalConviteAberto(true);
             }}
-            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-950/40"
+            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-success-solid hover:bg-success-solid text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-success/40"
           >
             <MessageCircle className="w-4 h-4" />
             <span>Convidar no WhatsApp</span>
@@ -594,7 +594,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           <button
             type="button"
             onClick={abrirModalCadastroColaborador}
-            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-sky-950/40"
+            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-info/40"
           >
             <UserPlus className="w-4 h-4 stroke-[2.5]" />
             <span>+ Novo Colaborador</span>
@@ -605,14 +605,14 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* FEEDBACK DE SUCESSO / ERRO */}
       <div aria-live="polite">
         {sucessoMsg && (
-          <div className="p-3 rounded-xl bg-emerald-950 border border-emerald-500 text-emerald-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-success/15 border border-success text-success flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
             <span>{sucessoMsg}</span>
           </div>
         )}
         {erro && (
-          <div className="p-3 rounded-xl bg-red-950 border border-red-500 text-red-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-danger/15 border border-danger text-danger flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
             <span>{erro}</span>
           </div>
         )}
@@ -621,15 +621,15 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* 5 ABAS DA EQUIPE */}
       <nav
         aria-label="Abas da Equipe"
-        className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 bg-[#071226] p-1.5 rounded-2xl border-2 border-[#12274D]"
+        className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 bg-sunken p-1.5 rounded-lg border-2 border-line"
       >
         <button
           type="button"
           onClick={() => setActiveTab('colaboradores')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'colaboradores'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
+              ? 'bg-brand text-on-brand'
+              : 'text-ink-muted hover:bg-muted'
           }`}
         >
           <Users className="w-4 h-4" />
@@ -639,10 +639,10 @@ export function Equipe({ empresaId }: EquipeProps) {
         <button
           type="button"
           onClick={() => setActiveTab('folha')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'folha'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
+              ? 'bg-brand text-on-brand'
+              : 'text-ink-muted hover:bg-muted'
           }`}
         >
           <DollarSign className="w-4 h-4" />
@@ -652,10 +652,10 @@ export function Equipe({ empresaId }: EquipeProps) {
         <button
           type="button"
           onClick={() => setActiveTab('escalas')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'escalas'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
+              ? 'bg-brand text-on-brand'
+              : 'text-ink-muted hover:bg-muted'
           }`}
         >
           <Calendar className="w-4 h-4" />
@@ -665,10 +665,10 @@ export function Equipe({ empresaId }: EquipeProps) {
         <button
           type="button"
           onClick={() => setActiveTab('ponto')}
-          className={`min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'ponto'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
+              ? 'bg-brand text-on-brand'
+              : 'text-ink-muted hover:bg-muted'
           }`}
         >
           <Clock className="w-4 h-4" />
@@ -678,10 +678,10 @@ export function Equipe({ empresaId }: EquipeProps) {
         <button
           type="button"
           onClick={() => setActiveTab('avaliacoes')}
-          className={`col-span-2 sm:col-span-1 min-h-[44px] rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+          className={`col-span-2 sm:col-span-1 min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
             activeTab === 'avaliacoes'
-              ? 'bg-[#38BDF8] text-[#071226]'
-              : 'text-slate-300 hover:bg-[#12274D]'
+              ? 'bg-brand text-on-brand'
+              : 'text-ink-muted hover:bg-muted'
           }`}
         >
           <Star className="w-4 h-4" />
@@ -695,7 +695,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       {activeTab === 'colaboradores' && (
         <div className="space-y-3">
           {usuariosInativos.length > 0 && (
-            <div className="flex items-center justify-between text-xs text-slate-400 bg-[#071226]/70 border border-[#12274D] px-3.5 py-2 rounded-xl">
+            <div className="flex items-center justify-between text-xs text-ink-subtle bg-sunken/70 border border-line px-3.5 py-2 rounded-xl">
               <span>
                 Exibindo <strong>{usuariosAtivos.length}</strong> colaboradores ativos
                 {mostrarInativos && ` e ${usuariosInativos.length} desativado(s)`}.
@@ -703,7 +703,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               <button
                 type="button"
                 onClick={() => setMostrarInativos((p) => !p)}
-                className="text-[#38BDF8] hover:text-[#0EA5E9] font-bold text-xs cursor-pointer flex items-center gap-1 transition-colors"
+                className="text-brand-ink hover:text-brand-ink font-semibold text-xs cursor-pointer flex items-center gap-1 transition-colors"
               >
                 {mostrarInativos
                   ? 'Ocultar Desativados'
@@ -712,7 +712,7 @@ export function Equipe({ empresaId }: EquipeProps) {
             </div>
           )}
 
-          <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
+          <div className="bg-sunken border-2 border-line rounded-xl divide-y divide-line">
             {colaboradoresVisiveis.map((u) => {
               const estrelas = u.estrelas_media ?? 5.0;
               const temSalario = u.salario_base && u.salario_base > 0;
@@ -720,50 +720,50 @@ export function Equipe({ empresaId }: EquipeProps) {
               return (
                 <article
                   key={u.id}
-                  className="p-3 sm:px-4 sm:py-3 hover:bg-[#0B1B36]/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="p-3 sm:px-4 sm:py-3 hover:bg-surface/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="min-w-0 sm:flex-1 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#12274D] text-blue-300 border border-blue-500/60 uppercase">
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-surface text-info border border-info/60 uppercase">
                         {u.cargo}
                       </span>
                       <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
                           u.ativo !== false
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
-                            : 'bg-red-950 text-red-300 border border-red-600'
+                            ? 'bg-success/15 text-success border border-success'
+                            : 'bg-danger/15 text-danger border border-danger'
                         }`}
                       >
                         {u.ativo !== false ? 'ATIVO' : 'DESATIVADO'}
                       </span>
-                      <div className="flex items-center gap-1 bg-amber-950/60 border border-amber-600 px-2 py-0.5 rounded text-[10px] text-amber-300 font-bold">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                      <div className="flex items-center gap-1 bg-warning/60 border border-warning px-2 py-0.5 rounded text-xs text-warning font-semibold">
+                        <Star className="w-3 h-3 fill-warning text-warning" />
                         <span>{estrelas.toFixed(1)}</span>
-                        <span className="text-slate-400">({u.total_avaliacoes || 0})</span>
+                        <span className="text-ink-subtle">({u.total_avaliacoes || 0})</span>
                       </div>
                     </div>
 
-                    <h3 className="text-base font-bold text-white leading-snug">{u.nome}</h3>
-                    <div className="text-xs text-slate-400 flex flex-wrap items-center gap-3 font-mono">
+                    <h3 className="text-base font-semibold text-ink leading-snug">{u.nome}</h3>
+                    <div className="text-xs text-ink-subtle flex flex-wrap items-center gap-3 font-mono">
                       <span>{u.email}</span>
                       {u.telefone && <span>&bull; {u.telefone}</span>}
                     </div>
                   </div>
 
                   {/* Lado Direito: Salário, Comissões e Ações */}
-                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#12274D]">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-line">
                     <div className="text-right font-mono tabular-nums text-xs">
-                      <div className="text-slate-400 text-[10px]">Salário Base</div>
-                      <div className="text-sm font-bold text-white">
+                      <div className="text-ink-subtle text-xs">Salário Base</div>
+                      <div className="text-sm font-semibold text-ink">
                         {temSalario ? (
                           formatBRL(u.salario_base!)
                         ) : (
-                          <span className="text-amber-400 font-sans text-xs font-normal">
+                          <span className="text-warning font-sans text-xs font-normal">
                             Não informado
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-emerald-400">
+                      <div className="text-xs text-success">
                         Comissão: {u.comissao_servico_pct ?? parametrosFolha.comissao_global_servico_pct}% M.O. &bull;{' '}
                         {u.comissao_peca_pct ?? parametrosFolha.comissao_global_peca_pct}% Peças
                       </div>
@@ -777,7 +777,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                           setModalHoleriteAberto(true);
                         }}
                         title="Ver Holerite"
-                        className="h-8 px-2.5 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-blue-300 font-bold text-xs flex items-center gap-1 cursor-pointer"
+                        className="h-8 px-2.5 rounded-lg bg-surface hover:bg-muted border border-line-strong text-info font-semibold text-xs flex items-center gap-1 cursor-pointer"
                       >
                         <FileText className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Holerite</span>
@@ -787,7 +787,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                         type="button"
                         onClick={() => abrirModalEdicaoColaborador(u)}
                         title="Editar Colaborador & RH"
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-amber-300 flex items-center justify-center cursor-pointer"
+                        className="w-8 h-8 rounded-lg bg-surface hover:bg-muted border border-line-strong text-warning flex items-center justify-center cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -797,7 +797,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                           type="button"
                           onClick={() => handleExcluirColaborador(u)}
                           title="Excluir Colaborador (Exclusão Lógica)"
-                          className="w-8 h-8 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 flex items-center justify-center cursor-pointer transition-colors"
+                          className="w-8 h-8 rounded-lg bg-danger/60 hover:bg-danger/15 border border-danger text-danger flex items-center justify-center cursor-pointer transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -806,7 +806,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                           type="button"
                           onClick={() => handleReativarColaborador(u)}
                           title="Reativar Colaborador"
-                          className="h-8 px-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700 text-emerald-300 flex items-center gap-1 text-xs font-bold cursor-pointer transition-colors"
+                          className="h-8 px-2 rounded-lg bg-success/70 hover:bg-success/15 border border-success text-success flex items-center gap-1 text-xs font-semibold cursor-pointer transition-colors"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">Reativar</span>
@@ -827,13 +827,13 @@ export function Equipe({ empresaId }: EquipeProps) {
       {activeTab === 'folha' && (
         <div className="space-y-4">
           {/* BARRA DE CONTROLE DA FOLHA */}
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-surface border-2 border-line rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-[#38BDF8]" />
+              <h3 className="text-base font-semibold text-ink flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-brand-ink" />
                 <span>Fechamento da Folha de Pagamento</span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-subtle">
                 Dia oficial de pagamento da oficina: <strong>Dia {parametrosFolha.dia_pagamento}</strong> (Adiantamento: Dia {parametrosFolha.dia_adiantamento})
               </p>
             </div>
@@ -843,13 +843,13 @@ export function Equipe({ empresaId }: EquipeProps) {
                 type="month"
                 value={mesFolhaRef}
                 onChange={(e) => setMesFolhaRef(e.target.value)}
-                className="min-h-[40px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-xs"
+                className="min-h-[40px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono text-xs"
               />
 
               <button
                 type="button"
                 onClick={handleLancarFolhaContasPagar}
-                className="min-h-[40px] px-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                className="min-h-[40px] px-4 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
                 <span>Lançar Folha no Contas a Pagar</span>
@@ -858,7 +858,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           </div>
 
           {/* LISTA DA FOLHA DOS COLABORADORES (APENAS ATIVOS) */}
-          <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
+          <div className="bg-sunken border-2 border-line rounded-xl divide-y divide-line">
             {usuariosAtivos.map((u) => {
               const temSalario = u.salario_base && u.salario_base > 0;
               const salarioBase = temSalario ? u.salario_base! : 0;
@@ -871,44 +871,44 @@ export function Equipe({ empresaId }: EquipeProps) {
               return (
                 <div
                   key={u.id}
-                  className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#0B1B36]/70 text-xs font-mono tabular-nums"
+                  className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-surface/70 text-xs font-mono tabular-nums"
                 >
                   <div className="font-sans">
-                    <strong className="text-sm font-bold text-white block">{u.nome}</strong>
-                    <span className="text-xs text-slate-400">{u.cargo}</span>
+                    <strong className="text-sm font-semibold text-ink block">{u.nome}</strong>
+                    <span className="text-xs text-ink-subtle">{u.cargo}</span>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-4 text-right">
                     <div>
-                      <div className="text-[10px] text-slate-400 font-sans">Base</div>
-                      <div className="text-slate-200">
+                      <div className="text-xs text-ink-subtle font-sans">Base</div>
+                      <div className="text-ink">
                         {temSalario ? (
                           formatBRL(salarioBase)
                         ) : (
-                          <span className="text-amber-400 font-sans text-xs">Não informado</span>
+                          <span className="text-warning font-sans text-xs">Não informado</span>
                         )}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-[10px] text-emerald-400 font-sans">Comissões (OS)</div>
-                      <div className="text-emerald-400 font-bold">
+                      <div className="text-xs text-success font-sans">Comissões (OS)</div>
+                      <div className="text-success font-semibold">
                         +{formatBRL(comissaoMO + comissaoPeca)}
                       </div>
                     </div>
 
                     <div>
-                      <div className="text-[10px] text-blue-400 font-sans">VT / VR</div>
-                      <div className="text-blue-300">+{formatBRL(vt + vr)}</div>
+                      <div className="text-xs text-info font-sans">VT / VR</div>
+                      <div className="text-info">+{formatBRL(vt + vr)}</div>
                     </div>
 
                     <div>
-                      <div className="text-[10px] text-[#38BDF8] font-sans font-bold">Líquido a Pagar</div>
-                      <div className="text-base font-black text-white">
+                      <div className="text-xs text-brand-ink font-sans font-semibold">Líquido a Pagar</div>
+                      <div className="text-base font-semibold text-ink">
                         {temSalario || totalLiquido > 0 ? (
                           formatBRL(totalLiquido)
                         ) : (
-                          <span className="text-amber-400 font-sans text-xs">Não informado</span>
+                          <span className="text-warning font-sans text-xs">Não informado</span>
                         )}
                       </div>
                     </div>
@@ -919,7 +919,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                         setColaboradorHolerite(u);
                         setModalHoleriteAberto(true);
                       }}
-                      className="min-h-[36px] px-3 rounded-lg bg-[#12274D] hover:bg-[#264577] text-white font-sans font-bold text-xs flex items-center gap-1 cursor-pointer"
+                      className="min-h-[36px] px-3 rounded-lg bg-surface hover:bg-muted text-ink font-sans font-semibold text-xs flex items-center gap-1 cursor-pointer"
                     >
                       <FileText className="w-3.5 h-3.5" />
                       <span>Ver Holerite</span>
@@ -939,11 +939,11 @@ export function Equipe({ empresaId }: EquipeProps) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-400" />
+              <h3 className="text-base font-semibold text-ink flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-info" />
                 <span>Escalas de Trabalho &amp; Calendário de Férias</span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-subtle">
                 Evite desfalque nos boxes planejando com antecedência as férias e folgas da equipe.
               </p>
             </div>
@@ -951,7 +951,7 @@ export function Equipe({ empresaId }: EquipeProps) {
             <button
               type="button"
               onClick={() => setModalEscalaAberto(true)}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-[#2563EB] hover:bg-blue-600 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-muted hover:bg-info text-ink font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
             >
               <Calendar className="w-4 h-4" />
               <span>+ Agendar Férias / Folga</span>
@@ -960,15 +960,15 @@ export function Equipe({ empresaId }: EquipeProps) {
 
           {/* LISTA DE FÉRIAS E ESCALAS */}
           {escalas.length === 0 ? (
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
-              <Calendar className="w-8 h-8 text-slate-500 mx-auto" />
-              <p className="text-sm font-bold text-white">Nenhuma escala ou férias agendadas</p>
-              <p className="text-xs text-slate-400">
+            <div className="bg-surface border-2 border-line rounded-xl p-8 text-center text-ink-subtle space-y-2">
+              <Calendar className="w-8 h-8 text-ink-subtle mx-auto" />
+              <p className="text-sm font-semibold text-ink">Nenhuma escala ou férias agendadas</p>
+              <p className="text-xs text-ink-subtle">
                 Clique no botão acima para agendar o período de descanso de um colaborador.
               </p>
             </div>
           ) : (
-            <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
+            <div className="bg-sunken border-2 border-line rounded-xl divide-y divide-line">
               {escalas.map((esc) => (
                 <div
                   key={esc.id}
@@ -976,14 +976,14 @@ export function Equipe({ empresaId }: EquipeProps) {
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-600 uppercase">
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-info/15 text-info border border-info/40 uppercase">
                         {esc.tipo}
                       </span>
-                      <strong className="text-sm font-bold text-white">{esc.usuario_nome}</strong>
+                      <strong className="text-sm font-semibold text-ink">{esc.usuario_nome}</strong>
                     </div>
-                    <div className="text-slate-400 font-mono">
-                      Período: <strong className="text-white">{formatData(esc.data_inicio)}</strong> até{' '}
-                      <strong className="text-white">{formatData(esc.data_fim)}</strong>
+                    <div className="text-ink-subtle font-mono">
+                      Período: <strong className="text-ink">{formatData(esc.data_inicio)}</strong> até{' '}
+                      <strong className="text-ink">{formatData(esc.data_fim)}</strong>
                       {esc.observacoes && <span className="ml-2">&bull; {esc.observacoes}</span>}
                     </div>
                   </div>
@@ -996,7 +996,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                       dispararFeedback('Período removido com sucesso.');
                     }}
                     title="Remover Agendamento"
-                    className="p-2 rounded-lg bg-red-950 text-red-300 hover:bg-red-900 cursor-pointer"
+                    className="p-2 rounded-lg bg-danger/15 text-danger hover:bg-danger/15 cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -1013,14 +1013,14 @@ export function Equipe({ empresaId }: EquipeProps) {
       {activeTab === 'ponto' && (
         <div className="space-y-4">
           {/* CARD DE BATIDA DE PONTO MOBILE */}
-          <div className="bg-gradient-to-br from-[#1E3A8A]/50 to-[#0B1B36] border-2 border-blue-500 rounded-2xl p-5 sm:p-6 text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-blue-900/50">
+          <div className="bg-gradient-to-br from-muted/50 to-surface border-2 border-info rounded-lg p-5 sm:p-6 text-center space-y-4">
+            <div className="w-14 h-14 rounded-lg bg-info text-ink flex items-center justify-center mx-auto shadow-lg shadow-info/50">
               <Clock className="w-8 h-8" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-white">Ponto Eletrônico por Geolocalização</h3>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto">
+              <h3 className="text-xl font-semibold text-ink">Ponto Eletrônico por Geolocalização</h3>
+              <p className="text-xs sm:text-sm text-ink-muted max-w-md mx-auto">
                 Bata seu ponto diretamente pelo celular. O sistema valida automaticamente se você está dentro do raio de{' '}
                 <strong>{coordsOficina.raio}m</strong> da oficina.
               </p>
@@ -1030,7 +1030,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               type="button"
               disabled={registrandoPonto}
               onClick={handleBaterPonto}
-              className="min-h-[50px] px-8 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-black text-base inline-flex items-center gap-2 cursor-pointer shadow-lg shadow-sky-950/40 disabled:opacity-50"
+              className="min-h-[50px] px-8 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-base inline-flex items-center gap-2 cursor-pointer shadow-lg shadow-info/40 disabled:opacity-50"
             >
               <Navigation className="w-5 h-5 stroke-[2.5]" />
               <span>{registrandoPonto ? 'Verificando GPS…' : 'Bater Ponto Agora'}</span>
@@ -1038,10 +1038,10 @@ export function Equipe({ empresaId }: EquipeProps) {
 
             {pontoFeedback && (
               <div
-                className={`p-3 rounded-xl border text-xs sm:text-sm font-bold max-w-lg mx-auto ${
+                className={`p-3 rounded-xl border text-xs sm:text-sm font-semibold max-w-lg mx-auto ${
                   pontoFeedback.sucesso
-                    ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200'
-                    : 'bg-red-950/80 border-red-500 text-red-200'
+                    ? 'bg-success/80 border-success text-success'
+                    : 'bg-danger/80 border-danger text-danger'
                 }`}
               >
                 {pontoFeedback.msg}
@@ -1050,34 +1050,34 @@ export function Equipe({ empresaId }: EquipeProps) {
           </div>
 
           {/* HISTÓRICO DE PONTOS REGISTRADOS */}
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl p-4 space-y-3">
-            <h4 className="text-sm font-bold text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-400" />
+          <div className="bg-surface border-2 border-line rounded-lg p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-ink flex items-center gap-2">
+              <Clock className="w-4 h-4 text-info" />
               <span>Últimos Registros de Ponto</span>
             </h4>
 
             {pontos.length === 0 ? (
-              <p className="text-xs text-slate-500 py-4 text-center">Nenhum ponto registrado hoje.</p>
+              <p className="text-xs text-ink-subtle py-4 text-center">Nenhum ponto registrado hoje.</p>
             ) : (
-              <div className="bg-[#071226] rounded-xl border border-[#264577] divide-y divide-[#12274D]">
+              <div className="bg-sunken rounded-xl border border-line divide-y divide-line">
                 {pontos.slice(0, 10).map((p) => (
                   <div
                     key={p.id}
                     className="p-3 flex items-center justify-between text-xs font-mono tabular-nums"
                   >
                     <div>
-                      <strong className="text-white font-sans block">{p.usuario_nome}</strong>
-                      <span className="text-slate-400">
+                      <strong className="text-ink font-sans block">{p.usuario_nome}</strong>
+                      <span className="text-ink-subtle">
                         {formatData(p.data)} às {p.hora} &bull; {p.tipo}
                       </span>
                     </div>
 
                     <div className="text-right">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        className={`px-2 py-0.5 rounded text-xs font-semibold ${
                           p.dentro_raio
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
-                            : 'bg-red-950 text-red-300 border border-red-600'
+                            ? 'bg-success/15 text-success border border-success'
+                            : 'bg-danger/15 text-danger border border-danger'
                         }`}
                       >
                         {p.dentro_raio ? 'NO RAIO DA OFICINA' : `FORA (${p.distancia_metros}m)`}
@@ -1096,13 +1096,13 @@ export function Equipe({ empresaId }: EquipeProps) {
           ======================================================== */}
       {activeTab === 'avaliacoes' && (
         <div className="space-y-4">
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-surface border-2 border-line rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+              <h3 className="text-base font-semibold text-ink flex items-center gap-2">
+                <Star className="w-5 h-5 text-warning fill-warning" />
                 <span>Avaliações dos Clientes por Atendimento</span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-subtle">
                 Feedback direto dos clientes ao receberem a Ordem de Serviço concluída pelo WhatsApp.
               </p>
             </div>
@@ -1113,19 +1113,19 @@ export function Equipe({ empresaId }: EquipeProps) {
                 const url = `${window.location.origin}/?modo=avaliar&osId=EXEMPLO-OS`;
                 window.open(url, '_blank');
               }}
-              className="min-h-[38px] px-3.5 rounded-xl bg-[#12274D] hover:bg-[#264577] text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer border border-[#3A5C90]"
+              className="min-h-[38px] px-3.5 rounded-xl bg-surface hover:bg-muted text-warning font-semibold text-xs flex items-center gap-1.5 cursor-pointer border border-line-strong"
             >
-              <Star className="w-4 h-4 fill-amber-400" />
+              <Star className="w-4 h-4 fill-warning" />
               <span>Ver Tela Pública de Avaliação</span>
             </button>
           </div>
 
           {/* LISTA DE DEPOIMENTOS & NOTAS */}
           {avaliacoes.length === 0 ? (
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
-              <Star className="w-8 h-8 text-slate-500 mx-auto" />
-              <p className="text-sm font-bold text-white">Nenhuma avaliação recebida ainda</p>
-              <p className="text-xs text-slate-400">
+            <div className="bg-surface border-2 border-line rounded-xl p-8 text-center text-ink-subtle space-y-2">
+              <Star className="w-8 h-8 text-ink-subtle mx-auto" />
+              <p className="text-sm font-semibold text-ink">Nenhuma avaliação recebida ainda</p>
+              <p className="text-xs text-ink-subtle">
                 Assim que os clientes clicarem no link do WhatsApp após a retirada do veículo, as notas e elogios aparecerão aqui.
               </p>
             </div>
@@ -1134,32 +1134,32 @@ export function Equipe({ empresaId }: EquipeProps) {
               {avaliacoes.map((av) => (
                 <div
                   key={av.id}
-                  className="bg-[#071226] border border-[#264577] rounded-xl p-4 space-y-2 text-xs"
+                  className="bg-sunken border border-line rounded-xl p-4 space-y-2 text-xs"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-amber-400">
+                    <div className="flex items-center gap-1 text-warning">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
                           key={star}
                           className={`w-4 h-4 ${
-                            star <= av.nota ? 'fill-amber-400' : 'text-slate-600'
+                            star <= av.nota ? 'fill-warning' : 'text-ink-subtle'
                           }`}
                         />
                       ))}
                     </div>
-                    <span className="text-slate-400 font-mono text-[11px]">{formatData(av.data)}</span>
+                    <span className="text-ink-subtle font-mono text-xs">{formatData(av.data)}</span>
                   </div>
 
                   <div>
-                    <strong className="text-white block text-sm">{av.cliente_nome}</strong>
-                    <span className="text-slate-400">
+                    <strong className="text-ink block text-sm">{av.cliente_nome}</strong>
+                    <span className="text-ink-subtle">
                       {av.veiculo_modelo} &bull; {av.veiculo_placa} &bull; Mecânico:{' '}
-                      <strong className="text-blue-300">{av.mecanico_nome || 'Equipe'}</strong>
+                      <strong className="text-info">{av.mecanico_nome || 'Equipe'}</strong>
                     </span>
                   </div>
 
                   {av.comentario && (
-                    <p className="text-slate-200 italic bg-[#0B1B36] p-2.5 rounded-lg border border-[#12274D]">
+                    <p className="text-ink italic bg-surface p-2.5 rounded-lg border border-line">
                       &ldquo;{av.comentario}&rdquo;
                     </p>
                   )}
@@ -1173,16 +1173,16 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* MODAL: CONVITE POR WHATSAPP & E-MAIL */}
       {modalConviteAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-emerald-500 rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-emerald-400" />
+          <div className="bg-surface border-2 border-success rounded-lg w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line pb-2">
+              <h3 className="text-base font-semibold text-ink flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-success" />
                 <span>Convidar Colaborador por WhatsApp</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setModalConviteAberto(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-ink-subtle hover:text-ink"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1190,33 +1190,33 @@ export function Equipe({ empresaId }: EquipeProps) {
 
             <div className="space-y-3 text-xs sm:text-sm">
               <div>
-                <label className="block font-bold text-slate-200 mb-1">Nome do Colaborador</label>
+                <label className="block font-semibold text-ink mb-1">Nome do Colaborador</label>
                 <input
                   type="text"
                   value={nomeConvite}
                   onChange={(e) => setNomeConvite(e.target.value)}
                   placeholder="Ex: Carlos Mecânico"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-200 mb-1">WhatsApp (DDD + Número)</label>
+                <label className="block font-semibold text-ink mb-1">WhatsApp (DDD + Número)</label>
                 <input
                   type="tel"
                   value={telConvite}
                   onChange={(e) => setTelConvite(e.target.value)}
                   placeholder="Ex: 11999998888"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-slate-200 mb-1">Cargo a Atribuir</label>
+                <label className="block font-semibold text-ink mb-1">Cargo a Atribuir</label>
                 <select
                   value={cargoConvite}
                   onChange={(e) => setCargoConvite(e.target.value as CargoUsuario)}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-semibold"
                 >
                   {CARGOS_DISPONIVEIS.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -1230,7 +1230,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                 <button
                   type="button"
                   onClick={handleEnviarConviteWhatsApp}
-                  className="w-full min-h-[46px] rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-950/50"
+                  className="w-full min-h-[46px] rounded-xl bg-success-solid hover:bg-success-solid text-white font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-success/50"
                 >
                   <Send className="w-4 h-4 stroke-[2.5]" />
                   <span>Enviar Convite no WhatsApp</span>
@@ -1244,16 +1244,16 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* MODAL: CADASTRO / EDIÇÃO DE COLABORADOR */}
       {modalColaboradorAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-3">
-              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-[#38BDF8]" />
+          <div className="bg-surface border-2 border-brand rounded-lg w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="text-base sm:text-lg font-semibold text-ink flex items-center gap-2">
+                <Users className="w-5 h-5 text-brand-ink" />
                 <span>{colaboradorEmEdicao ? 'Editar Colaborador & RH' : 'Novo Colaborador'}</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setModalColaboradorAberto(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-ink-subtle hover:text-ink"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1262,45 +1262,45 @@ export function Equipe({ empresaId }: EquipeProps) {
             <form onSubmit={handleSalvarColaborador} className="space-y-3.5 text-xs sm:text-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Nome Completo *</label>
+                  <label className="block font-semibold text-ink mb-1">Nome Completo *</label>
                   <input
                     type="text"
                     required
                     value={formNome}
                     onChange={(e) => setFormNome(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">E-mail de Acesso *</label>
+                  <label className="block font-semibold text-ink mb-1">E-mail de Acesso *</label>
                   <input
                     type="email"
                     required
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Telefone / WhatsApp</label>
+                  <label className="block font-semibold text-ink mb-1">Telefone / WhatsApp</label>
                   <input
                     type="tel"
                     value={formTelefone}
                     onChange={(e) => setFormTelefone(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Cargo *</label>
+                  <label className="block font-semibold text-ink mb-1">Cargo *</label>
                   <select
                     value={formCargo}
                     onChange={(e) => setFormCargo(e.target.value as CargoUsuario)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-semibold"
                   >
                     {CARGOS_DISPONIVEIS.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -1313,65 +1313,65 @@ export function Equipe({ empresaId }: EquipeProps) {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Salário Base (R$)</label>
+                  <label className="block font-semibold text-ink mb-1">Salário Base (R$)</label>
                   <input
                     type="number"
                     value={formSalario}
                     onChange={(e) => setFormSalario(e.target.value)}
                     placeholder="Ex: 2800.00 (opcional)"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Comissão M.O. (%)</label>
+                  <label className="block font-semibold text-ink mb-1">Comissão M.O. (%)</label>
                   <input
                     type="number"
                     value={formComissaoServico}
                     onChange={(e) => setFormComissaoServico(e.target.value)}
                     placeholder="Ex: 15"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Comissão Peças (%)</label>
+                  <label className="block font-semibold text-ink mb-1">Comissão Peças (%)</label>
                   <input
                     type="number"
                     value={formComissaoPeca}
                     onChange={(e) => setFormComissaoPeca(e.target.value)}
                     placeholder="Ex: 5"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Vale Transporte (R$)</label>
+                  <label className="block font-semibold text-ink mb-1">Vale Transporte (R$)</label>
                   <input
                     type="number"
                     value={formVT}
                     onChange={(e) => setFormVT(e.target.value)}
                     placeholder="0.00"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Vale Refeição (R$)</label>
+                  <label className="block font-semibold text-ink mb-1">Vale Refeição (R$)</label>
                   <input
                     type="number"
                     value={formVR}
                     onChange={(e) => setFormVR(e.target.value)}
                     placeholder="0.00"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-200 mb-1">
+                <label className="block font-semibold text-ink mb-1">
                   {colaboradorEmEdicao ? 'Nova Senha (deixe vazio p/ manter)' : 'Senha Inicial'}
                 </label>
                 <input
@@ -1379,11 +1379,11 @@ export function Equipe({ empresaId }: EquipeProps) {
                   placeholder="Mínimo 6 caracteres"
                   value={formSenha}
                   onChange={(e) => setFormSenha(e.target.value)}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#12274D]">
+              <div className="flex items-center justify-between gap-2 pt-3 border-t border-line">
                 {colaboradorEmEdicao ? (
                   <button
                     type="button"
@@ -1391,7 +1391,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                       setModalColaboradorAberto(false);
                       handleExcluirColaborador(colaboradorEmEdicao);
                     }}
-                    className="min-h-[42px] px-3.5 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-800 text-red-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer mr-auto transition-colors"
+                    className="min-h-[42px] px-3.5 rounded-xl bg-danger/70 hover:bg-danger/15 border border-danger text-danger font-semibold text-xs flex items-center gap-1.5 cursor-pointer mr-auto transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Desativar</span>
@@ -1402,13 +1402,13 @@ export function Equipe({ empresaId }: EquipeProps) {
                   <button
                     type="button"
                     onClick={() => setModalColaboradorAberto(false)}
-                    className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold cursor-pointer"
+                    className="min-h-[42px] px-4 rounded-xl bg-surface text-ink font-semibold cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="min-h-[42px] px-5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold cursor-pointer"
+                    className="min-h-[42px] px-5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold cursor-pointer"
                   >
                     Salvar Colaborador
                   </button>
@@ -1422,16 +1422,16 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* MODAL: HOLERITE / DEMONSTRATIVO DE PAGAMENTO IMPRIMÍVEL */}
       {modalHoleriteAberto && colaboradorHolerite && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#0B1B36] border-2 border-blue-500 rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2 print:hidden">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-400" />
+          <div className="bg-surface border-2 border-info rounded-lg w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line pb-2 print:hidden">
+              <h3 className="text-base font-semibold text-ink flex items-center gap-2">
+                <FileText className="w-5 h-5 text-info" />
                 <span>Demonstrativo de Pagamento (Holerite)</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setModalHoleriteAberto(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-ink-subtle hover:text-ink"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1443,12 +1443,12 @@ export function Equipe({ empresaId }: EquipeProps) {
               className="bg-white text-black p-5 rounded-xl border-2 border-black space-y-4 font-mono text-xs select-all"
             >
               <div className="text-center border-b-2 border-black pb-2">
-                <h2 className="text-base font-black uppercase">MECANIFY &bull; OFICINA MECÂNICA</h2>
-                <div className="text-[11px] font-bold">RECIBO DE PAGAMENTO DE SALÁRIO E COMISSÕES</div>
-                <div className="text-[10px]">Mês de Referência: {mesFolhaRef}</div>
+                <h2 className="text-base font-semibold uppercase">MECANIFY &bull; OFICINA MECÂNICA</h2>
+                <div className="text-xs font-semibold">RECIBO DE PAGAMENTO DE SALÁRIO E COMISSÕES</div>
+                <div className="text-xs">Mês de Referência: {mesFolhaRef}</div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 border-b border-black pb-2 text-[11px]">
+              <div className="grid grid-cols-2 gap-2 border-b border-black pb-2 text-xs">
                 <div>
                   <strong>Colaborador:</strong> {colaboradorHolerite.nome}
                 </div>
@@ -1465,13 +1465,13 @@ export function Equipe({ empresaId }: EquipeProps) {
 
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-black text-[10px] uppercase font-bold">
+                  <tr className="border-b border-black text-xs uppercase font-semibold">
                     <th className="py-1">Descrição</th>
                     <th className="py-1 text-right">Proventos (R$)</th>
                     <th className="py-1 text-right">Descontos (R$)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-300">
+                <tbody className="divide-y divide-line">
                   <tr>
                     <td className="py-1">Salário Base Mensal</td>
                     <td className="py-1 text-right">
@@ -1516,7 +1516,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                 </tbody>
               </table>
 
-              <div className="border-t-2 border-black pt-2 flex items-center justify-between text-sm font-black">
+              <div className="border-t-2 border-black pt-2 flex items-center justify-between text-sm font-semibold">
                 <span>VALOR LÍQUIDO A RECEBER:</span>
                 <span className="text-base">
                   {colaboradorHolerite.salario_base && colaboradorHolerite.salario_base > 0
@@ -1534,7 +1534,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                 </span>
               </div>
 
-              <div className="pt-8 border-t border-dashed border-black text-center text-[10px]">
+              <div className="pt-8 border-t border-dashed border-black text-center text-xs">
                 ____________________________________________________
                 <br />
                 Assinatura do Colaborador: {colaboradorHolerite.nome}
@@ -1545,14 +1545,14 @@ export function Equipe({ empresaId }: EquipeProps) {
               <button
                 type="button"
                 onClick={() => setModalHoleriteAberto(false)}
-                className="min-h-[40px] px-3.5 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
+                className="min-h-[40px] px-3.5 rounded-xl bg-surface text-ink font-semibold text-xs cursor-pointer"
               >
                 Fechar
               </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="min-h-[40px] px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                className="min-h-[40px] px-4 rounded-xl bg-info hover:bg-info text-ink font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Imprimir Holerite</span>
@@ -1565,16 +1565,16 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* MODAL: AGENDAR ESCALA / FÉRIAS */}
       {modalEscalaAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-blue-500 rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-400" />
+          <div className="bg-surface border-2 border-info rounded-lg w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line pb-2">
+              <h3 className="text-base font-semibold text-ink flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-info" />
                 <span>Agendar Férias / Folga de Colaborador</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setModalEscalaAberto(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-ink-subtle hover:text-ink"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1582,12 +1582,12 @@ export function Equipe({ empresaId }: EquipeProps) {
 
             <form onSubmit={handleSalvarEscala} className="space-y-3.5 text-xs sm:text-sm">
               <div>
-                <label className="block font-bold text-slate-200 mb-1">Colaborador *</label>
+                <label className="block font-semibold text-ink mb-1">Colaborador *</label>
                 <select
                   required
                   value={escalaUsuarioId}
                   onChange={(e) => setEscalaUsuarioId(e.target.value)}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-semibold"
                 >
                   <option value="">Selecione o profissional…</option>
                   {usuarios.map((u) => (
@@ -1599,11 +1599,11 @@ export function Equipe({ empresaId }: EquipeProps) {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-200 mb-1">Tipo de Período *</label>
+                <label className="block font-semibold text-ink mb-1">Tipo de Período *</label>
                 <select
                   value={escalaTipo}
                   onChange={(e) => setEscalaTipo(e.target.value as any)}
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-semibold"
                 >
                   <option value="FERIAS">Férias</option>
                   <option value="FOLGA">Folga / Escala Revezamento</option>
@@ -1614,50 +1614,50 @@ export function Equipe({ empresaId }: EquipeProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Data Início *</label>
+                  <label className="block font-semibold text-ink mb-1">Data Início *</label>
                   <input
                     type="date"
                     required
                     value={escalaInicio}
                     onChange={(e) => setEscalaInicio(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Data Fim *</label>
+                  <label className="block font-semibold text-ink mb-1">Data Fim *</label>
                   <input
                     type="date"
                     required
                     value={escalaFim}
                     onChange={(e) => setEscalaFim(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-200 mb-1">Observações</label>
+                <label className="block font-semibold text-ink mb-1">Observações</label>
                 <input
                   type="text"
                   value={escalaObs}
                   onChange={(e) => setEscalaObs(e.target.value)}
                   placeholder="Ex: 15 dias de férias aprovadas…"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#12274D]">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setModalEscalaAberto(false)}
-                  className="min-h-[40px] px-4 rounded-xl bg-[#12274D] text-white font-bold cursor-pointer"
+                  className="min-h-[40px] px-4 rounded-xl bg-surface text-ink font-semibold cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="min-h-[40px] px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold cursor-pointer"
+                  className="min-h-[40px] px-5 rounded-xl bg-info hover:bg-info text-ink font-semibold cursor-pointer"
                 >
                   Salvar Período
                 </button>

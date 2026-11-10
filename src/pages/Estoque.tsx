@@ -488,15 +488,15 @@ export function Estoque({ empresaId }: EstoqueProps) {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-              <Package className="w-6 h-6 text-[#38BDF8]" aria-hidden="true" />
+            <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight flex items-center gap-2.5">
+              <Package className="w-6 h-6 text-brand-ink" aria-hidden="true" />
               <span>Estoque &amp; Almoxarifado</span>
             </h1>
-            <span className="px-2 py-0.5 rounded-full bg-[#12274D] border border-[#264577] text-xs font-mono font-bold text-slate-300">
+            <span className="px-2 py-0.5 rounded-full bg-surface border border-line text-xs font-mono font-semibold text-ink-muted">
               {itens.length} itens
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-ink-subtle mt-0.5">
             Controle ágil de peças, fluidos, componentes e saldo para a bancada da oficina.
           </p>
         </div>
@@ -507,9 +507,9 @@ export function Estoque({ empresaId }: EstoqueProps) {
             onClick={handleExportarCsv}
             title="Exportar para Excel / CSV"
             aria-label="Exportar para Excel / CSV"
-            className="min-h-[42px] px-3 py-2 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-200 font-bold text-xs flex items-center gap-2 cursor-pointer"
+            className="min-h-[42px] px-3 py-2 rounded-xl bg-sunken hover:bg-muted border border-line text-ink font-semibold text-xs flex items-center gap-2 cursor-pointer"
           >
-            <Download className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+            <Download className="w-4 h-4 text-brand-ink" aria-hidden="true" />
             <span className="hidden sm:inline">Exportar CSV</span>
           </button>
 
@@ -519,10 +519,10 @@ export function Estoque({ empresaId }: EstoqueProps) {
             disabled={carregando}
             title="Atualizar lista de estoque"
             aria-label="Atualizar estoque"
-            className="min-h-[42px] px-2.5 py-2 rounded-xl bg-[#071226] hover:bg-[#12274D] border border-[#264577] text-slate-300 flex items-center justify-center cursor-pointer disabled:opacity-50"
+            className="min-h-[42px] px-2.5 py-2 rounded-xl bg-sunken hover:bg-muted border border-line text-ink-muted flex items-center justify-center cursor-pointer disabled:opacity-50"
           >
             <RefreshCw
-              className={`w-4 h-4 ${carregando ? 'animate-spin text-[#38BDF8]' : ''}`}
+              className={`w-4 h-4 ${carregando ? 'animate-spin text-brand-ink' : ''}`}
               aria-hidden="true"
             />
           </button>
@@ -530,7 +530,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
           <button
             type="button"
             onClick={abrirModalCadastro}
-            className="min-h-[42px] px-3.5 py-2 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs sm:text-sm flex items-center gap-2 cursor-pointer shadow-md shadow-sky-950/40"
+            className="min-h-[42px] px-3.5 py-2 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-xs sm:text-sm flex items-center gap-2 cursor-pointer shadow-md shadow-info/40"
           >
             <Plus className="w-4 h-4 stroke-[3]" aria-hidden="true" />
             <span>+ Nova Peça</span>
@@ -541,14 +541,14 @@ export function Estoque({ empresaId }: EstoqueProps) {
       {/* FEEDBACK DE SUCESSO / ERRO */}
       <div aria-live="polite">
         {sucessoMsg && (
-          <div className="p-3 rounded-xl bg-emerald-950 border border-emerald-500 text-emerald-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-success/15 border border-success text-success flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
             <span>{sucessoMsg}</span>
           </div>
         )}
         {erro && (
-          <div className="p-3 rounded-xl bg-red-950 border border-red-500 text-red-100 flex items-center gap-2 text-xs sm:text-sm font-bold">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+          <div className="p-3 rounded-xl bg-danger/15 border border-danger text-danger flex items-center gap-2 text-xs sm:text-sm font-semibold">
+            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
             <span>{erro}</span>
           </div>
         )}
@@ -563,15 +563,15 @@ export function Estoque({ empresaId }: EstoqueProps) {
             : 'grid-cols-2'
         } gap-2 sm:gap-3`}
       >
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+        <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-ink-subtle text-xs font-semibold">
             <span>Total de Itens</span>
-            <Package className="w-4 h-4 text-blue-400" aria-hidden="true" />
+            <Package className="w-4 h-4 text-info" aria-hidden="true" />
           </div>
-          <div className="text-xl sm:text-2xl font-black font-mono text-white mt-1 tabular-nums">
+          <div className="text-xl sm:text-2xl font-semibold font-mono text-ink mt-1 tabular-nums">
             {stats.totalItens}
           </div>
-          <div className="text-[11px] text-slate-400">Produtos no catálogo</div>
+          <div className="text-xs text-ink-subtle">Produtos no catálogo</div>
         </div>
 
         <button
@@ -579,31 +579,31 @@ export function Estoque({ empresaId }: EstoqueProps) {
           onClick={() => setApenasEstoqueBaixo((prev) => !prev)}
           className={`rounded-xl p-3 sm:p-4 text-left flex flex-col justify-between cursor-pointer border-2 transition-colors ${
             apenasEstoqueBaixo
-              ? 'bg-red-950/80 border-red-500 text-white'
+              ? 'bg-danger/80 border-danger text-ink'
               : stats.criticos > 0
-              ? 'bg-[#0B1B36] border-red-900/60 hover:border-red-500 text-slate-200'
-              : 'bg-[#0B1B36] border-[#12274D] text-slate-200'
+              ? 'bg-surface border-danger/60 hover:border-danger text-ink'
+              : 'bg-surface border-line text-ink'
           }`}
         >
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className={stats.criticos > 0 ? 'text-red-400' : 'text-slate-400'}>
+          <div className="flex items-center justify-between text-xs font-semibold">
+            <span className={stats.criticos > 0 ? 'text-danger' : 'text-ink-subtle'}>
               Estoque Crítico
             </span>
             <AlertTriangle
               className={`w-4 h-4 ${
-                stats.criticos > 0 ? 'text-red-400 animate-pulse' : 'text-slate-500'
+                stats.criticos > 0 ? 'text-danger animate-pulse' : 'text-ink-subtle'
               }`}
               aria-hidden="true"
             />
           </div>
           <div
-            className={`text-xl sm:text-2xl font-black font-mono mt-1 tabular-nums ${
-              stats.criticos > 0 ? 'text-red-400' : 'text-slate-300'
+            className={`text-xl sm:text-2xl font-semibold font-mono mt-1 tabular-nums ${
+              stats.criticos > 0 ? 'text-danger' : 'text-ink-muted'
             }`}
           >
             {stats.criticos}
           </div>
-          <div className="text-[11px] text-slate-400">
+          <div className="text-xs text-ink-subtle">
             {apenasEstoqueBaixo ? 'Filtro ativado (clique p/ ver todos)' : 'Qtd ≤ Alerta mínimo'}
           </div>
         </button>
@@ -611,26 +611,26 @@ export function Estoque({ empresaId }: EstoqueProps) {
         {/* Patrimônio Investido & Potencial de Venda (Apenas DONO, FINANCEIRO e Master) */}
         {canSeeFinanceiro && (
           <>
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+            <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-ink-subtle text-xs font-semibold">
                 <span>Capital em Custo</span>
-                <DollarSign className="w-4 h-4 text-amber-400" aria-hidden="true" />
+                <DollarSign className="w-4 h-4 text-warning" aria-hidden="true" />
               </div>
-              <div className="text-lg sm:text-xl font-black font-mono text-white mt-1 tabular-nums">
+              <div className="text-lg sm:text-xl font-semibold font-mono text-ink mt-1 tabular-nums">
                 {formatBRL(stats.totalCusto)}
               </div>
-              <div className="text-[11px] text-slate-400">Patrimônio investido</div>
+              <div className="text-xs text-ink-subtle">Patrimônio investido</div>
             </div>
 
-            <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+            <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-ink-subtle text-xs font-semibold">
                 <span>Potencial Venda</span>
-                <TrendingUp className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+                <TrendingUp className="w-4 h-4 text-success" aria-hidden="true" />
               </div>
-              <div className="text-lg sm:text-xl font-black font-mono text-emerald-400 mt-1 tabular-nums">
+              <div className="text-lg sm:text-xl font-semibold font-mono text-success mt-1 tabular-nums">
                 {formatBRL(stats.totalVenda)}
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-xs text-ink-subtle">
                 Lucro estimado: {formatBRL(stats.lucroProjetado)}
               </div>
             </div>
@@ -639,11 +639,11 @@ export function Estoque({ empresaId }: EstoqueProps) {
       </section>
 
       {/* BARRA DE BUSCA REATIVA E FILTROS DE CATEGORIA */}
-      <section className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-3 space-y-2.5">
+      <section className="bg-surface border-2 border-line rounded-xl p-3 space-y-2.5">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {/* Campo de Busca Reativa Instantânea */}
           <search className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-subtle">
               <Search className="w-4 h-4" aria-hidden="true" />
             </div>
             <input
@@ -656,16 +656,16 @@ export function Estoque({ empresaId }: EstoqueProps) {
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck="false"
-              className="w-full min-h-[42px] pl-9 pr-3 bg-[#071226] border border-[#264577] rounded-xl text-white text-xs sm:text-sm placeholder-slate-500 focus:outline-none focus:border-[#38BDF8]"
+              className="w-full min-h-[42px] pl-9 pr-3 bg-sunken border border-line rounded-xl text-ink text-xs sm:text-sm placeholder-ink-subtle focus:outline-none focus:border-brand"
             />
           </search>
 
           <button
             type="button"
             onClick={() => setMostrarModalCategorias(true)}
-            className="min-h-[42px] px-3 py-2 rounded-xl bg-[#12274D] hover:bg-[#264577] border border-[#3A5C90] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            className="min-h-[42px] px-3 py-2 rounded-xl bg-surface hover:bg-muted border border-line-strong text-ink font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
           >
-            <FolderPlus className="w-4 h-4 text-[#38BDF8]" aria-hidden="true" />
+            <FolderPlus className="w-4 h-4 text-brand-ink" aria-hidden="true" />
             <span>Categorias ({categoriasCustom.length})</span>
           </button>
         </div>
@@ -678,10 +678,10 @@ export function Estoque({ empresaId }: EstoqueProps) {
               setCategoriaAtiva('TODAS');
               setApenasEstoqueBaixo(false);
             }}
-            className={`px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-pointer transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 cursor-pointer transition-colors ${
               categoriaAtiva === 'TODAS' && !apenasEstoqueBaixo
-                ? 'bg-[#2563EB] text-white'
-                : 'bg-[#071226] text-slate-300 border border-[#264577] hover:bg-[#12274D]'
+                ? 'bg-muted text-ink'
+                : 'bg-sunken text-ink-muted border border-line hover:bg-muted'
             }`}
           >
             Todas ({itens.length})
@@ -690,10 +690,10 @@ export function Estoque({ empresaId }: EstoqueProps) {
           <button
             type="button"
             onClick={() => setApenasEstoqueBaixo((v) => !v)}
-            className={`px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-pointer flex items-center gap-1 transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 cursor-pointer flex items-center gap-1 transition-colors ${
               apenasEstoqueBaixo
-                ? 'bg-red-600 text-white'
-                : 'bg-[#071226] text-red-300 border border-red-900/60 hover:bg-red-950'
+                ? 'bg-danger-solid text-white'
+                : 'bg-sunken text-danger border border-danger/60 hover:bg-danger/15'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
@@ -713,10 +713,10 @@ export function Estoque({ empresaId }: EstoqueProps) {
                   setCategoriaAtiva(cat);
                   setApenasEstoqueBaixo(false);
                 }}
-                className={`px-3 py-1.5 rounded-lg font-bold shrink-0 cursor-pointer transition-colors ${
+                className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 cursor-pointer transition-colors ${
                   ativa
-                    ? 'bg-[#38BDF8] text-[#071226]'
-                    : 'bg-[#071226] text-slate-300 border border-[#264577] hover:bg-[#12274D]'
+                    ? 'bg-brand text-on-brand'
+                    : 'bg-sunken text-ink-muted border border-line hover:bg-muted'
                 }`}
               >
                 {cat} ({count})
@@ -728,15 +728,15 @@ export function Estoque({ empresaId }: EstoqueProps) {
 
       {/* LISTAGEM DENSA & MOBILE-FIRST DOS ITENS DO ESTOQUE */}
       {carregando ? (
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-2">
-          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#38BDF8]" aria-hidden="true" />
+        <div className="bg-surface border-2 border-line rounded-xl p-8 text-center text-ink-subtle space-y-2">
+          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-brand-ink" aria-hidden="true" />
           <p className="text-sm">Carregando catálogo do estoque…</p>
         </div>
       ) : itensFiltrados.length === 0 ? (
-        <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-xl p-8 text-center text-slate-400 space-y-3">
-          <Package className="w-10 h-10 text-slate-500 mx-auto" aria-hidden="true" />
-          <h3 className="text-base font-bold text-white">Nenhum item encontrado</h3>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+        <div className="bg-surface border-2 border-line rounded-xl p-8 text-center text-ink-subtle space-y-3">
+          <Package className="w-10 h-10 text-ink-subtle mx-auto" aria-hidden="true" />
+          <h3 className="text-base font-semibold text-ink">Nenhum item encontrado</h3>
+          <p className="text-xs sm:text-sm text-ink-subtle max-w-md mx-auto">
             {busca || apenasEstoqueBaixo || categoriaAtiva !== 'TODAS'
               ? 'Nenhuma peça corresponde aos filtros aplicados. Tente limpar a busca.'
               : 'Seu almoxarifado ainda não possui peças cadastradas. Comece cadastrando sua primeira peça agora.'}
@@ -744,7 +744,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
           <button
             type="button"
             onClick={abrirModalCadastro}
-            className="min-h-[42px] px-4 py-2 rounded-xl bg-[#38BDF8] text-[#071226] font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[42px] px-4 py-2 rounded-xl bg-brand text-on-brand font-semibold text-xs inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" aria-hidden="true" />
             <span>Cadastrar Peça</span>
@@ -752,7 +752,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="bg-[#071226] border-2 border-[#264577] rounded-xl divide-y divide-[#12274D]">
+          <div className="bg-sunken border-2 border-line rounded-xl divide-y divide-line">
             {itensFiltrados.map((item) => {
               const qtd = item.quantidade ?? 0;
               const min = item.minimo_alerta ?? 5;
@@ -763,52 +763,52 @@ export function Estoque({ empresaId }: EstoqueProps) {
               return (
                 <article
                   key={item.id}
-                  className="p-3 sm:px-4 sm:py-3 hover:bg-[#0B1B36]/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                  className="p-3 sm:px-4 sm:py-3 hover:bg-surface/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                 >
                   {/* Linha 1: Identificação da Peça (Nome em largura total no mobile) */}
                   <div className="min-w-0 sm:flex-1 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#12274D] text-slate-300 border border-[#264577] uppercase shrink-0">
+                      <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-surface text-ink-muted border border-line uppercase shrink-0">
                         {item.categoria || 'PECAS'}
                       </span>
                       {item.codigo && (
-                        <span className="font-mono text-[11px] text-[#38BDF8] bg-sky-950/60 border border-sky-900 px-1.5 py-0.5 rounded shrink-0">
+                        <span className="font-mono text-xs text-brand-ink bg-info/60 border border-info px-1.5 py-0.5 rounded shrink-0">
                           SKU: {item.codigo}
                         </span>
                       )}
                       {isCritico && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-300 border border-red-600 animate-pulse shrink-0">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-danger/15 text-danger border border-danger animate-pulse shrink-0">
                           <AlertTriangle className="w-3 h-3" aria-hidden="true" />
                           <span>Baixo (mín: {min})</span>
                         </span>
                       )}
                     </div>
 
-                    <h3 className="text-sm sm:text-base font-bold text-white break-words leading-snug">
+                    <h3 className="text-sm sm:text-base font-semibold text-ink break-words leading-snug">
                       {item.nome}
                     </h3>
                   </div>
 
                   {/* Linha 2 (Mobile) / Lado Direito (Desktop): Preços, Saldo e Ações */}
-                  <div className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#12274D]">
+                  <div className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-line">
                     {/* Bloco de Preços */}
                     <div className="flex items-center gap-3 font-mono tabular-nums text-right">
                       {canSeeFinanceiro && (
                         <div className="hidden md:block">
-                          <div className="text-[10px] text-slate-400">Custo</div>
-                          <div className="text-xs text-slate-300">{formatBRL(item.custo)}</div>
+                          <div className="text-xs text-ink-subtle">Custo</div>
+                          <div className="text-xs text-ink-muted">{formatBRL(item.custo)}</div>
                         </div>
                       )}
 
                       <div>
-                        <div className="text-[10px] text-slate-400">Venda</div>
-                        <div className="text-sm font-bold text-white">{formatBRL(item.venda)}</div>
+                        <div className="text-xs text-ink-subtle">Venda</div>
+                        <div className="text-sm font-semibold text-ink">{formatBRL(item.venda)}</div>
                       </div>
 
                       {canSeeFinanceiro && item.custo > 0 && (
                         <div className="hidden lg:block">
-                          <div className="text-[10px] text-emerald-400">Margem</div>
-                          <div className="text-xs font-bold text-emerald-400">
+                          <div className="text-xs text-success">Margem</div>
+                          <div className="text-xs font-semibold text-success">
                             {margem.toFixed(0)}%
                           </div>
                         </div>
@@ -819,14 +819,14 @@ export function Estoque({ empresaId }: EstoqueProps) {
                     <div
                       className={`min-w-[68px] px-2.5 py-1 rounded-lg border text-center font-mono shrink-0 ${
                         isCritico
-                          ? 'bg-red-950/80 border-red-500 text-red-200'
-                          : 'bg-[#12274D] border-emerald-500/60 text-emerald-300'
+                          ? 'bg-danger/80 border-danger text-danger'
+                          : 'bg-surface border-success/60 text-success'
                       }`}
                     >
-                      <div className="text-[10px] font-bold opacity-80 uppercase leading-none">
+                      <div className="text-xs font-semibold opacity-80 uppercase leading-none">
                         Saldo
                       </div>
-                      <div className="text-sm sm:text-base font-extrabold tabular-nums leading-tight">
+                      <div className="text-sm sm:text-base font-semibold tabular-nums leading-tight">
                         {qtd} un.
                       </div>
                     </div>
@@ -839,7 +839,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                         disabled={qtd <= 0}
                         title="Registrar Saída Rápida de Peça"
                         aria-label={`Registrar Saída de ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-red-950 border border-slate-600 hover:border-red-500 text-slate-200 hover:text-red-300 flex items-center justify-center cursor-pointer disabled:opacity-40 transition-colors"
+                        className="w-8 h-8 rounded-lg bg-surface hover:bg-danger/15 border border-line-strong hover:border-danger text-ink hover:text-danger flex items-center justify-center cursor-pointer disabled:opacity-40 transition-colors"
                       >
                         <ArrowDownRight className="w-4 h-4" aria-hidden="true" />
                       </button>
@@ -849,7 +849,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                         onClick={() => abrirModalAjuste(item, 'entrada')}
                         title="Registrar Entrada / Chegada de Nota"
                         aria-label={`Registrar Entrada de ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-emerald-950 border border-slate-600 hover:border-emerald-500 text-slate-200 hover:text-emerald-300 flex items-center justify-center cursor-pointer transition-colors"
+                        className="w-8 h-8 rounded-lg bg-surface hover:bg-success/15 border border-line-strong hover:border-success text-ink hover:text-success flex items-center justify-center cursor-pointer transition-colors"
                       >
                         <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
                       </button>
@@ -863,7 +863,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                         }}
                         title="Imprimir Etiqueta com Código de Barras"
                         aria-label={`Imprimir etiqueta com código de barras para ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-[#38BDF8] flex items-center justify-center cursor-pointer transition-colors"
+                        className="w-8 h-8 rounded-lg bg-surface hover:bg-muted border border-line-strong text-brand-ink flex items-center justify-center cursor-pointer transition-colors"
                       >
                         <Barcode className="w-4 h-4" aria-hidden="true" />
                       </button>
@@ -874,7 +874,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                         onClick={() => abrirModalEdicao(item)}
                         title="Editar Peça"
                         aria-label={`Editar ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-[#12274D] hover:bg-[#264577] border border-slate-600 text-amber-300 flex items-center justify-center cursor-pointer transition-colors"
+                        className="w-8 h-8 rounded-lg bg-surface hover:bg-muted border border-line-strong text-warning flex items-center justify-center cursor-pointer transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
@@ -885,7 +885,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                         onClick={() => setItemParaExcluir(item)}
                         title="Excluir Peça"
                         aria-label={`Excluir ${item.nome}`}
-                        className="w-8 h-8 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-700 text-red-200 flex items-center justify-center cursor-pointer transition-colors"
+                        className="w-8 h-8 rounded-lg bg-danger/60 hover:bg-danger/15 border border-danger text-danger flex items-center justify-center cursor-pointer transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
@@ -901,16 +901,16 @@ export function Estoque({ empresaId }: EstoqueProps) {
       {/* MODAL 1: CADASTRO / EDIÇÃO DE PEÇA NO ESTOQUE */}
       {modalItemAberto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-3">
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <Package className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
+          <div className="bg-surface border-2 border-brand rounded-lg w-full max-w-lg p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h2 className="text-base sm:text-lg font-semibold text-ink flex items-center gap-2">
+                <Package className="w-5 h-5 text-brand-ink" aria-hidden="true" />
                 <span>{itemEmEdicao ? 'Editar Peça / Item' : 'Nova Peça no Estoque'}</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setModalItemAberto(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#12274D] cursor-pointer"
+                className="p-1.5 rounded-lg text-ink-subtle hover:text-ink hover:bg-muted cursor-pointer"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
@@ -918,7 +918,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
 
             <form onSubmit={handleSalvarItem} className="space-y-3.5 text-xs sm:text-sm">
               <div>
-                <label className="block font-bold text-slate-200 mb-1">
+                <label className="block font-semibold text-ink mb-1">
                   Nome da Peça / Produto *
                 </label>
                 <input
@@ -927,17 +927,17 @@ export function Estoque({ empresaId }: EstoqueProps) {
                   value={formNome}
                   onChange={(e) => setFormNome(e.target.value)}
                   placeholder="Ex: Pastilha de Freio Dianteira Onix 1.0"
-                  className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white"
+                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">Categoria *</label>
+                  <label className="block font-semibold text-ink mb-1">Categoria *</label>
                   <select
                     value={formCategoria}
                     onChange={(e) => setFormCategoria(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-bold"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-semibold"
                   >
                     {categoriasCustom.map((cat) => (
                       <option key={cat} value={cat}>
@@ -948,7 +948,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">
+                  <label className="block font-semibold text-ink mb-1">
                     Código / SKU / Cód. Barras
                   </label>
                   <input
@@ -956,14 +956,14 @@ export function Estoque({ empresaId }: EstoqueProps) {
                     value={formCodigo}
                     onChange={(e) => setFormCodigo(e.target.value)}
                     placeholder="Ex: ONX-7741"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono uppercase"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono uppercase"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">
+                  <label className="block font-semibold text-ink mb-1">
                     Quantidade em Saldo *
                   </label>
                   <input
@@ -972,12 +972,12 @@ export function Estoque({ empresaId }: EstoqueProps) {
                     required
                     value={formQuantidade}
                     onChange={(e) => setFormQuantidade(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center font-bold"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono text-center font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">
+                  <label className="block font-semibold text-ink mb-1">
                     Alerta Mínimo (Crítico) *
                   </label>
                   <input
@@ -986,7 +986,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                     required
                     value={formMinimo}
                     onChange={(e) => setFormMinimo(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono text-center"
                   />
                 </div>
               </div>
@@ -998,7 +998,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               >
                 {canSeeFinanceiro && (
                   <div>
-                    <label className="block font-bold text-slate-200 mb-1">
+                    <label className="block font-semibold text-ink mb-1">
                       Custo Unitário (R$)
                     </label>
                     <input
@@ -1008,13 +1008,13 @@ export function Estoque({ empresaId }: EstoqueProps) {
                       value={formCusto}
                       onChange={(e) => setFormCusto(e.target.value)}
                       placeholder="0.00"
-                      className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-slate-200 font-mono"
+                      className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
                     />
                   </div>
                 )}
 
                 <div>
-                  <label className="block font-bold text-slate-200 mb-1">
+                  <label className="block font-semibold text-ink mb-1">
                     Preço de Venda (R$) *
                   </label>
                   <input
@@ -1025,23 +1025,23 @@ export function Estoque({ empresaId }: EstoqueProps) {
                     value={formVenda}
                     onChange={(e) => setFormVenda(e.target.value)}
                     placeholder="0.00"
-                    className="w-full min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono font-bold"
+                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono font-semibold"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#12274D]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setModalItemAberto(false)}
-                  className="min-h-[42px] px-4 rounded-xl bg-[#12274D] hover:bg-[#264577] text-white font-bold cursor-pointer"
+                  className="min-h-[42px] px-4 rounded-xl bg-surface hover:bg-muted text-ink font-semibold cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={salvandoItem}
-                  className="min-h-[42px] px-5 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold cursor-pointer disabled:opacity-50"
+                  className="min-h-[42px] px-5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold cursor-pointer disabled:opacity-50"
                 >
                   {salvandoItem ? 'Salvando…' : 'Salvar Peça'}
                 </button>
@@ -1054,38 +1054,38 @@ export function Estoque({ empresaId }: EstoqueProps) {
       {/* MODAL 2: AJUSTE RÁPIDO DE SALDO (+ ENTRADA / - SAÍDA) */}
       {modalAjusteAberto && itemParaAjuste && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-[#12274D] rounded-2xl w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
+          <div className="bg-surface border-2 border-line rounded-lg w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line pb-2">
+              <h2 className="text-base font-semibold text-ink flex items-center gap-2">
                 {ajusteTipo === 'entrada' ? (
-                  <ArrowUpRight className="w-5 h-5 text-emerald-400" aria-hidden="true" />
+                  <ArrowUpRight className="w-5 h-5 text-success" aria-hidden="true" />
                 ) : (
-                  <ArrowDownRight className="w-4 h-4 text-red-400" aria-hidden="true" />
+                  <ArrowDownRight className="w-4 h-4 text-danger" aria-hidden="true" />
                 )}
                 <span>{ajusteTipo === 'entrada' ? 'Entrada no Estoque' : 'Saída do Estoque'}</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setModalAjusteAberto(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-ink-subtle hover:text-ink"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="bg-[#071226] p-3 rounded-xl border border-[#264577] space-y-1">
-              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+            <div className="bg-sunken p-3 rounded-xl border border-line space-y-1">
+              <div className="text-xs text-ink-subtle font-semibold uppercase tracking-wider">
                 Peça Selecionada
               </div>
-              <div className="text-sm font-bold text-white">{itemParaAjuste.nome}</div>
-              <div className="text-xs font-mono text-slate-300">
-                Saldo atual: <strong className="text-white">{itemParaAjuste.quantidade} un.</strong>
+              <div className="text-sm font-semibold text-ink">{itemParaAjuste.nome}</div>
+              <div className="text-xs font-mono text-ink-muted">
+                Saldo atual: <strong className="text-ink">{itemParaAjuste.quantidade} un.</strong>
               </div>
             </div>
 
             <form onSubmit={handleConfirmarAjuste} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-200 mb-1">
+                <label className="block text-xs font-semibold text-ink mb-1">
                   Quantidade a {ajusteTipo === 'entrada' ? 'adicionar' : 'dar baixa'}
                 </label>
                 <input
@@ -1095,7 +1095,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                   autoFocus
                   value={ajusteQtd}
                   onChange={(e) => setAjusteQtd(e.target.value)}
-                  className="w-full min-h-[46px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white font-mono text-center text-lg font-bold"
+                  className="w-full min-h-[46px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono text-center text-lg font-semibold"
                 />
               </div>
 
@@ -1103,17 +1103,17 @@ export function Estoque({ empresaId }: EstoqueProps) {
                 <button
                   type="button"
                   onClick={() => setModalAjusteAberto(false)}
-                  className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
+                  className="min-h-[42px] px-4 rounded-xl bg-surface text-ink font-semibold text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={ajustando}
-                  className={`min-h-[42px] px-5 rounded-xl text-white font-extrabold text-xs cursor-pointer ${
+                  className={`min-h-[42px] px-5 rounded-xl text-ink font-semibold text-xs cursor-pointer ${
                     ajusteTipo === 'entrada'
-                      ? 'bg-emerald-600 hover:bg-emerald-500'
-                      : 'bg-red-600 hover:bg-red-500'
+                      ? 'bg-success-solid hover:bg-success-solid'
+                      : 'bg-danger-solid hover:bg-danger-solid'
                   }`}
                 >
                   {ajustando
@@ -1131,16 +1131,16 @@ export function Estoque({ empresaId }: EstoqueProps) {
       {/* MODAL 3: GERENCIADOR DE CATEGORIAS DA EMPRESA */}
       {mostrarModalCategorias && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-[#2563EB] rounded-2xl w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <FolderPlus className="w-5 h-5 text-blue-400" aria-hidden="true" />
+          <div className="bg-surface border-2 border-brand rounded-lg w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line pb-2">
+              <h2 className="text-base font-semibold text-ink flex items-center gap-2">
+                <FolderPlus className="w-5 h-5 text-info" aria-hidden="true" />
                 <span>Gerenciar Categorias da Oficina</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setMostrarModalCategorias(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-ink-subtle hover:text-ink"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
@@ -1153,11 +1153,11 @@ export function Estoque({ empresaId }: EstoqueProps) {
                 value={novaCategoriaNome}
                 onChange={(e) => setNovaCategoriaNome(e.target.value)}
                 placeholder="Nome da nova categoria (Ex: SUSPENSÃO)…"
-                className="flex-1 min-h-[42px] px-3 bg-[#071226] border border-[#264577] rounded-xl text-white text-xs uppercase"
+                className="flex-1 min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink text-xs uppercase"
               />
               <button
                 type="submit"
-                className="min-h-[42px] px-4 rounded-xl bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-xs cursor-pointer shrink-0"
+                className="min-h-[42px] px-4 rounded-xl bg-muted hover:bg-info text-ink font-semibold text-xs cursor-pointer shrink-0"
               >
                 + Criar
               </button>
@@ -1171,12 +1171,12 @@ export function Estoque({ empresaId }: EstoqueProps) {
                 return (
                   <div
                     key={cat}
-                    className="p-2.5 rounded-xl bg-[#071226] border border-[#12274D] flex items-center justify-between gap-2 text-xs"
+                    className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between gap-2 text-xs"
                   >
                     <div className="flex items-center gap-2">
-                      <Tag className="w-3.5 h-3.5 text-blue-400" aria-hidden="true" />
-                      <span className="font-bold text-white">{cat}</span>
-                      <span className="text-slate-400">({count} itens)</span>
+                      <Tag className="w-3.5 h-3.5 text-info" aria-hidden="true" />
+                      <span className="font-semibold text-ink">{cat}</span>
+                      <span className="text-ink-subtle">({count} itens)</span>
                     </div>
 
                     <button
@@ -1184,7 +1184,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                       onClick={() => handleExcluirCategoria(cat)}
                       title={`Excluir categoria ${cat}`}
                       aria-label={`Excluir categoria ${cat}`}
-                      className="p-1 text-red-400 hover:text-red-200 cursor-pointer"
+                      className="p-1 text-danger hover:text-danger cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" aria-hidden="true" />
                     </button>
@@ -1193,11 +1193,11 @@ export function Estoque({ empresaId }: EstoqueProps) {
               })}
             </div>
 
-            <div className="pt-2 border-t border-[#12274D] flex justify-end">
+            <div className="pt-2 border-t border-line flex justify-end">
               <button
                 type="button"
                 onClick={() => setMostrarModalCategorias(false)}
-                className="min-h-[38px] px-4 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
+                className="min-h-[38px] px-4 rounded-xl bg-surface text-ink font-semibold text-xs cursor-pointer"
               >
                 Fechar
               </button>
@@ -1209,16 +1209,16 @@ export function Estoque({ empresaId }: EstoqueProps) {
       {/* MODAL 4: GERADOR DE ETIQUETA COM CÓDIGO DE BARRAS NATIVO (PRINTABLE) */}
       {modalEtiquetaAberto && itemEtiqueta && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#0B1B36] border-2 border-[#38BDF8] rounded-2xl w-full max-w-sm p-4 sm:p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#12274D] pb-2 print:hidden">
-              <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                <Barcode className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
+          <div className="bg-surface border-2 border-brand rounded-lg w-full max-w-sm p-4 sm:p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-line pb-2 print:hidden">
+              <h2 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
+                <Barcode className="w-5 h-5 text-brand-ink" aria-hidden="true" />
                 <span>Etiqueta com Código de Barras</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setModalEtiquetaAberto(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-ink-subtle hover:text-ink"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
@@ -1229,11 +1229,11 @@ export function Estoque({ empresaId }: EstoqueProps) {
               id="etiqueta-impressao"
               className="bg-white text-black p-4 rounded-xl shadow-lg border-2 border-black flex flex-col items-center justify-center text-center space-y-2 select-all"
             >
-              <div className="text-[10px] font-black uppercase tracking-wider text-slate-800">
+              <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
                 MECANIFY &bull; ALMOXARIFADO
               </div>
 
-              <div className="text-xs font-black leading-tight uppercase max-w-[240px] text-black">
+              <div className="text-xs font-semibold leading-tight uppercase max-w-[240px] text-black">
                 {itemEtiqueta.nome}
               </div>
 
@@ -1277,16 +1277,16 @@ export function Estoque({ empresaId }: EstoqueProps) {
                   );
                 })()}
 
-                <div className="font-mono text-[11px] font-extrabold tracking-widest mt-1 text-black">
+                <div className="font-mono text-xs font-semibold tracking-widest mt-1 text-black">
                   {(itemEtiqueta.codigo || `AT-${itemEtiqueta.id.slice(0, 8)}`).toUpperCase()}
                 </div>
               </div>
 
               <div className="w-full flex items-center justify-between border-t border-black pt-1 px-1">
-                <span className="text-[10px] font-bold text-slate-700 uppercase">
+                <span className="text-xs font-semibold text-ink-muted uppercase">
                   {itemEtiqueta.categoria || 'PEÇA'}
                 </span>
-                <span className="font-mono text-base font-black text-black">
+                <span className="font-mono text-base font-semibold text-black">
                   {formatBRL(itemEtiqueta.venda)}
                 </span>
               </div>
@@ -1296,14 +1296,14 @@ export function Estoque({ empresaId }: EstoqueProps) {
               <button
                 type="button"
                 onClick={() => setModalEtiquetaAberto(false)}
-                className="min-h-[42px] px-3.5 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
+                className="min-h-[42px] px-3.5 rounded-xl bg-surface text-ink font-semibold text-xs cursor-pointer"
               >
                 Fechar
               </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="min-h-[42px] px-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-extrabold text-xs flex items-center gap-2 cursor-pointer shadow-md"
+                className="min-h-[42px] px-4 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-xs flex items-center gap-2 cursor-pointer shadow-md"
               >
                 <Printer className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
                 <span>Imprimir Etiqueta</span>
@@ -1316,20 +1316,20 @@ export function Estoque({ empresaId }: EstoqueProps) {
       {/* MODAL 5: CONFIRMAÇÃO DE EXCLUSÃO */}
       {itemParaExcluir && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-[#0B1B36] border-2 border-red-600 rounded-2xl w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
+          <div className="bg-surface border-2 border-danger rounded-lg w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-950 border border-red-500 text-red-400 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-danger/15 border border-danger text-danger flex items-center justify-center shrink-0">
                 <Trash2 className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Excluir Peça do Estoque?</h3>
-                <p className="text-xs text-slate-400">Esta ação não poderá ser desfeita.</p>
+                <h3 className="text-base font-semibold text-ink">Excluir Peça do Estoque?</h3>
+                <p className="text-xs text-ink-subtle">Esta ação não poderá ser desfeita.</p>
               </div>
             </div>
 
-            <div className="p-3 bg-[#071226] rounded-xl border border-[#264577]">
-              <div className="text-sm font-bold text-white">{itemParaExcluir.nome}</div>
-              <div className="text-xs text-slate-400 font-mono mt-0.5">
+            <div className="p-3 bg-sunken rounded-xl border border-line">
+              <div className="text-sm font-semibold text-ink">{itemParaExcluir.nome}</div>
+              <div className="text-xs text-ink-subtle font-mono mt-0.5">
                 Saldo: {itemParaExcluir.quantidade} un. &bull; Preço: {formatBRL(itemParaExcluir.venda)}
               </div>
             </div>
@@ -1338,7 +1338,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               <button
                 type="button"
                 onClick={() => setItemParaExcluir(null)}
-                className="min-h-[42px] px-4 rounded-xl bg-[#12274D] text-white font-bold text-xs cursor-pointer"
+                className="min-h-[42px] px-4 rounded-xl bg-surface text-ink font-semibold text-xs cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1346,7 +1346,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
                 type="button"
                 disabled={excluindo}
                 onClick={handleConfirmarExclusao}
-                className="min-h-[42px] px-4.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs cursor-pointer disabled:opacity-50"
+                className="min-h-[42px] px-4.5 rounded-xl bg-danger-solid hover:bg-danger-solid text-white font-semibold text-xs cursor-pointer disabled:opacity-50"
               >
                 {excluindo ? 'Excluindo…' : 'Sim, Excluir'}
               </button>

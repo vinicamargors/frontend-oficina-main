@@ -259,32 +259,32 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-dvh w-full bg-[#071226] text-[#F8FAFC] grid grid-cols-1 lg:grid-cols-12">
+    <div className="min-h-dvh w-full bg-canvas text-ink grid grid-cols-1 lg:grid-cols-12">
       {/* COLUNA ESQUERDA — IDENTIDADE INDUSTRIAL MECANIFY (Azul Oficina + Laranja) */}
-      <aside className="lg:col-span-5 bg-[#1E3A8A] border-b-4 lg:border-b-0 lg:border-r-4 border-[#38BDF8] p-6 sm:p-10 lg:p-12 flex flex-col justify-between">
+      <aside className="lg:col-span-5 bg-muted border-b-4 lg:border-b-0 lg:border-r-4 border-brand p-6 sm:p-10 lg:p-12 flex flex-col justify-between">
         <div>
           {/* Marca Mecanify */}
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
+            <div className="w-16 h-16 rounded-xl bg-brand text-on-brand flex items-center justify-center shrink-0">
               <Wrench className="w-9 h-9 stroke-[2.5]" aria-hidden="true" />
             </div>
             <div>
               <span
                 translate="no"
-                className="text-2xl sm:text-3xl font-bold tracking-tight text-white block leading-none"
+                className="text-2xl sm:text-3xl font-semibold tracking-tight text-ink block leading-none"
               >
                 Mecanify
               </span>
-              <span className="text-sm sm:text-base text-blue-100 font-medium mt-1 block">
+              <span className="text-sm sm:text-base text-info font-medium mt-1 block">
                 Sistema de Pátio &amp; Gestão Automotiva
               </span>
             </div>
           </div>
 
-          <h1 className="mt-8 lg:mt-12 text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.08] tracking-tight">
+          <h1 className="mt-8 lg:mt-12 text-3xl sm:text-4xl lg:text-5xl font-semibold text-ink leading-[1.08] tracking-tight">
             Controle total do pátio no celular ou na bancada.
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-blue-100 leading-relaxed max-w-xl">
+          <p className="mt-4 text-base sm:text-lg text-info leading-relaxed max-w-xl">
             Feito para o ritmo da oficina: botões grandes, leitura imediata de placas,
             controle de peças e orçamento rápido direto para o WhatsApp do cliente.
           </p>
@@ -292,37 +292,37 @@ export function Login() {
 
         {/* Blocos Grandes de Benefícios Operacionais */}
         <div className="mt-8 lg:mt-12 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3.5">
-          <div className="bg-[#172554] border-2 border-blue-700 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-[#38BDF8] text-[#071226] flex items-center justify-center shrink-0">
+          <div className="bg-muted border-2 border-info rounded-xl p-4 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-brand text-on-brand flex items-center justify-center shrink-0">
               <Car className="w-6 h-6 stroke-[2.2]" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-bold text-white text-base">Placas &amp; Veículos</div>
-              <div className="text-sm text-blue-200">
+              <div className="font-semibold text-ink text-base">Placas &amp; Veículos</div>
+              <div className="text-sm text-info">
                 Consulta rápida e histórico por carro
               </div>
             </div>
           </div>
 
-          <div className="bg-[#172554] border-2 border-blue-700 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-[#2563EB] text-white flex items-center justify-center shrink-0">
+          <div className="bg-muted border-2 border-info rounded-xl p-4 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-muted text-ink flex items-center justify-center shrink-0">
               <ClipboardCheck className="w-6 h-6 stroke-[2.2]" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-bold text-white text-base">Ordens de Serviço</div>
-              <div className="text-sm text-blue-200">
+              <div className="font-semibold text-ink text-base">Ordens de Serviço</div>
+              <div className="text-sm text-info">
                 Peças, mão de obra e status em 1 toque
               </div>
             </div>
           </div>
 
-          <div className="bg-[#172554] border-2 border-blue-700 rounded-xl p-4 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-emerald-500 text-[#071226] flex items-center justify-center shrink-0">
+          <div className="bg-muted border-2 border-info rounded-xl p-4 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-success-solid text-on-brand flex items-center justify-center shrink-0">
               <ShieldCheck className="w-6 h-6 stroke-[2.2]" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-bold text-white text-base">Multi-Oficina Isolado</div>
-              <div className="text-sm text-blue-200">
+              <div className="font-semibold text-ink text-base">Multi-Oficina Isolado</div>
+              <div className="text-sm text-info">
                 Dados protegidos com confirmação por e-mail
               </div>
             </div>
@@ -333,31 +333,31 @@ export function Login() {
       {/* COLUNA DIREITA — FORMULÁRIOS DE ACESSO, CADASTRO E RECUPERAÇÃO DE SENHA */}
       <main
         id="conteudo-principal"
-        className="lg:col-span-7 flex items-center justify-center p-4 sm:p-8 lg:p-12 bg-[#071226]"
+        className="lg:col-span-7 flex items-center justify-center p-4 sm:p-8 lg:p-12 bg-sunken"
       >
-        <div className="w-full max-w-2xl bg-[#0B1B36] border-2 border-[#264577] rounded-2xl p-6 sm:p-10">
+        <div className="w-full max-w-2xl bg-surface border-2 border-line rounded-lg p-6 sm:p-10">
           {/* 1. TELA PÓS-CADASTRO: CONFIRMAÇÃO DE E-MAIL ENVIADA */}
           {confirmationSentTo ? (
             <div className="space-y-6" aria-live="polite">
-              <div className="w-20 h-20 rounded-2xl bg-[#38BDF8] text-[#071226] flex items-center justify-center">
+              <div className="w-20 h-20 rounded-lg bg-brand text-on-brand flex items-center justify-center">
                 <MailCheck className="w-11 h-11 stroke-[2.2]" aria-hidden="true" />
               </div>
 
               <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                <h2 className="text-2xl sm:text-3xl font-semibold text-ink leading-tight">
                   Confirme seu e-mail para ativar sua oficina
                 </h2>
-                <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+                <p className="text-base sm:text-lg text-ink-muted leading-relaxed">
                   Enviamos um link de ativação para:
                 </p>
-                <div className="bg-[#12274D] border-2 border-[#38BDF8] rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-bold text-white break-all">
+                <div className="bg-surface border-2 border-brand rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-semibold text-ink break-all">
                   {confirmationSentTo}
                 </div>
               </div>
 
-              <div className="bg-[#12274D] border border-[#264577] rounded-xl p-5 space-y-2 text-slate-200 text-base">
-                <p className="font-semibold text-white">Como ativar agora (leva 10 segundos):</p>
-                <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
+              <div className="bg-surface border border-line rounded-xl p-5 space-y-2 text-ink text-base">
+                <p className="font-semibold text-ink">Como ativar agora (leva 10 segundos):</p>
+                <ol className="list-decimal list-inside space-y-1.5 text-ink-muted">
                   <li>Abra o aplicativo de e-mail no seu celular ou computador.</li>
                   <li>Procure pelo e-mail do Mecanify (olhe também no Spam).</li>
                   <li>Toque em <strong>Confirmar Meu E-mail</strong> para liberar seu acesso.</li>
@@ -365,15 +365,15 @@ export function Login() {
               </div>
 
               {resendSuccess && (
-                <div className="p-4 rounded-xl bg-emerald-950 border-2 border-emerald-500 text-emerald-200 flex items-center gap-3 text-base">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" aria-hidden="true" />
+                <div className="p-4 rounded-xl bg-success/15 border-2 border-success text-success flex items-center gap-3 text-base">
+                  <CheckCircle2 className="w-6 h-6 text-success shrink-0" aria-hidden="true" />
                   <span>{resendSuccess}</span>
                 </div>
               )}
 
               {error && (
-                <div className="p-4 rounded-xl bg-red-950 border-2 border-red-500 text-red-200 flex items-center gap-3 text-base">
-                  <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" aria-hidden="true" />
+                <div className="p-4 rounded-xl bg-danger/15 border-2 border-danger text-danger flex items-center gap-3 text-base">
+                  <AlertTriangle className="w-6 h-6 text-danger shrink-0" aria-hidden="true" />
                   <span>{error}</span>
                 </div>
               )}
@@ -383,7 +383,7 @@ export function Login() {
                   type="button"
                   disabled={resending}
                   onClick={() => handleResendEmail(confirmationSentTo)}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#12274D] hover:bg-[#264577] border-2 border-[#3A5C90] text-white font-bold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+                  className="min-h-[60px] px-6 py-4 rounded-xl bg-surface hover:bg-muted border-2 border-line-strong text-ink font-semibold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
                 >
                   {resending ? (
                     <>
@@ -404,7 +404,7 @@ export function Login() {
                     setEmail(confirmationSentTo);
                     switchMode('login');
                   }}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-base flex items-center justify-center gap-3 cursor-pointer"
+                  className="min-h-[60px] px-6 py-4 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-base flex items-center justify-center gap-3 cursor-pointer"
                 >
                   <span>Já confirmei — Entrar</span>
                   <ArrowRight className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
@@ -414,40 +414,40 @@ export function Login() {
           ) : resetEmailSentTo ? (
             /* 2. TELA PÓS-SOLICITAÇÃO DE RECUPERAÇÃO DE SENHA */
             <div className="space-y-6" aria-live="polite">
-              <div className="w-20 h-20 rounded-2xl bg-[#2563EB] text-white flex items-center justify-center">
+              <div className="w-20 h-20 rounded-lg bg-muted text-ink flex items-center justify-center">
                 <KeyRound className="w-11 h-11 stroke-[2.2]" aria-hidden="true" />
               </div>
 
               <div className="space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                <h2 className="text-2xl sm:text-3xl font-semibold text-ink leading-tight">
                   Link de recuperação enviado!
                 </h2>
-                <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+                <p className="text-base sm:text-lg text-ink-muted leading-relaxed">
                   Enviamos um e-mail com o botão para criar sua nova senha em:
                 </p>
-                <div className="bg-[#12274D] border-2 border-[#2563EB] rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-bold text-white break-all">
+                <div className="bg-surface border-2 border-brand rounded-xl px-5 py-4 font-mono text-lg sm:text-xl font-semibold text-ink break-all">
                   {resetEmailSentTo}
                 </div>
               </div>
 
-              <div className="bg-[#12274D] border border-[#264577] rounded-xl p-5 space-y-2 text-slate-200 text-base">
-                <p className="font-semibold text-white">Próximo passo:</p>
-                <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
+              <div className="bg-surface border border-line rounded-xl p-5 space-y-2 text-ink text-base">
+                <p className="font-semibold text-ink">Próximo passo:</p>
+                <ol className="list-decimal list-inside space-y-1.5 text-ink-muted">
                   <li>Abra seu e-mail e toque no botão <strong>Redefinir Minha Senha</strong>.</li>
                   <li>Você voltará automaticamente para cá para digitar a senha nova.</li>
                 </ol>
               </div>
 
               {resendSuccess && (
-                <div className="p-4 rounded-xl bg-emerald-950 border-2 border-emerald-500 text-emerald-200 flex items-center gap-3 text-base">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" aria-hidden="true" />
+                <div className="p-4 rounded-xl bg-success/15 border-2 border-success text-success flex items-center gap-3 text-base">
+                  <CheckCircle2 className="w-6 h-6 text-success shrink-0" aria-hidden="true" />
                   <span>{resendSuccess}</span>
                 </div>
               )}
 
               {error && (
-                <div className="p-4 rounded-xl bg-red-950 border-2 border-red-500 text-red-200 flex items-center gap-3 text-base">
-                  <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" aria-hidden="true" />
+                <div className="p-4 rounded-xl bg-danger/15 border-2 border-danger text-danger flex items-center gap-3 text-base">
+                  <AlertTriangle className="w-6 h-6 text-danger shrink-0" aria-hidden="true" />
                   <span>{error}</span>
                 </div>
               )}
@@ -457,7 +457,7 @@ export function Login() {
                   type="button"
                   disabled={resending}
                   onClick={() => handleResendPasswordReset(resetEmailSentTo)}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#12274D] hover:bg-[#264577] border-2 border-[#3A5C90] text-white font-bold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+                  className="min-h-[60px] px-6 py-4 rounded-xl bg-surface hover:bg-muted border-2 border-line-strong text-ink font-semibold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
                 >
                   {resending ? (
                     <>
@@ -475,7 +475,7 @@ export function Login() {
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className="min-h-[60px] px-6 py-4 rounded-xl bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-base flex items-center justify-center gap-3 cursor-pointer"
+                  className="min-h-[60px] px-6 py-4 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-base flex items-center justify-center gap-3 cursor-pointer"
                 >
                   <ArrowLeft className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
                   <span>Voltar para o Login</span>
@@ -489,17 +489,17 @@ export function Login() {
                 <div
                   role="tablist"
                   aria-label="Escolha entre entrar ou criar nova conta"
-                  className="grid grid-cols-2 gap-3 bg-[#071226] p-2 rounded-xl border-2 border-[#12274D] mb-8"
+                  className="grid grid-cols-2 gap-3 bg-sunken p-2 rounded-xl border-2 border-line mb-8"
                 >
                   <button
                     role="tab"
                     type="button"
                     aria-selected={mode === 'login'}
                     onClick={() => switchMode('login')}
-                    className={`min-h-[58px] rounded-lg px-4 py-3 font-bold text-base sm:text-lg flex items-center justify-center gap-3 cursor-pointer ${
+                    className={`min-h-[58px] rounded-lg px-4 py-3 font-semibold text-base sm:text-lg flex items-center justify-center gap-3 cursor-pointer ${
                       mode === 'login'
-                        ? 'bg-[#38BDF8] text-[#071226]'
-                        : 'bg-transparent text-slate-300 hover:bg-[#12274D] hover:text-white'
+                        ? 'bg-brand text-on-brand'
+                        : 'bg-transparent text-ink-muted hover:bg-muted hover:text-ink'
                     }`}
                   >
                     <LogIn className="w-6 h-6 shrink-0" aria-hidden="true" />
@@ -511,10 +511,10 @@ export function Login() {
                     type="button"
                     aria-selected={mode === 'cadastro'}
                     onClick={() => switchMode('cadastro')}
-                    className={`min-h-[58px] rounded-lg px-4 py-3 font-bold text-base sm:text-lg flex items-center justify-center gap-3 cursor-pointer ${
+                    className={`min-h-[58px] rounded-lg px-4 py-3 font-semibold text-base sm:text-lg flex items-center justify-center gap-3 cursor-pointer ${
                       mode === 'cadastro'
-                        ? 'bg-[#2563EB] text-white'
-                        : 'bg-transparent text-slate-300 hover:bg-[#12274D] hover:text-white'
+                        ? 'bg-muted text-ink'
+                        : 'bg-transparent text-ink-muted hover:bg-muted hover:text-ink'
                     }`}
                   >
                     <UserPlus className="w-6 h-6 shrink-0" aria-hidden="true" />
@@ -528,22 +528,22 @@ export function Login() {
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className="mb-6 min-h-[48px] px-4 py-2.5 rounded-xl bg-[#071226] hover:bg-[#12274D] border-2 border-[#264577] text-slate-200 font-bold text-base inline-flex items-center gap-2.5 cursor-pointer"
+                  className="mb-6 min-h-[48px] px-4 py-2.5 rounded-xl bg-sunken hover:bg-muted border-2 border-line text-ink font-semibold text-base inline-flex items-center gap-2.5 cursor-pointer"
                 >
-                  <ArrowLeft className="w-5 h-5 text-[#38BDF8]" aria-hidden="true" />
+                  <ArrowLeft className="w-5 h-5 text-brand-ink" aria-hidden="true" />
                   <span>Voltar para o Login</span>
                 </button>
               )}
 
               {/* CABEÇALHO DO FORMULÁRIO */}
               <div className="mb-6">
-                <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                <h2 className="text-2xl sm:text-3xl font-semibold text-ink leading-tight">
                   {mode === 'login' && 'Acessar Painel da Oficina'}
                   {mode === 'cadastro' && 'Cadastrar Nova Oficina'}
                   {mode === 'recuperar' && 'Esqueceu sua senha?'}
                   {mode === 'nova-senha' && 'Criar Nova Senha de Acesso'}
                 </h2>
-                <p className="text-base text-slate-300 mt-1">
+                <p className="text-base text-ink-muted mt-1">
                   {mode === 'login' && 'Digite seu e-mail e senha para abrir o pátio.'}
                   {mode === 'cadastro' &&
                     'Preencha os dados abaixo. Você receberá um e-mail de confirmação para ativar a conta.'}
@@ -557,10 +557,10 @@ export function Login() {
               {/* ALERTA DE ERRO OU E-MAIL NÃO CONFIRMADO */}
               <div aria-live="polite">
                 {error && (
-                  <div className="mb-6 p-5 rounded-xl bg-red-950 border-2 border-red-500 text-red-100 space-y-3">
+                  <div className="mb-6 p-5 rounded-xl bg-danger/15 border-2 border-danger text-danger space-y-3">
                     <div className="flex items-start gap-3.5">
                       <AlertTriangle
-                        className="w-6 h-6 text-red-400 shrink-0 mt-0.5"
+                        className="w-6 h-6 text-danger shrink-0 mt-0.5"
                         aria-hidden="true"
                       />
                       <span className="text-base font-medium leading-snug">{error}</span>
@@ -571,7 +571,7 @@ export function Login() {
                         type="button"
                         disabled={resending}
                         onClick={() => handleResendEmail(unconfirmedEmail)}
-                        className="w-full min-h-[52px] px-4 py-3 rounded-lg bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226] font-bold text-base flex items-center justify-center gap-2.5 cursor-pointer"
+                        className="w-full min-h-[52px] px-4 py-3 rounded-lg bg-brand hover:bg-brand-hover text-on-brand font-semibold text-base flex items-center justify-center gap-2.5 cursor-pointer"
                       >
                         {resending ? (
                           <>
@@ -590,9 +590,9 @@ export function Login() {
                 )}
 
                 {resendSuccess && (
-                  <div className="mb-6 p-5 rounded-xl bg-emerald-950 border-2 border-emerald-500 text-emerald-100 flex items-center gap-3.5 text-base font-medium">
+                  <div className="mb-6 p-5 rounded-xl bg-success/15 border-2 border-success text-success flex items-center gap-3.5 text-base font-medium">
                     <CheckCircle2
-                      className="w-6 h-6 text-emerald-400 shrink-0"
+                      className="w-6 h-6 text-success shrink-0"
                       aria-hidden="true"
                     />
                     <span>{resendSuccess}</span>
@@ -607,7 +607,7 @@ export function Login() {
                     <div>
                       <label
                         htmlFor="campo-oficina"
-                        className="block text-base font-bold text-slate-100 mb-2"
+                        className="block text-base font-semibold text-ink mb-2"
                       >
                         Nome da Oficina
                       </label>
@@ -621,7 +621,7 @@ export function Login() {
                         value={nomeOficina}
                         onChange={(e) => setNomeOficina(e.target.value)}
                         placeholder="Ex.: Auto Centro Irmãos Silva…"
-                        className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                        className="w-full min-h-[58px] px-4 py-3.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink placeholder-ink-subtle text-lg font-medium"
                       />
                     </div>
 
@@ -629,7 +629,7 @@ export function Login() {
                       <div>
                         <label
                           htmlFor="campo-nome"
-                          className="block text-base font-bold text-slate-100 mb-2"
+                          className="block text-base font-semibold text-ink mb-2"
                         >
                           Seu Nome (Responsável)
                         </label>
@@ -643,14 +643,14 @@ export function Login() {
                           value={nome}
                           onChange={(e) => setNome(e.target.value)}
                           placeholder="Ex.: Carlos Mecânico…"
-                          className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                          className="w-full min-h-[58px] px-4 py-3.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink placeholder-ink-subtle text-lg font-medium"
                         />
                       </div>
 
                       <div>
                         <label
                           htmlFor="campo-telefone"
-                          className="block text-base font-bold text-slate-100 mb-2"
+                          className="block text-base font-semibold text-ink mb-2"
                         >
                           WhatsApp / Celular
                         </label>
@@ -663,7 +663,7 @@ export function Login() {
                           value={telefone}
                           onChange={(e) => setTelefone(e.target.value)}
                           placeholder="Ex.: (11) 99999-0000…"
-                          className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-mono tabular-nums"
+                          className="w-full min-h-[58px] px-4 py-3.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink placeholder-ink-subtle text-lg font-mono tabular-nums"
                         />
                       </div>
                     </div>
@@ -674,7 +674,7 @@ export function Login() {
                   <div>
                     <label
                       htmlFor="campo-email"
-                      className="block text-base font-bold text-slate-100 mb-2"
+                      className="block text-base font-semibold text-ink mb-2"
                     >
                       E-mail de Acesso
                     </label>
@@ -691,7 +691,7 @@ export function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seu.email@oficina.com.br…"
-                      className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                      className="w-full min-h-[58px] px-4 py-3.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink placeholder-ink-subtle text-lg font-medium"
                     />
                   </div>
                 )}
@@ -701,7 +701,7 @@ export function Login() {
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <label
                         htmlFor="campo-senha"
-                        className="block text-base font-bold text-slate-100"
+                        className="block text-base font-semibold text-ink"
                       >
                         {mode === 'nova-senha'
                           ? 'Nova Senha (mínimo 6 caracteres)'
@@ -712,7 +712,7 @@ export function Login() {
                         <button
                           type="button"
                           onClick={() => switchMode('recuperar')}
-                          className="min-h-[44px] px-2 text-sm sm:text-base font-bold text-[#38BDF8] hover:text-sky-300 underline underline-offset-4 cursor-pointer"
+                          className="min-h-[44px] px-2 text-sm sm:text-base font-semibold text-brand-ink hover:text-info underline underline-offset-4 cursor-pointer"
                         >
                           Esqueci minha senha
                         </button>
@@ -737,13 +737,13 @@ export function Login() {
                             ? 'Digite sua nova senha…'
                             : 'Digite sua senha…'
                         }
-                        className="w-full min-h-[58px] pl-4 pr-16 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                        className="w-full min-h-[58px] pl-4 pr-16 py-3.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink placeholder-ink-subtle text-lg font-medium"
                       />
                       <button
                         type="button"
                         onClick={() => setMostrarSenha((v) => !v)}
                         aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                        className="absolute right-2 min-w-[48px] min-h-[48px] rounded-lg text-slate-300 hover:text-white hover:bg-[#12274D] flex items-center justify-center cursor-pointer"
+                        className="absolute right-2 min-w-[48px] min-h-[48px] rounded-lg text-ink-muted hover:text-ink hover:bg-muted flex items-center justify-center cursor-pointer"
                       >
                         {mostrarSenha ? (
                           <EyeOff className="w-6 h-6" aria-hidden="true" />
@@ -759,7 +759,7 @@ export function Login() {
                   <div>
                     <label
                       htmlFor="campo-confirmar-senha"
-                      className="block text-base font-bold text-slate-100 mb-2"
+                      className="block text-base font-semibold text-ink mb-2"
                     >
                       Repita a Nova Senha
                     </label>
@@ -774,7 +774,7 @@ export function Login() {
                       value={confirmarSenha}
                       onChange={(e) => setConfirmarSenha(e.target.value)}
                       placeholder="Digite a mesma senha novamente…"
-                      className="w-full min-h-[58px] px-4 py-3.5 bg-[#071226] border-2 border-[#264577] focus:border-[#38BDF8] rounded-xl text-white placeholder-slate-500 text-lg font-medium"
+                      className="w-full min-h-[58px] px-4 py-3.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink placeholder-ink-subtle text-lg font-medium"
                     />
                   </div>
                 )}
@@ -782,10 +782,10 @@ export function Login() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className={`w-full min-h-[64px] px-6 py-4 rounded-xl font-bold text-lg sm:text-xl flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 ${
+                  className={`w-full min-h-[64px] px-6 py-4 rounded-xl font-semibold text-lg sm:text-xl flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 ${
                     mode === 'login' || mode === 'nova-senha'
-                      ? 'bg-[#38BDF8] hover:bg-[#0EA5E9] text-[#071226]'
-                      : 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white'
+                      ? 'bg-brand hover:bg-brand-hover text-on-brand'
+                      : 'bg-muted hover:bg-muted text-ink'
                   }`}
                 >
                   {submitting ? (
