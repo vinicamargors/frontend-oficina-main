@@ -5,6 +5,8 @@ import { Button, Field, PageHeader, Panel } from '../components/ui';
 
 interface OficinaProps {
   empresaId: string;
+  /** Avisa o app quando o formulário tem alterações não salvas (para perguntar antes de trocar de tela ou de oficina). */
+  onSujoChange?: (sujo: boolean) => void;
 }
 
 // Cada seção: título e uma linha de apoio à esquerda, campos à direita (empilhados no celular).
@@ -44,13 +46,19 @@ function Secao({
   );
 }
 
-export function Oficina({ empresaId }: OficinaProps) {
+export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
   const [carregando, setCarregando] = useState(true);
-  const [jaCarregou, setJaCarregou] = useState(false);
+  // De qual oficina são os dados no formulário: trocar de oficina (master) volta ao esqueleto/erro, nunca mostra os de outra
+  const [empresaDosDados, setEmpresaDosDados] = useState<string | null>(null);
+  const jaCarregou = empresaDosDados === empresaId;
+  // Só a carga mais recente pode preencher o formulário (uma resposta atrasada de outra oficina é ignorada)
+  const cargaAtual = useRef(0);
   const [salvando, setSalvando] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [erroCarga, setErroCarga] = useState<string | null>(null);
+  // Erro de carga guardado com a oficina a que se refere (o de uma oficina não aparece na outra)
+  const [falhaCarga, setFalhaCarga] = useState<{ empresaId: string; mensagem: string } | null>(null);
+  const erroCarga = falhaCarga?.empresaId === empresaId ? falhaCarga.mensagem : null;
 
   // Form Dados da Oficina
   const [nomeFantasia, setNomeFantasia] = useState('');
@@ -107,7 +115,7 @@ export function Oficina({ empresaId }: OficinaProps) {
     pagaHoraExtra,
     valorHoraExtra,
   ]);
-  const sujo = baseline !== null && atual !== baseline;
+  const sujo = jaCarregou && baseline !== null && atual !== baseline;
 
   useEffect(() => {
     if (!pedirBaseline) return;
@@ -119,12 +127,32 @@ export function Oficina({ empresaId }: OficinaProps) {
   const [saidaPendente, setSaidaPendente] = useState<(() => void) | null>(null);
   const liberado = useRef(false);
 
+  // Trocou de oficina: o que estava no formulário era da anterior
+  useEffect(() => {
+    setBaseline(null);
+    setPedirBaseline(false);
+    setErro(null);
+    setSucessoMsg(null);
+  }, [empresaId]);
+
+  // Sem alterações (salvou, descartou ou trocou de oficina): não há mais o que confirmar
+  useEffect(() => {
+    if (!sujo) setSaidaPendente(null);
+  }, [sujo]);
+
+  useEffect(() => {
+    onSujoChange?.(sujo);
+  }, [sujo, onSujoChange]);
+  useEffect(() => () => onSujoChange?.(false), [onSujoChange]);
+
   // Resolução automática das coordenadas sem intervenção manual do usuário
   const resolverCoordenadasAutomaticas = useCallback(async (termo: string) => {
     if (!termo || !termo.trim()) return;
+    const carga = cargaAtual.current;
     try {
       setResolvendoLocalizacao(true);
       const res = await api.geocodificarEndereco(termo);
+      if (carga !== cargaAtual.current) return;
       if (res && res.latitude && res.longitude) {
         setLatGps(res.latitude);
         setLonGps(res.longitude);
@@ -135,13 +163,15 @@ export function Oficina({ empresaId }: OficinaProps) {
   }, []);
 
   const carregarDados = useCallback(async () => {
+    const carga = ++cargaAtual.current;
     try {
       setCarregando(true);
-      setErroCarga(null);
+      setFalhaCarga(null);
       const [cfg, paramsFolha] = await Promise.all([
         api.obterConfiguracoesOficina(empresaId),
         api.obterParametrosFolha(empresaId),
       ]);
+      if (carga !== cargaAtual.current) return;
 
       setNomeFantasia(cfg.nome_fantasia || '');
       setRazaoSocial(cfg.razao_social || '');
@@ -177,13 +207,14 @@ export function Oficina({ empresaId }: OficinaProps) {
       setComissaoPeca(paramsFolha.comissao_global_peca_pct);
       setPagaHoraExtra(paramsFolha.paga_hora_extra_padrao);
       setValorHoraExtra(paramsFolha.valor_hora_extra_padrao);
-      setJaCarregou(true);
+      setEmpresaDosDados(empresaId);
       setPedirBaseline(true);
     } catch (e) {
+      if (carga !== cargaAtual.current) return;
       const err = e as Error;
-      setErroCarga(err.message || 'Erro ao carregar dados da oficina.');
+      setFalhaCarga({ empresaId, mensagem: err.message || 'Erro ao carregar dados da oficina.' });
     } finally {
-      setCarregando(false);
+      if (carga === cargaAtual.current) setCarregando(false);
     }
   }, [empresaId, resolverCoordenadasAutomaticas]);
 
@@ -249,9 +280,11 @@ export function Oficina({ empresaId }: OficinaProps) {
 
     const digitos = v.replace(/\D/g, '');
     if (digitos.length === 8) {
+      const carga = cargaAtual.current;
       try {
         setResolvendoLocalizacao(true);
         const res = await api.geocodificarEndereco(digitos);
+        if (carga !== cargaAtual.current) return;
         if (res.latitude && res.longitude) {
           setLatGps(res.latitude);
           setLonGps(res.longitude);
@@ -269,6 +302,8 @@ export function Oficina({ empresaId }: OficinaProps) {
 
   const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!jaCarregou) return;
+    const carga = cargaAtual.current;
     try {
       setSalvando(true);
       setErro(null);
@@ -307,9 +342,11 @@ export function Oficina({ empresaId }: OficinaProps) {
         valor_hora_extra_padrao: valorHoraExtra,
       });
 
+      if (carga !== cargaAtual.current) return;
       setPedirBaseline(true);
       dispararFeedback('Dados da oficina atualizados com sucesso!');
     } catch (e) {
+      if (carga !== cargaAtual.current) return;
       const err = e as Error;
       setErro(err.message || 'Erro ao salvar alterações.');
     } finally {
@@ -318,22 +355,25 @@ export function Oficina({ empresaId }: OficinaProps) {
   };
 
   const temGps = latGps != null && lonGps != null;
+  // Ainda sem os dados desta oficina (primeira carga ou troca de oficina): esqueleto, nunca campos de outra
+  const semDados = !jaCarregou;
+  const mostrarEsqueleto = carregando || semDados;
 
   const botaoAtualizar = (
-    <Button variante="fantasma" icone={RefreshCw} onClick={() => pedirConfirmacao(carregarDados)} disabled={carregando}>
+    <Button variante="fantasma" icone={RefreshCw} onClick={() => pedirConfirmacao(carregarDados)} disabled={mostrarEsqueleto}>
       Atualizar
     </Button>
   );
 
   // Falha na primeira carga: sem formulário vazio, que poderia ser salvo por cima dos dados reais
-  if (!carregando && !jaCarregou) {
+  if (!carregando && semDados && erroCarga) {
     return (
       <div className="mx-auto max-w-4xl">
         <PageHeader titulo="Dados da Oficina" />
         <Panel espaco="lg" className="space-y-4">
           <p role="alert" className="flex items-start gap-2 text-sm font-medium text-danger">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>{erroCarga || 'Erro ao carregar dados da oficina.'}</span>
+            <span>{erroCarga}</span>
           </p>
           <p className="text-sm text-ink-muted">Nada foi alterado. Confira a conexão e tente de novo.</p>
           <Button icone={RefreshCw} onClick={carregarDados}>
@@ -356,7 +396,7 @@ export function Oficina({ empresaId }: OficinaProps) {
       )}
 
       <form onSubmit={handleSalvar} className="space-y-4">
-        <Secao titulo="Identificação" apoio="Nome, documentos e contatos da oficina." carregando={carregando} campos={7}>
+        <Secao titulo="Identificação" apoio="Nome, documentos e contatos da oficina." carregando={mostrarEsqueleto} campos={7}>
           <div className="sm:col-span-2">
             <Field rotulo="Nome fantasia *">
               <input type="text" required value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} />
@@ -382,7 +422,7 @@ export function Oficina({ empresaId }: OficinaProps) {
           </Field>
         </Secao>
 
-        <Secao titulo="Endereço" apoio="Com o CEP, o endereço e o pátio no mapa se preenchem sozinhos." carregando={carregando} campos={2}>
+        <Secao titulo="Endereço" apoio="Com o CEP, o endereço e o pátio no mapa se preenchem sozinhos." carregando={mostrarEsqueleto} campos={2}>
           <div className="sm:col-span-2 sm:grid sm:grid-cols-3 sm:gap-4">
             <Field rotulo="CEP">
               <input type="text" value={cep} onChange={(e) => handleCepChange(e.target.value)} placeholder="00000-000" maxLength={9} />
@@ -401,7 +441,7 @@ export function Oficina({ empresaId }: OficinaProps) {
           </div>
         </Secao>
 
-        <Secao titulo="Pagamento (PIX)" apoio="Como o cliente paga a ordem de serviço." carregando={carregando} campos={1}>
+        <Secao titulo="Pagamento (PIX)" apoio="Como o cliente paga a ordem de serviço." carregando={mostrarEsqueleto} campos={1}>
           <div className="sm:col-span-2">
             <Field rotulo="Chave PIX" dica="Aparece nas ordens de serviço impressas. Pode ser CNPJ, e-mail, celular ou chave aleatória.">
               <input type="text" value={chavePix} onChange={(e) => setChavePix(e.target.value)} placeholder="CNPJ, e-mail, celular ou chave aleatória" />
@@ -409,7 +449,7 @@ export function Oficina({ empresaId }: OficinaProps) {
           </div>
         </Secao>
 
-        <Secao titulo="Ponto (GPS)" apoio="A equipe só registra o ponto dentro do raio do pátio." carregando={carregando} campos={1}>
+        <Secao titulo="Ponto (GPS)" apoio="A equipe só registra o ponto dentro do raio do pátio." carregando={mostrarEsqueleto} campos={1}>
           <div className="sm:col-span-2 space-y-4">
             <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
               <Field rotulo="Raio de tolerância (metros)">
@@ -472,7 +512,7 @@ export function Oficina({ empresaId }: OficinaProps) {
           </div>
         </Secao>
 
-        <Secao titulo="Folha e comissões" apoio="Regras padrão, usadas quando o colaborador não tem uma taxa própria." carregando={carregando} campos={6}>
+        <Secao titulo="Folha e comissões" apoio="Regras padrão, usadas quando o colaborador não tem uma taxa própria." carregando={mostrarEsqueleto} campos={6}>
           <Field rotulo="Dia de pagamento da folha" dica="Ex.: dia 5 do mês seguinte">
             <input
               type="number"
@@ -537,7 +577,7 @@ export function Oficina({ empresaId }: OficinaProps) {
         </Secao>
 
         {/* BARRA DE SALVAR: no celular fica logo acima da navegação inferior do app */}
-        {!carregando && (
+        {!mostrarEsqueleto && (
           <div className="sticky bottom-[calc(61px+max(0.25rem,env(safe-area-inset-bottom)))] z-30 rounded-2xl bg-surface p-3 ring-1 ring-line-strong lg:bottom-4">
             {saidaPendente ? (
               <div role="alert" ref={(el) => el?.scrollIntoView({ block: 'nearest' })} className="space-y-3">

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
 import { DashboardOperacional } from './pages/DashboardOperacional';
@@ -12,6 +12,7 @@ import { AvaliacaoPublicaOS } from './pages/AvaliacaoPublicaOS';
 import { api } from './api/client';
 import { Empresa, StatusOS } from './types';
 import { Button, Logo, ThemeToggle } from './components/ui';
+import { Folha } from './components/Folha';
 import {
   Ellipsis,
   LayoutDashboard,
@@ -132,7 +133,18 @@ function AppShell() {
     }
   }, [isAuthenticated, user, selectedEmpresaId, activeTab, canSeeConfig, canSeeFinanceiro]);
 
-  const handleNavigateTab = (tab: string, status?: StatusOS, osId?: string) => {
+  // Dados da Oficina com alterações não salvas: trocar de tela ou de oficina pergunta antes de descartar
+  const oficinaSuja = useRef(false);
+  const aoMudarSujoOficina = useCallback((sujo: boolean) => {
+    oficinaSuja.current = sujo;
+  }, []);
+  const [saidaPendente, setSaidaPendente] = useState<(() => void) | null>(null);
+  const protegerSaida = (acao: () => void) => {
+    if (oficinaSuja.current) setSaidaPendente(() => acao);
+    else acao();
+  };
+
+  const handleNavigateTab = (tab: string, status?: StatusOS, osId?: string, substituir = false) => {
     let nextTab = (tab as NavTab) || 'patio';
 
     // Impede navegação indevida por perfil
@@ -160,7 +172,9 @@ function AppShell() {
     } else {
       url.searchParams.delete('osId');
     }
-    window.history.pushState({}, '', url.toString());
+    // `substituir`: a tela que sai deixou uma entrada extra no histórico (formulário sujo); a nova tela fica no lugar dela
+    if (substituir) window.history.replaceState({}, '', url.toString());
+    else window.history.pushState({}, '', url.toString());
   };
 
   useEffect(() => {
@@ -270,7 +284,9 @@ function AppShell() {
 
   const irPara = (id: NavTab) => {
     setMaisAberto(false);
-    handleNavigateTab(id);
+    if (oficinaSuja.current && id === activeTab) return;
+    // Descartar com o formulário sujo: a entrada extra que a Oficina deixou no histórico vira a da nova tela
+    protegerSaida(() => handleNavigateTab(id, undefined, undefined, oficinaSuja.current));
   };
 
   const seletorMaster = (idSeletor: string) =>
@@ -284,8 +300,11 @@ function AppShell() {
           id={idSeletor}
           value={effectiveEmpresaId}
           onChange={(e) => {
-            setSelectedEmpresaId(e.target.value);
-            localStorage.setItem('autotec_tenant_id', e.target.value);
+            const id = e.target.value;
+            protegerSaida(() => {
+              setSelectedEmpresaId(id);
+              localStorage.setItem('autotec_tenant_id', id);
+            });
           }}
           className="w-full h-10 min-h-11 md:min-h-10 px-3 rounded-md bg-surface border border-line-strong text-ink text-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
@@ -388,7 +407,7 @@ function AppShell() {
           ) : activeTab === 'equipe' && canSeeConfig ? (
             <Equipe empresaId={effectiveEmpresaId} />
           ) : activeTab === 'oficina' && canSeeConfig ? (
-            <Oficina empresaId={effectiveEmpresaId} />
+            <Oficina empresaId={effectiveEmpresaId} onSujoChange={aoMudarSujoOficina} />
           ) : (
             <DashboardOperacional empresaId={effectiveEmpresaId} onNavigateTab={handleNavigateTab} />
           )}
@@ -450,6 +469,25 @@ function AppShell() {
           </div>
         </div>
       )}
+
+      <Folha aberto={saidaPendente !== null} titulo="Descartar alterações?" aoCancelar={() => setSaidaPendente(null)}>
+        <p className="text-sm text-ink-muted">O que você digitou nos Dados da Oficina será perdido.</p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variante="secundario" onClick={() => setSaidaPendente(null)}>
+            Continuar editando
+          </Button>
+          <Button
+            variante="perigo"
+            onClick={() => {
+              const sair = saidaPendente;
+              setSaidaPendente(null);
+              sair?.();
+            }}
+          >
+            Descartar
+          </Button>
+        </div>
+      </Folha>
 
       {/* BARRA INFERIOR (MOBILE) */}
       <nav

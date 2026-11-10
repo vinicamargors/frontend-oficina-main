@@ -352,3 +352,158 @@ test.describe('dados da oficina', () => {
     expect(pequenos).toBe(0);
   });
 });
+
+// ------------------------------------------------------------------ master trocando de oficina
+const EMPRESA_B = '22222222-2222-4222-8222-222222222222';
+const empresaB = { ...empresa, id: EMPRESA_B, nome_fantasia: 'Oficina B do Teste', razao_social: 'Oficina B Ltda', cnpj: '98.765.432/0001-10' };
+const cfgB = { ...configuracoesEmpresa, chave_pix: 'pix-da-oficina-b', inscricao_estadual: '999.999.999.999' };
+const jsonOk = (corpo: unknown) => ({
+  status: 200,
+  contentType: 'application/json',
+  headers: { 'access-control-allow-origin': '*' },
+  body: JSON.stringify(corpo),
+});
+
+/** Master com duas oficinas; `atrasoB`/`falharB` controlam a carga das configurações da oficina B. */
+async function abrirComoMaster(page: Page, tema: 'claro' | 'escuro', b: { atrasoB?: number; falharB?: () => boolean } = {}) {
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'master', tema);
+  await page.route('**/api/v1/empresas/?*', (r) => r.fulfill(jsonOk([empresa, empresaB])));
+  await page.route(`**/api/v1/empresas/${EMPRESA_B}/configuracoes`, async (r) => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    if (b.atrasoB) await new Promise((ok) => setTimeout(ok, b.atrasoB));
+    if (b.falharB?.()) {
+      return r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'Servidor fora do ar' }) });
+    }
+    return r.fulfill(jsonOk(cfgB));
+  });
+  await abrirTela(page, 'oficina');
+  await expect(page.getByLabel('Chave PIX')).toHaveValue(configuracoesEmpresa.chave_pix);
+}
+
+/** Troca a oficina pelo seletor do master (no celular ele fica na folha "Mais"). */
+async function trocarOficina(page: Page, largura: number, id: string) {
+  if (largura < 1024) {
+    if ((await page.getByRole('dialog', { name: 'Mais opções' }).count()) === 0) {
+      await barraMobile(page).getByRole('button', { name: 'Mais' }).click();
+    }
+    await page.getByRole('dialog', { name: 'Mais opções' }).getByLabel('Oficina (Master)').selectOption(id);
+  } else {
+    await page.getByLabel('Oficina (Master)').selectOption(id);
+  }
+}
+
+const folhaDescartar = (page: Page) => page.getByRole('dialog', { name: 'Descartar alterações?' });
+
+test.describe('master trocando de oficina', () => {
+  test('carga lenta da nova oficina: nada da oficina anterior fica editável e a resposta velha não sobrescreve', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await abrirComoMaster(page, tema, { atrasoB: 1500 });
+    await trocarOficina(page, largura, EMPRESA_B);
+    // enquanto B carrega: sem campos com os valores de A
+    await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(0);
+    // volta para A antes de B responder: A recarrega e a resposta atrasada de B é ignorada
+    await trocarOficina(page, largura, EMPRESA_ID);
+    await expect(page.getByLabel('Chave PIX')).toHaveValue(configuracoesEmpresa.chave_pix);
+    await page.waitForTimeout(2000);
+    await expect(page.getByLabel('Chave PIX')).toHaveValue(configuracoesEmpresa.chave_pix);
+    await expect(page.getByLabel(/^Nome fantasia/)).toHaveValue(empresa.nome_fantasia);
+  });
+
+  test('falha ao carregar a nova oficina: painel de erro com "Tentar novamente", sem formulário da oficina anterior', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    let falhar = true;
+    await abrirComoMaster(page, tema, { falharB: () => falhar });
+    const escritas = registrarEscritas(page);
+    await trocarOficina(page, largura, EMPRESA_B);
+    await expect(page.getByRole('main').getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Salvar alterações' })).toHaveCount(0);
+    if (largura < 1024) await page.keyboard.press('Escape'); // fecha a folha "Mais"
+    falhar = false;
+    await page.getByRole('button', { name: 'Tentar novamente' }).click();
+    await expect(page.getByLabel('Chave PIX')).toHaveValue(cfgB.chave_pix);
+    await expect(page.getByLabel(/^Nome fantasia/)).toHaveValue(empresaB.nome_fantasia);
+    await page.getByRole('button', { name: 'Salvar alterações' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'atualizados com sucesso' })).toBeVisible();
+    expect(escritas.map((e) => e.caminho)).toEqual([`/empresas/${EMPRESA_B}`, `/empresas/${EMPRESA_B}/configuracoes`, `/empresas/${EMPRESA_B}/configuracoes`]);
+    expect(escritas[1].corpo.chave_pix).toBe(cfgB.chave_pix);
+  });
+
+  test('formulário sujo: trocar de oficina pergunta antes; continuar mantém, descartar carrega a outra', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await abrirComoMaster(page, tema);
+    await page.getByLabel('Chave PIX').fill('digitado-em-a');
+    await trocarOficina(page, largura, EMPRESA_B);
+    const folha = folhaDescartar(page);
+    await expect(folha).toBeVisible();
+    await folha.getByRole('button', { name: 'Continuar editando' }).click();
+    await expect(folha).toHaveCount(0);
+    await expect(page.getByLabel('Chave PIX')).toHaveValue('digitado-em-a');
+
+    await trocarOficina(page, largura, EMPRESA_B);
+    await expect(folha).toBeVisible();
+    await folha.getByRole('button', { name: 'Descartar' }).click();
+    await expect(page.getByLabel('Chave PIX')).toHaveValue(cfgB.chave_pix);
+    await expect(page.getByText('Alterações não salvas')).toHaveCount(0);
+  });
+});
+
+// ------------------------------------------------------------------ trocar de tela com formulário sujo
+async function clicarNaNavegacao(page: Page, largura: number, desktop: string, mobile: string) {
+  if (largura < 1024) await barraMobile(page).getByRole('button', { name: mobile }).click();
+  else await page.getByRole('navigation', { name: 'Seções' }).getByRole('button', { name: desktop }).click();
+}
+
+test.describe('trocar de tela com o formulário da oficina sujo', () => {
+  test('pergunta antes; continuar mantém o formulário; descartar navega e o voltar não fica dobrado', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await abrirComHistorico(page, tema);
+    await campo(page, 'Chave PIX').fill('pix-digitado');
+    await clicarNaNavegacao(page, largura, 'Ordens de Serviço', 'Ordens');
+    const folha = folhaDescartar(page);
+    await expect(folha).toBeVisible();
+    await folha.getByRole('button', { name: 'Continuar editando' }).click();
+    await expect(folha).toHaveCount(0);
+    await expect(page).toHaveURL(/tab=oficina/);
+    await expect(campo(page, 'Chave PIX')).toHaveValue('pix-digitado');
+
+    await clicarNaNavegacao(page, largura, 'Ordens de Serviço', 'Ordens');
+    await folha.getByRole('button', { name: 'Descartar' }).click();
+    await expect(page).toHaveURL(/tab=os/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
+
+    // voltar: uma vez para a oficina (limpa), outra para o radar
+    await page.goBack();
+    await expect(page).toHaveURL(/tab=oficina/);
+    await expect(campo(page, 'Chave PIX')).toHaveValue(configuracoesEmpresa.chave_pix);
+    await page.goBack();
+    await expect(page).not.toHaveURL(/tab=oficina/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
+  });
+
+  test('formulário limpo: navega direto, sem perguntar', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await abrirComHistorico(page, tema);
+    await clicarNaNavegacao(page, largura, 'Ordens de Serviço', 'Ordens');
+    await expect(page).toHaveURL(/tab=os/);
+    await expect(folhaDescartar(page)).toHaveCount(0);
+    await page.goBack();
+    await expect(page).toHaveURL(/tab=oficina/);
+  });
+
+  test('formulário volta a ficar limpo com a pergunta do "voltar" aberta: a pergunta some e o voltar seguinte sai uma vez só', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrirComHistorico(page, tema);
+    await campo(page, 'Chave PIX').fill('pix-novo');
+    await page.goBack();
+    const aviso = page.getByRole('alert').filter({ hasText: 'Descartar alterações?' });
+    await expect(aviso).toBeVisible();
+    // desfaz a edição à mão: nada mais a descartar (antes a pergunta ficava e "Descartar" voltava duas telas)
+    await campo(page, 'Chave PIX').fill(configuracoesEmpresa.chave_pix);
+    await expect(aviso).toHaveCount(0);
+    await expect(page.getByText('Alterações não salvas')).toHaveCount(0);
+    await page.goBack();
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
+  });
+});
