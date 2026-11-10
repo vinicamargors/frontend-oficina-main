@@ -29,6 +29,7 @@ export function LinhaOrdem({
   const dias = diasDesde(os.data_abertura);
   const nivel = nivelAtraso(st, dias);
   const prox = proximaEtapa(st);
+  const defeito = os.descricao_problema?.trim() || '';
   // Sem próxima etapa (Pago), o WhatsApp fica à direita da própria linha em vez de abrir uma faixa de ações.
   const faixaAcoes = Boolean(prox);
 
@@ -37,8 +38,8 @@ export function LinhaOrdem({
       <button
         type="button"
         onClick={aoAbrir}
-        className={`block w-full cursor-pointer pl-4 pt-3 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand lg:pb-3 lg:pr-[19rem] ${
-          faixaAcoes ? 'pb-[3.75rem] pr-4' : fone ? 'pb-3 pr-14' : 'pb-3 pr-4'
+        className={`block w-full cursor-pointer pl-4 pt-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand lg:pb-3 lg:pt-3 lg:pr-[19rem] ${
+          faixaAcoes ? 'pb-[3.25rem] pr-4' : fone ? 'pb-3 pr-14' : 'pb-3 pr-4'
         }`}
       >
         <span className="flex items-center gap-3">
@@ -46,13 +47,18 @@ export function LinhaOrdem({
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{modelo}</span>
           <span className="shrink-0 text-sm font-semibold tabular-nums text-ink">{formatBRL(os.total_geral)}</span>
         </span>
-        <span className="mt-2 flex min-w-0 items-center gap-2">
+        <span className="mt-1.5 flex min-w-0 items-center gap-2 lg:mt-2">
           <span className="shrink-0">
             <StatusBadge status={st} />
           </span>
           <span className="min-w-0 truncate text-xs text-ink-muted">
             {clienteNome} · {textoDias(dias)}
           </span>
+          {defeito && (
+            <span title={defeito} className="min-w-0 flex-[1_1_0%] truncate text-xs text-ink-subtle">
+              {defeito}
+            </span>
+          )}
           {nivel !== 'ok' && (
             <span className="shrink-0">
               <MarcaAtraso nivel={nivel} />
@@ -64,7 +70,7 @@ export function LinhaOrdem({
       {(prox || fone) && (
         <div
           className={`pointer-events-none absolute flex items-center justify-between gap-2 lg:inset-x-auto lg:bottom-auto lg:right-2 lg:top-1/2 lg:w-72 lg:-translate-y-1/2 lg:justify-end ${
-            faixaAcoes ? 'inset-x-4 bottom-2' : 'right-1 top-1/2 -translate-y-1/2'
+            faixaAcoes ? 'inset-x-4 bottom-1' : 'right-1 top-1/2 -translate-y-1/2'
           }`}
         >
           {prox ? (

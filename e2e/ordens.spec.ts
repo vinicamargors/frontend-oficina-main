@@ -261,3 +261,79 @@ test.describe('lista de ordens de serviço', () => {
     exigirRedeCompleta(page);
   });
 });
+
+test.describe('busca da lista: debounce e respostas fora de ordem', () => {
+  const lista = (page: Page) => page.getByRole('list', { name: 'Ordens de serviço' });
+  const ehLeituraOS = (url: string) => /\/api\/v1\/os\/\?/.test(url);
+
+  test('digitar 5 letras rápido gera uma só rodada de leituras', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'ordens');
+
+    const leituras: string[] = [];
+    page.on('request', (r) => {
+      if (r.method() === 'GET' && ehLeituraOS(r.url())) leituras.push(r.url());
+    });
+    await page.getByRole('searchbox', { name: /Buscar Ordem de Serviço/ }).pressSequentially('QWE4R', { delay: 40 });
+    await expect(lista(page).getByRole('listitem')).toHaveCount(2);
+    await page.waitForTimeout(800);
+    // 1 lista + 6 contagens, não 5 × 7
+    expect(leituras.length).toBeLessThanOrEqual(7);
+    expect(leituras.every((u) => new URL(u).searchParams.get('search') === 'QWE4R')).toBe(true);
+  });
+
+  test('resposta lenta de uma busca anterior não sobrescreve a mais nova', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await page.route('**/api/v1/os/?*', async (route) => {
+      const busca = new URL(route.request().url()).searchParams.get('search');
+      if (busca === 'Q') await new Promise((r) => setTimeout(r, 1500));
+      await route.fallback();
+    });
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'ordens');
+
+    const campo = page.getByRole('searchbox', { name: /Buscar Ordem de Serviço/ });
+    await campo.pressSequentially('Q');
+    await page.waitForTimeout(450); // dispara a busca "Q" (lenta)
+    await campo.pressSequentially('WE');
+    await expect(lista(page).getByRole('listitem')).toHaveCount(2);
+    await page.waitForTimeout(1800); // a resposta de "Q" (12 linhas) chega depois
+    await expect(lista(page).getByRole('listitem')).toHaveCount(2);
+    await expect(page.getByRole('group', { name: 'Filtrar por etapa' }).getByRole('button').first()).toHaveAccessibleName(/Todas\s*2$/);
+  });
+});
+
+test('linha mostra o defeito relatado (truncado, com title) e fica compacta no celular', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'ordens');
+  const primeira = page.getByRole('list', { name: 'Ordens de serviço' }).getByRole('listitem').first();
+  const defeito = primeira.getByText(ordens[0].descricao_problema!, { exact: true });
+  await expect(defeito).toBeVisible();
+  await expect(defeito).toHaveAttribute('title', ordens[0].descricao_problema!);
+  const alt = (await primeira.boundingBox())!.height;
+  expect(alt).toBeLessThanOrEqual(largura >= 1024 ? 96 : 120);
+});
+
+test('OS paga antiga sem forma de pagamento não destaca nenhuma forma', async ({ page }, info) => {
+  const { tema } = contextoDoProjeto(info);
+  await simularBackend(page, 'cheio');
+  await page.route(`**/os/*/${OS_BANCADA_ID}/imprimir`, async (route) => {
+    const base = dossie('cheio', OS_BANCADA_ID);
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify({ ...base, ordem: { ...base.ordem, status: 'PAGO', forma_pagamento: null } }),
+    });
+  });
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'bancada');
+  for (const forma of FORMAS) {
+    await expect(page.getByRole('button', { name: forma, exact: true })).toHaveAttribute('aria-pressed', 'false');
+  }
+});

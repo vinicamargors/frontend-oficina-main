@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api, OrdenacaoOS } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -42,6 +42,7 @@ import { ConfirmarPagamento } from '../components/ConfirmarPagamento';
 import { FORMAS_PAGAMENTO } from './ordens/formasPagamento';
 import { ETAPAS_OS, mensagemEtapa } from './ordens/etapas';
 import { LinhaOrdem } from './ordens/LinhaOrdem';
+import { useDebouncedValue } from '../lib/useDebouncedValue';
 
 interface OrdensServicoProps {
   empresaId: string;
@@ -105,6 +106,11 @@ export function OrdensServico({
     initialStatusFilter || 'TODAS'
   );
   const [busca, setBusca] = useState('');
+  // O campo responde na hora; a lista e as contagens só leem a busca depois de 300ms sem digitação.
+  const buscaAplicada = useDebouncedValue(busca, 300);
+  // Só a resposta da leitura mais recente é aplicada (evita resposta antiga sobrescrever a nova).
+  const seqLista = useRef(0);
+  const seqContagens = useRef(0);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [valorMin, setValorMin] = useState('');
@@ -139,7 +145,7 @@ export function OrdensServico({
   const [editKm, setEditKm] = useState<string>('');
   const [editProblema, setEditProblema] = useState<string>('');
   const [editMecanicoId, setEditMecanicoId] = useState<string>('');
-  const [editFormaPagamento, setEditFormaPagamento] = useState<string>('PIX');
+  const [, setEditFormaPagamento] = useState<string>('PIX');
   const [statusAutoSave, setStatusAutoSave] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   // Lançamento de Itens em Lote + Busca Reativa de Estoque (Nome e SKU, Qtd > 0)
@@ -203,6 +209,7 @@ export function OrdensServico({
 
   const carregarOrdens = useCallback(async () => {
     if (!empresaId) return;
+    const minha = ++seqLista.current;
     setLoadingLista(true);
     setErroLista(null);
     try {
@@ -211,7 +218,7 @@ export function OrdensServico({
       const res = await api.listarOS({
         empresaId,
         status: statusFiltro === 'TODAS' ? undefined : statusFiltro,
-        search: busca,
+        search: buscaAplicada,
         dataInicio: dataInicio || undefined,
         dataFim: dataFim || undefined,
         valorMin: vMin,
@@ -220,18 +227,20 @@ export function OrdensServico({
         skip: (pagina - 1) * ITENS_POR_PAGINA,
         limit: ITENS_POR_PAGINA,
       });
+      if (minha !== seqLista.current) return;
       setOrdens(res.items || []);
       setTotalOrdens(res.total || 0);
     } catch (err: unknown) {
+      if (minha !== seqLista.current) return;
       const e = err as Error;
       setErroLista(e.message || 'Erro ao carregar Ordens de Serviço.');
     } finally {
-      setLoadingLista(false);
+      if (minha === seqLista.current) setLoadingLista(false);
     }
   }, [
     empresaId,
     statusFiltro,
-    busca,
+    buscaAplicada,
     dataInicio,
     dataFim,
     valorMin,
@@ -248,6 +257,7 @@ export function OrdensServico({
 
   const carregarContagens = useCallback(async () => {
     if (!empresaId) return;
+    const minha = ++seqContagens.current;
     const vMin = valorMin.trim() ? Number(valorMin.replace(',', '.')) : null;
     const vMax = valorMax.trim() ? Number(valorMax.replace(',', '.')) : null;
     const etapas: (StatusOS | 'TODAS')[] = ['TODAS', ...ETAPAS_OS];
@@ -257,7 +267,7 @@ export function OrdensServico({
           .listarOS({
             empresaId,
             status: st === 'TODAS' ? undefined : st,
-            search: busca,
+            search: buscaAplicada,
             dataInicio: dataInicio || undefined,
             dataFim: dataFim || undefined,
             valorMin: vMin,
@@ -269,18 +279,24 @@ export function OrdensServico({
           .catch(() => undefined)
       )
     );
+    if (minha !== seqContagens.current) return;
     const mapa: Partial<Record<StatusOS | 'TODAS', number>> = {};
     etapas.forEach((st, i) => {
       if (resultados[i] !== undefined) mapa[st] = resultados[i];
     });
     setContagens(mapa);
-  }, [empresaId, busca, dataInicio, dataFim, valorMin, valorMax]);
+  }, [empresaId, buscaAplicada, dataInicio, dataFim, valorMin, valorMax]);
 
   useEffect(() => {
     if (view === 'lista') {
       carregarContagens();
     }
   }, [view, carregarContagens]);
+
+  // Nova busca aplicada volta à primeira página
+  useEffect(() => {
+    setPagina(1);
+  }, [buscaAplicada]);
 
   const veiculosPorCliente = useMemo(() => {
     const mapa = new Map<string, Veiculo[]>();
@@ -2066,7 +2082,8 @@ export function OrdensServico({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="mr-1 text-sm text-ink-muted">Forma de pagamento:</span>
                 {FORMAS_PAGAMENTO.map((fp) => {
-                  const atual = (os.forma_pagamento || editFormaPagamento) === fp;
+                  // Só destaca a forma gravada; OS paga antiga sem forma não destaca nenhuma.
+                  const atual = os.forma_pagamento === fp;
                   return (
                     <button
                       key={fp}
@@ -2773,10 +2790,7 @@ export function OrdensServico({
               autoCapitalize="off"
               spellCheck={false}
               value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
-                setPagina(1);
-              }}
+              onChange={(e) => setBusca(e.target.value)}
               placeholder="Placa, cliente ou defeito…"
               className={`${CLASSE_CAMPO} pl-9`}
             />
