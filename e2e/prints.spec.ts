@@ -73,3 +73,18 @@ test('print login (entrar, criar conta, recuperar)', async ({ page }, info) => {
   await tirar('recuperar');
   exigirRedeCompleta(page);
 });
+
+// Folha de confirmação do pagamento aberta sobre a bancada: `pagamento-<tema>-<largura>.png`.
+test('print pagamento (folha aberta)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'bancada');
+  await page.getByRole('list', { name: 'Etapas da ordem de serviço' }).getByRole('button', { name: 'Pago / entregue', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Confirmar pagamento' }).waitFor();
+  await page.mouse.move(1, 1); // sem hover acidental numa opção (pareceria pré-marcada)
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `pagamento-${tema}-${largura}.png`), animations: 'disabled' });
+});
