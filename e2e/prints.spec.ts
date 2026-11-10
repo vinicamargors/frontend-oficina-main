@@ -218,3 +218,61 @@ test('print clientes veiculo novo (adicionar veículo com consulta de placa)', a
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `clientes-veiculo-novo-${tema}-${largura}.png`), animations: 'disabled' });
 });
+
+// Estoque: formulário de nova peça, folha de ajuste (entrada), confirmação de exclusão e menu da linha:
+// `estoque-{form,ajuste,exclusao,menu}-<tema>-<largura>.png`. O estado de estoque baixo já aparece em `estoque-*-cheio`.
+async function abrirEstoque(page: import('@playwright/test').Page, tema: 'claro' | 'escuro') {
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'estoque');
+}
+const nomeBaixo = 'Filtro de ar condicionado';
+
+test('print estoque form (nova peça aberta)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await abrirEstoque(page, tema);
+  await page.getByRole('button', { name: /Nova peça/ }).click();
+  await page.getByRole('dialog', { name: 'Nova peça no estoque' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `estoque-form-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print estoque ajuste (entrada com quantidade)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await abrirEstoque(page, tema);
+  await page.getByRole('button', { name: `Mais ações de ${nomeBaixo}` }).click();
+  await page.getByRole('menuitem', { name: /Registrar entrada/ }).click();
+  const d = page.getByRole('dialog', { name: 'Entrada no estoque' });
+  await d.waitFor();
+  await d.getByRole('button', { name: 'Aumentar quantidade' }).click();
+  await d.getByRole('button', { name: 'Aumentar quantidade' }).click();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `estoque-ajuste-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print estoque exclusao (confirmação)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await abrirEstoque(page, tema);
+  await page.getByRole('button', { name: `Mais ações de ${nomeBaixo}` }).click();
+  await page.getByRole('menuitem', { name: /Excluir peça/ }).click();
+  await page.getByRole('dialog', { name: 'Excluir peça do estoque?' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `estoque-exclusao-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print estoque menu (ações da linha)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await abrirEstoque(page, tema);
+  await page.getByRole('button', { name: `Mais ações de ${nomeBaixo}` }).click();
+  await page.getByRole('menu').waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `estoque-menu-${tema}-${largura}.png`), animations: 'disabled' });
+});
