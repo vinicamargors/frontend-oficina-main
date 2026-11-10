@@ -87,7 +87,7 @@ test.describe('radar: seletor de período', () => {
     await escolher(page, '30 dias');
     await expect(botaoPeriodo(page)).toHaveAccessibleName('Últimos 30 dias');
     expect(leituras.some((q) => q.get('data_inicio') === diasAntes(hoje, 29))).toBe(true);
-    await expect(page.getByText('2 ordens pagas e entregues no período')).toBeVisible();
+    await expect(page.getByText('2 ordens abertas no período já pagas e entregues')).toBeVisible();
     exigirRedeCompleta(page);
   });
 
@@ -217,11 +217,69 @@ test.describe('radar: seletor de período', () => {
     });
     await escolher(page, '30 dias');
     await escolher(page, '14 dias');
-    await expect(page.getByText('1 ordem paga e entregue no período')).toBeVisible();
+    await expect(page.getByText('1 ordem aberta no período já paga e entregue')).toBeVisible();
     await page.waitForTimeout(2600);
     await expect(botaoPeriodo(page)).toHaveAccessibleName('Últimos 14 dias');
-    await expect(page.getByText('1 ordem paga e entregue no período')).toBeVisible();
-    await expect(page.getByText('2 ordens pagas e entregues no período')).toHaveCount(0);
+    await expect(page.getByText('1 ordem aberta no período já paga e entregue')).toBeVisible();
+    await expect(page.getByText('2 ordens abertas no período já pagas e entregues')).toHaveCount(0);
+  });
+
+  test('período vazio com ordens abertas mais antigas: texto do período, aviso e botão de nova OS no cabeçalho', async ({ page }, info) => {
+    await preparar(page, contextoDoProjeto(info).tema);
+    // nada dentro do período; as leituras "antes do período" (sem data_inicio) seguem o mock normal
+    await page.route(URL_OS, async (route) => {
+      if (new URL(route.request().url()).searchParams.get('data_inicio')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          headers: { 'access-control-allow-origin': '*' },
+          body: JSON.stringify({ items: [], total: 0, skip: 0, limit: 20 }),
+        });
+      } else await route.fallback();
+    });
+    await abrirTela(page, 'radar');
+    await expect(page.getByText('Nenhuma ordem no período')).toBeVisible();
+    await expect(page.getByText('Nenhum veículo no pátio')).toHaveCount(0);
+    await expect(page.getByText('Escolha um período maior para ver mais.')).toBeVisible();
+    await expect(page.getByText('2 ordens abertas mais antigas ficam fora do período')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Nova ordem de serviço' })).toHaveCount(1);
+    await page.getByRole('button', { name: 'Ver 30 dias' }).click();
+    await expect(botaoPeriodo(page)).toHaveAccessibleName('Últimos 30 dias');
+  });
+
+  test('escolher de novo o período vigente não refaz as leituras', async ({ page }, info) => {
+    const leituras = registrarLeituras(page);
+    await preparar(page, contextoDoProjeto(info).tema);
+    await abrirTela(page, 'radar');
+    leituras.length = 0;
+    await escolher(page, '7 dias');
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await page.waitForTimeout(500);
+    expect(leituras.length).toBe(0);
+  });
+
+  test('Personalizado: erro ligado aos campos e motivo quando falta data', async ({ page }, info) => {
+    await preparar(page, contextoDoProjeto(info).tema);
+    await abrirTela(page, 'radar');
+    await botaoPeriodo(page).click();
+    await page.getByRole('menuitemradio', { name: 'Personalizado' }).click();
+    const de = page.getByLabel('De', { exact: true });
+    const ate = page.getByLabel('Até', { exact: true });
+    await ate.fill('');
+    await expect(page.getByText('Informe as duas datas para aplicar.')).toBeVisible();
+    const aplicar = page.getByRole('button', { name: 'Aplicar' });
+    await expect(aplicar).toHaveAttribute('aria-disabled', 'true');
+    await aplicar.focus();
+    await expect(aplicar).toBeFocused();
+    const hoje = hojeSP();
+    await de.fill(diasAntes(hoje, 2));
+    await ate.fill(diasAntes(hoje, 5));
+    const alerta = page.getByRole('alert');
+    await expect(alerta).toContainText('anterior');
+    const idErro = await alerta.getAttribute('id');
+    await expect(de).toHaveAttribute('aria-invalid', 'true');
+    await expect(ate).toHaveAttribute('aria-describedby', new RegExp(idErro!));
+    await expect(de).toHaveAttribute('aria-describedby', new RegExp(idErro!));
   });
 
   test('celular: controle numa linha, alvos de 44px e sem rolagem lateral', async ({ page }, info) => {

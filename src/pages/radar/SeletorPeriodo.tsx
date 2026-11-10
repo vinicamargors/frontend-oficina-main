@@ -27,6 +27,8 @@ export function SeletorPeriodo({
   const campoDe = useRef<HTMLInputElement>(null);
   const idRotulo = useId();
   const idValor = useId();
+  const idErro = useId();
+  const idDica = useId();
   const hojeISO = dataLocalISO(new Date());
   const personalizado = periodo.tipo === 'custom';
 
@@ -78,6 +80,8 @@ export function SeletorPeriodo({
   };
 
   const erro = de && ate ? validarPersonalizado(de, ate) : 'incompleto';
+  const mostrarErro = !!erro && erro !== 'incompleto';
+  const descricao = mostrarErro ? idErro : erro === 'incompleto' ? idDica : undefined;
   const itemClasse =
     'flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-ink transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none';
 
@@ -159,19 +163,39 @@ export function SeletorPeriodo({
                     type="date"
                     value={de}
                     max={hojeISO}
+                    aria-describedby={descricao}
+                    aria-invalid={mostrarErro || undefined}
                     onChange={(e) => setDe(e.target.value)}
                   />
                 </Field>
                 <Field rotulo="Até">
-                  <input type="date" value={ate} min={de || undefined} max={hojeISO} onChange={(e) => setAte(e.target.value)} />
+                  <input
+                    type="date"
+                    value={ate}
+                    min={de || undefined}
+                    max={hojeISO}
+                    aria-describedby={descricao}
+                    aria-invalid={mostrarErro || undefined}
+                    onChange={(e) => setAte(e.target.value)}
+                  />
                 </Field>
               </div>
-              {erro && erro !== 'incompleto' && (
-                <p role="alert" className="text-[0.8125rem] text-danger">
+              {mostrarErro && (
+                <p id={idErro} role="alert" className="text-[0.8125rem] text-danger">
                   {erro}
                 </p>
               )}
-              <Button type="submit" className="w-full" disabled={!!erro}>
+              {erro === 'incompleto' && (
+                <p id={idDica} className="text-xs text-ink-muted">
+                  Informe as duas datas para aplicar.
+                </p>
+              )}
+              <Button
+                type="submit"
+                className="w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                aria-disabled={!!erro}
+                aria-describedby={erro === 'incompleto' ? idDica : mostrarErro ? idErro : undefined}
+              >
                 Aplicar
               </Button>
             </form>

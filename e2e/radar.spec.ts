@@ -139,7 +139,7 @@ test.describe('radar do pátio', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'radar');
 
-    await expect(page.getByText('Nenhum veículo no pátio')).toBeVisible();
+    await expect(page.getByText('Nenhuma ordem no período')).toBeVisible();
     const acao = page.getByRole('button', { name: 'Nova ordem de serviço' });
     await expect(acao).toHaveCount(1);
     await expect(page.getByRole('region', { name: 'Orçamento', exact: true })).toHaveCount(0);

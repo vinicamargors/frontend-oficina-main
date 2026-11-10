@@ -283,6 +283,8 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   }, [carregarRadar]);
 
   const escolherPeriodo = (p: Periodo) => {
+    // Escolher de novo o que já está valendo não refaz as leituras
+    if (p.tipo === periodo.tipo && (p.tipo !== 'custom' || (periodo.tipo === 'custom' && p.de === periodo.de && p.ate === periodo.ate))) return;
     if (p.tipo !== 'custom') salvarPreset(p.tipo);
     setPeriodo(p);
   };
@@ -299,7 +301,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <Button variante="fantasma" icone={RefreshCw} onClick={carregarRadar}>
             Atualizar
           </Button>
-          {quadro && !patioVazio && !error && <Button onClick={novaOS}>Nova ordem de serviço</Button>}
+          {quadro && !error && <Button onClick={novaOS}>Nova ordem de serviço</Button>}
         </>
       }
     />
@@ -371,12 +373,18 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         {patioVazio ? (
           <Panel espaco="lg" className="space-y-4">
             <div>
-              <h2 className="text-lg font-semibold text-ink">Nenhum veículo no pátio</h2>
+              <h2 className="text-lg font-semibold text-ink">Nenhuma ordem no período</h2>
               <p className="mt-1 text-sm text-ink-muted">
-                Abra uma ordem de serviço e o veículo aparece aqui, na etapa em que estiver.
+                {periodo.tipo === '30'
+                  ? 'Abra uma ordem de serviço e ela aparece aqui, na etapa em que estiver.'
+                  : 'Escolha um período maior para ver mais.'}
               </p>
             </div>
-            <Button onClick={novaOS}>Nova ordem de serviço</Button>
+            {periodo.tipo !== '30' && (
+              <Button variante="secundario" onClick={() => escolherPeriodo({ tipo: '30' })}>
+                Ver 30 dias
+              </Button>
+            )}
           </Panel>
         ) : (
           <>
@@ -411,7 +419,8 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         {pagas > 0 && (
           <p className="mt-2">
             <Button variante="fantasma" tamanho="sm" onClick={() => onNavigateTab('os', 'PAGO')}>
-              {pagas} {pagas === 1 ? 'ordem paga e entregue' : 'ordens pagas e entregues'} no período
+              {pagas}{' '}
+              {pagas === 1 ? 'ordem aberta no período já paga e entregue' : 'ordens abertas no período já pagas e entregues'}
             </Button>
           </p>
         )}
