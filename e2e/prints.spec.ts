@@ -346,3 +346,94 @@ test('print financeiro exclusao (confirmação)', async ({ page }, info) => {
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `financeiro-exclusao-${tema}-${largura}.png`), animations: 'disabled' });
 });
+
+// Equipe: cada aba em cada cenário, o formulário, as confirmações, o esqueleto de carregamento e o holerite em
+// modo de impressão: `equipe-<colaboradores|folha|escalas|ponto|avaliacoes>-<tema>-<largura>-<cenario>.png` e
+// `equipe-{form,confirmacao-desativar,confirmacao-folha,carregando,holerite,holerite-impressao}-<tema>-<largura>.png`.
+const ABAS_EQUIPE = [
+  ['colaboradores', 'Equipe'],
+  ['folha', 'Folha'],
+  ['escalas', 'Escalas'],
+  ['ponto', 'Ponto'],
+  ['avaliacoes', 'Avaliações'],
+] as const;
+
+async function abrirEquipe(page: import('@playwright/test').Page, tema: 'claro' | 'escuro', cenario: Cenario = 'cheio') {
+  await simularBackend(page, cenario);
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'equipe');
+}
+
+for (const cenario of CENARIOS) {
+  test(`print equipe abas ${cenario}`, async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    mkdirSync(PASTA, { recursive: true });
+    await abrirEquipe(page, tema, cenario);
+    for (const [id, rotulo] of ABAS_EQUIPE) {
+      await page.getByRole('tablist', { name: 'Seções da equipe' }).getByRole('tab', { name: rotulo }).click();
+      await page.mouse.move(1, 1);
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: join(PASTA, `equipe-${id}-${tema}-${largura}-${cenario}.png`), fullPage: true, animations: 'disabled' });
+    }
+    exigirRedeCompleta(page);
+  });
+}
+
+test('print equipe form (editar colaborador)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await abrirEquipe(page, tema);
+  await page.getByRole('button', { name: 'Mais ações de Tiago Ferreira' }).click();
+  await page.getByRole('menuitem', { name: 'Editar colaborador' }).click();
+  await page.getByRole('dialog', { name: 'Editar colaborador' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `equipe-form-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print equipe confirmações (desativar e lançar folha)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await abrirEquipe(page, tema);
+  await page.getByRole('button', { name: 'Mais ações de Tiago Ferreira' }).click();
+  await page.getByRole('menuitem', { name: 'Desativar colaborador' }).click();
+  await page.getByRole('dialog', { name: 'Desativar colaborador?' }).waitFor();
+  await page.mouse.move(1, 1);
+  await page.screenshot({ path: join(PASTA, `equipe-confirmacao-desativar-${tema}-${largura}.png`), animations: 'disabled' });
+  await page.keyboard.press('Escape');
+  await page.getByRole('tab', { name: 'Folha' }).click();
+  await page.getByRole('button', { name: /Lançar no Contas a Pagar/ }).click();
+  await page.getByRole('dialog', { name: 'Lançar folha no Contas a Pagar?' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `equipe-confirmacao-folha-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print equipe carregando (esqueleto)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await simularBackend(page, 'cheio');
+  await page.route('**/api/v1/usuarios/*', async (route) => {
+    if (route.request().method() === 'GET' && !route.request().url().endsWith('/me')) return; // nunca responde
+    return route.fallback();
+  });
+  await entrarComo(page, 'DONO', tema);
+  await page.goto('/?tab=equipe');
+  await page.getByRole('main').getByRole('status').filter({ hasText: 'Carregando' }).waitFor();
+  await page.mouse.move(1, 1);
+  await page.screenshot({ path: join(PASTA, `equipe-carregando-${tema}-${largura}.png`), animations: 'disabled' });
+});
+
+test('print equipe holerite (tela e impressão)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await abrirEquipe(page, tema);
+  await page.getByRole('tab', { name: 'Folha' }).click();
+  await page.getByRole('button', { name: 'Ver holerite de Tiago Ferreira' }).click();
+  await page.getByRole('dialog', { name: 'Holerite' }).waitFor();
+  await page.mouse.move(1, 1);
+  exigirRedeCompleta(page);
+  await page.screenshot({ path: join(PASTA, `equipe-holerite-${tema}-${largura}.png`), animations: 'disabled' });
+  await page.emulateMedia({ media: 'print' });
+  await page.screenshot({ path: join(PASTA, `equipe-holerite-impressao-${tema}-${largura}.png`), animations: 'disabled' });
+});
