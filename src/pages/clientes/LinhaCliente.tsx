@@ -1,6 +1,6 @@
 import { ChevronDown, ClipboardList, Edit2, MessageCircle, Plus } from 'lucide-react';
 import type { Cliente, UltimaOS, Veiculo } from '../../types';
-import { Badge, Button, PlateChip } from '../../components/ui';
+import { Badge, Button, PlateChip, formatarPlaca } from '../../components/ui';
 import { AcoesVeiculo } from './AcoesVeiculo';
 import { MenuAcoes } from './MenuAcoes';
 import { montarLinkWhatsApp } from './auxiliares';
@@ -61,6 +61,11 @@ export function LinhaCliente({
             <span className="mt-0.5 block truncate text-xs tabular-nums text-ink-muted">
               {cliente.telefone || 'Sem fone'} · {qtd}
             </span>
+            {carros.length > 0 && (
+              <span className="mt-0.5 block truncate font-mono text-xs tracking-wide text-ink-muted lg:hidden">
+                {carros.map((v) => formatarPlaca(v.placa)).join(' · ')}
+              </span>
+            )}
           </span>
           <span className="hidden shrink-0 items-center gap-2 lg:flex">
             {carros.slice(0, 2).map((v) => (

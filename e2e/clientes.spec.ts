@@ -46,6 +46,7 @@ test.describe('lista de clientes', () => {
 
     await expect(page.getByRole('heading', { level: 1, name: 'Clientes & Veículos' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 1 }).locator('xpath=..')).toContainText(String(clientes.length));
+    await expect(page.getByText(`${veiculos.length} veículos cadastrados`)).toBeVisible();
     await expect(page.getByRole('button', { name: /Novo cliente/ })).toHaveCount(1);
     await expect(page.getByRole('searchbox', { name: /Pesquisar por placa/ })).toBeVisible();
     await expect(page.getByRole('tab', { name: /Clientes/ })).toHaveAttribute('aria-selected', 'true');
@@ -273,8 +274,60 @@ test.describe('novo cliente com veículos', () => {
     const d = page.getByRole('dialog', { name: /Novo cliente/ });
     await d.getByLabel(/Nome Completo/).fill('Descartado');
     await d.getByRole('button', { name: 'Cancelar' }).click();
+    await d.getByRole('button', { name: 'Descartar' }).click(); // há dados digitados: confirma o descarte
     await expect(d).toBeHidden();
     expect(escritas).toEqual([]);
+  });
+});
+
+test.describe('sair das folhas de formulário', () => {
+  test('Esc com dados digitados pede confirmação; Continuar mantém o valor; Descartar fecha sem escrever', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const escritas = gravarEscritas(page);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /Novo cliente/ }).click();
+    const d = page.getByRole('dialog', { name: /Novo cliente/ });
+    await d.getByLabel(/Nome Completo/).fill('Digitado');
+
+    await page.keyboard.press('Escape');
+    await expect(d).toBeVisible();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await d.getByRole('button', { name: 'Continuar editando' }).click();
+    await expect(d.getByRole('alert')).toHaveCount(0);
+    await expect(d.getByLabel(/Nome Completo/)).toHaveValue('Digitado');
+
+    await d.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    await expect(d).toBeHidden();
+    expect(escritas).toEqual([]);
+  });
+
+  test('formulário intacto fecha com Esc sem perguntar', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /Novo cliente/ }).click();
+    const d = page.getByRole('dialog', { name: /Novo cliente/ });
+    await expect(d).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(d).toBeHidden();
+  });
+
+  test('editar veículo e ficha do cliente: Esc só pergunta se algo mudou', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` }).click();
+    await page.getByRole('menuitem', { name: /Editar ficha/ }).click();
+    const d = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
+    await d.getByLabel(/Endereço/).fill('Outra rua');
+    // "Editar carro" com a ficha alterada pergunta antes de sair
+    await d.getByRole('button', { name: 'Editar carro' }).first().click();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    const v = page.getByRole('dialog', { name: /Editar Veículo — ABC1234/ });
+    await expect(v).toBeVisible();
+    await page.keyboard.press('Escape'); // nada mudou no veículo
+    await expect(v).toBeHidden();
   });
 });
 
@@ -341,6 +394,22 @@ test.describe('paginação', () => {
   });
 });
 
+test('enquanto carrega, o cabeçalho não mostra contagem zerada', async ({ page }, info) => {
+  const { tema } = contextoDoProjeto(info);
+  await simularBackend(page, 'cheio');
+  await page.route(/\/api\/v1\/clientes\/[^/?]+$/, async (route) => {
+    await new Promise((r) => setTimeout(r, 1500));
+    await route.fallback();
+  });
+  await entrarComo(page, 'DONO', tema);
+  await page.goto('/?tab=clientes');
+  const h1 = page.getByRole('heading', { level: 1, name: 'Clientes & Veículos' });
+  await expect(h1).toBeVisible();
+  await expect(h1.locator('xpath=..')).not.toContainText('0');
+  await expect(page.getByText(/veículos cadastrados/)).toHaveCount(0);
+  await expect(lista(page)).toBeVisible();
+});
+
 test.describe('estado vazio', () => {
   test('sem clientes: mensagem e uma única ação principal (a do cabeçalho)', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
@@ -366,7 +435,7 @@ test.describe('celular', () => {
       await l.scrollIntoViewIfNeeded();
       const c = (await l.boundingBox())!;
       expect(c.height).toBeGreaterThanOrEqual(56);
-      expect(c.height).toBeLessThanOrEqual(88);
+      expect(c.height).toBeLessThanOrEqual(96);
       expect(c.x + c.width).toBeLessThanOrEqual(largura);
       ys.push(c.y);
       expect(await botoesVisiveis(l)).toBeLessThanOrEqual(4);
@@ -399,6 +468,14 @@ test.describe('celular', () => {
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
     expect(escritas).toEqual([]);
+  });
+
+  test('placas aparecem na linha do cliente mesmo recolhida', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    test.skip(largura >= 1024, 'só celular');
+    await abrir(page, tema);
+    await expect(linha(page, JOAO.nome)).toContainText('ABC-1234 · DEF5G67');
+    for (const l of await lista(page).getByRole('listitem').all()) expect((await l.boundingBox())!.height).toBeLessThanOrEqual(96);
   });
 
   test('aba Placas: lista vertical com todos os veículos', async ({ page }, info) => {

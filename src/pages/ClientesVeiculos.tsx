@@ -82,6 +82,8 @@ export function ClientesVeiculos({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
+  // Saída pendente de confirmação ("Descartar alterações?") quando uma folha de formulário tem dados não salvos
+  const [saidaPendente, setSaidaPendente] = useState<(() => void) | null>(null);
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
@@ -497,6 +499,74 @@ export function ClientesVeiculos({
       setCriandoOsRapida(false);
     }
   };
+  const fichaSuja =
+    cliNome !== (clienteEmEdicao?.nome || '') ||
+    cliTelefone !== (clienteEmEdicao?.telefone || '') ||
+    cliCpfCnpj !== (clienteEmEdicao?.cpf_cnpj || '') ||
+    cliEndereco !== (clienteEmEdicao?.endereco || '') ||
+    novosVeiculosRascunho.some((r) => r.placa || r.modelo || r.marca || r.cor || r.ano || r.km_atual);
+  const veiculoSujo =
+    veiculoEmEdicao !== null &&
+    (editVeiPlaca !== (veiculoEmEdicao.placa || '') ||
+      editVeiModelo !== (veiculoEmEdicao.modelo || '') ||
+      editVeiMarca !== (veiculoEmEdicao.marca || '') ||
+      editVeiCor !== (veiculoEmEdicao.cor || '') ||
+      editVeiAno !== (veiculoEmEdicao.ano ? String(veiculoEmEdicao.ano) : '') ||
+      editVeiKm !== (veiculoEmEdicao.km_atual != null ? String(veiculoEmEdicao.km_atual) : '') ||
+      editVeiChassi !== (veiculoEmEdicao.chassi || ''));
+  const osSuja =
+    novaOsRapida !== null &&
+    (osDescricao.trim() !== '' ||
+      osMecanicoId !== '' ||
+      osKmAtual !== (novaOsRapida.veiculo.km_atual ? String(novaOsRapida.veiculo.km_atual) : ''));
+
+  useEffect(() => {
+    if (!fichaAberta && !veiculoEmEdicao && !novaOsRapida) setSaidaPendente(null);
+  }, [fichaAberta, veiculoEmEdicao, novaOsRapida]);
+
+  // Esc, voltar do Android e Cancelar: com dados digitados, pede confirmação em vez de descartar em silêncio
+  const sairDaFolha = (sujo: boolean, fechar: () => void) => {
+    if (sujo) setSaidaPendente(() => fechar);
+    else fechar();
+  };
+  const fecharFicha = () => {
+    setSaidaPendente(null);
+    setFichaAberta(false);
+  };
+  const fecharEdicaoVeiculo = () => {
+    setSaidaPendente(null);
+    setVeiculoEmEdicao(null);
+  };
+  const fecharOsRapida = () => {
+    setSaidaPendente(null);
+    setNovaOsRapida(null);
+  };
+
+  const confirmarDescarte = saidaPendente && (
+    <div
+      role="alert"
+      ref={(el) => el?.scrollIntoView({ block: 'nearest' })}
+      className="space-y-3 rounded-xl bg-warning/15 p-4"
+    >
+      <p className="text-sm font-medium text-ink">Descartar alterações? O que você digitou será perdido.</p>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button variante="secundario" onClick={() => setSaidaPendente(null)}>
+          Continuar editando
+        </Button>
+        <Button
+          variante="perigo"
+          onClick={() => {
+            const fechar = saidaPendente;
+            setSaidaPendente(null);
+            fechar();
+          }}
+        >
+          Descartar
+        </Button>
+      </div>
+    </div>
+  );
+
   const alertaErro = (mensagem: string) => (
     <p role="alert" className="flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
       <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -519,9 +589,11 @@ export function ClientesVeiculos({
       <PageHeader
         titulo="Clientes & Veículos"
         complemento={
-          <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle">{clientes.length}</span>
+          loading ? undefined : (
+            <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle">{clientes.length}</span>
+          )
         }
-        abaixo={<span className="tabular-nums">{veiculos.length} veículos cadastrados</span>}
+        abaixo={loading ? undefined : <span className="tabular-nums">{veiculos.length} veículos cadastrados</span>}
         acoes={
           <Button icone={Plus} onClick={abrirFichaNovoCliente}>
             Novo cliente
@@ -714,11 +786,12 @@ export function ClientesVeiculos({
         tamanho="lg"
         fecharNoFundo={false}
         titulo={clienteEmEdicao ? `Ficha de ${clienteEmEdicao.nome}` : 'Novo cliente e veículos'}
-        aoCancelar={() => setFichaAberta(false)}
+        aoCancelar={() => sairDaFolha(fichaSuja, fecharFicha)}
       >
         <p className="-mt-3 text-sm text-ink-muted">
           Cadastre ou atualize os dados do cliente e vincule quantos veículos precisar.
         </p>
+        {confirmarDescarte}
         {erro && alertaErro(erro)}
         <form onSubmit={handleSalvarFichaCliente} className="space-y-6">
           <fieldset className="space-y-4">
@@ -799,10 +872,12 @@ export function ClientesVeiculos({
                     <Button
                       variante="fantasma"
                       tamanho="sm"
-                      onClick={() => {
-                        setFichaAberta(false);
-                        abrirModalEditarVeiculo(v);
-                      }}
+                      onClick={() =>
+                        sairDaFolha(fichaSuja, () => {
+                          fecharFicha();
+                          abrirModalEditarVeiculo(v);
+                        })
+                      }
                     >
                       Editar carro
                     </Button>
@@ -947,7 +1022,7 @@ export function ClientesVeiculos({
           </fieldset>
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variante="secundario" onClick={() => setFichaAberta(false)}>
+            <Button variante="secundario" onClick={() => sairDaFolha(fichaSuja, fecharFicha)}>
               Cancelar
             </Button>
             <Button type="submit" carregando={salvandoFicha}>
@@ -963,9 +1038,10 @@ export function ClientesVeiculos({
         tamanho="lg"
         fecharNoFundo={false}
         titulo={veiculoEmEdicao ? `Editar Veículo — ${veiculoEmEdicao.placa}` : ''}
-        aoCancelar={() => setVeiculoEmEdicao(null)}
+        aoCancelar={() => sairDaFolha(veiculoSujo, fecharEdicaoVeiculo)}
       >
         <p className="-mt-3 text-sm text-ink-muted">Atualize placa, modelo, cor, ano ou quilometragem do veículo.</p>
+        {confirmarDescarte}
         {erro && alertaErro(erro)}
         <form onSubmit={handleSalvarEdicaoVeiculo} className="space-y-6">
           <div className="grid grid-cols-6 gap-4">
@@ -1077,7 +1153,7 @@ export function ClientesVeiculos({
           </div>
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variante="secundario" onClick={() => setVeiculoEmEdicao(null)}>
+            <Button variante="secundario" onClick={() => sairDaFolha(veiculoSujo, fecharEdicaoVeiculo)}>
               Cancelar
             </Button>
             <Button type="submit" carregando={salvandoVeiculoEdit}>
@@ -1158,7 +1234,7 @@ export function ClientesVeiculos({
         aberto={novaOsRapida !== null}
         fecharNoFundo={false}
         titulo="Abrir Ordem de Serviço"
-        aoCancelar={() => setNovaOsRapida(null)}
+        aoCancelar={() => sairDaFolha(osSuja, fecharOsRapida)}
       >
         {novaOsRapida && (
           <>
@@ -1169,6 +1245,7 @@ export function ClientesVeiculos({
                 Cliente: <span className="font-medium text-ink">{novaOsRapida.cliente.nome}</span>
               </span>
             </div>
+            {confirmarDescarte}
             {erro && alertaErro(erro)}
             <form onSubmit={handleConfirmarNovaOsRapida} className="space-y-4">
               <Field rotulo="KM Atual na Entrada">
@@ -1211,7 +1288,7 @@ export function ClientesVeiculos({
                 />
               </Field>
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <Button variante="secundario" onClick={() => setNovaOsRapida(null)}>
+                <Button variante="secundario" onClick={() => sairDaFolha(osSuja, fecharOsRapida)}>
                   Cancelar
                 </Button>
                 <Button type="submit" carregando={criandoOsRapida}>
