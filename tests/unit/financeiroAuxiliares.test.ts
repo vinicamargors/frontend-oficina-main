@@ -60,7 +60,9 @@ describe('intervaloDoAtalho no calendário local (America/Sao_Paulo)', () => {
     process.env.TZ = 'America/Sao_Paulo';
   });
   afterAll(() => {
-    process.env.TZ = tzOriginal;
+    // `process.env.TZ = undefined` gravaria a string "undefined" (fuso inválido, vira UTC) para os testes seguintes
+    if (tzOriginal === undefined) delete process.env.TZ;
+    else process.env.TZ = tzOriginal;
   });
   afterEach(() => {
     vi.useRealTimers();
