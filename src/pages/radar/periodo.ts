@@ -1,15 +1,13 @@
+import { dataLocalISO } from '../../lib/data';
+
 export type Preset = '7' | '14' | '30';
 export type Periodo = { tipo: Preset } | { tipo: 'custom'; de: string; ate: string };
 
 export const CHAVE_PERIODO = 'mecanify_radar_periodo';
 export const PRESETS: Preset[] = ['7', '14', '30'];
 
-const dois = (n: number) => String(n).padStart(2, '0');
-
 /** Data no calendário LOCAL como `AAAA-MM-DD` (o formato dos filtros da tela de Ordens). Nunca usa UTC. */
-export function dataLocalISO(d: Date): string {
-  return `${d.getFullYear()}-${dois(d.getMonth() + 1)}-${dois(d.getDate())}`;
-}
+export { dataLocalISO };
 
 function deISO(iso: string): Date {
   const [a, m, d] = iso.split('-').map(Number);

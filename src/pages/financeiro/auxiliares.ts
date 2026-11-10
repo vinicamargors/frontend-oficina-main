@@ -1,5 +1,5 @@
 import type { StatusTransacao, TipoTransacao } from '../../types';
-import { dataLocalISO } from '../radar/periodo';
+import { dataLocalISO } from '../../lib/data';
 
 export type AtalhoPeriodo = 'HOJE' | '7D' | '30D' | 'MES_ATUAL' | 'MES_ANTERIOR' | 'ANO_ATUAL';
 
