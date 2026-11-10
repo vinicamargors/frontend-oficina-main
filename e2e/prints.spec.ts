@@ -51,3 +51,25 @@ test('print shell (menu e barra)', async ({ page }, info) => {
     await page.screenshot({ path: join(PASTA, `shell-${tema}-${largura}-mais.png`), animations: 'disabled' });
   }
 });
+
+// Login em cada modo: `login-<entrar|criar-conta|recuperar>-<tema>-<largura>.png`.
+test('print login (entrar, criar conta, recuperar)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await page.addInitScript(([k, v]) => localStorage.setItem(k, v), ['mecanify_tema', tema]);
+  await abrirTela(page, 'login');
+  const tirar = (nome: string) =>
+    page.screenshot({ path: join(PASTA, `login-${nome}-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+
+  await tirar('entrar');
+  await page.getByRole('tab', { name: 'Criar conta' }).click();
+  await page.getByRole('heading', { name: 'Cadastrar nova oficina' }).waitFor();
+  await tirar('criar-conta');
+  await page.getByRole('tab', { name: 'Entrar' }).click();
+  await page.getByRole('button', { name: 'Esqueci minha senha' }).click();
+  await page.getByRole('heading', { name: 'Recuperar senha' }).waitFor();
+  await tirar('recuperar');
+  exigirRedeCompleta(page);
+});
