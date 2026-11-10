@@ -547,6 +547,18 @@ export function Estoque({ empresaId }: EstoqueProps) {
     else fecharModalItem();
   };
 
+  // Folha de categorias: nome digitado e ainda não criado também pede confirmação antes de sumir
+  const fecharCategorias = () => {
+    setSaidaPendente(null);
+    setCategoriaParaExcluir(null);
+    setNovaCategoriaNome('');
+    setMostrarModalCategorias(false);
+  };
+  const sairDasCategorias = () => {
+    if (novaCategoriaNome.trim()) setSaidaPendente(() => fecharCategorias);
+    else fecharCategorias();
+  };
+
   const alertaErro = (mensagem: string) => (
     <p role="alert" className="flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
       <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -957,11 +969,9 @@ export function Estoque({ empresaId }: EstoqueProps) {
       <Folha
         aberto={mostrarModalCategorias}
         titulo="Gerenciar categorias"
-        aoCancelar={() => {
-          setCategoriaParaExcluir(null);
-          setMostrarModalCategorias(false);
-        }}
+        aoCancelar={sairDasCategorias}
       >
+        {confirmarDescarte}
         <form onSubmit={handleAdicionarCategoria} className="flex items-end gap-2">
           <div className="flex-1">
             <Field rotulo="Nome da nova categoria">
@@ -1024,13 +1034,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         </ul>
 
         <div className="flex justify-end">
-          <Button
-            variante="secundario"
-            onClick={() => {
-              setCategoriaParaExcluir(null);
-              setMostrarModalCategorias(false);
-            }}
-          >
+          <Button variante="secundario" onClick={sairDasCategorias}>
             Fechar
           </Button>
         </div>

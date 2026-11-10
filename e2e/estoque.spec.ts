@@ -314,6 +314,32 @@ test.describe('categorias', () => {
   });
 });
 
+test.describe('categorias: nome digitado e não criado', () => {
+  test('Esc com nome digitado pergunta "Descartar alterações?"; vazio fecha direto', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    const d = page.getByRole('dialog', { name: 'Gerenciar categorias' });
+    await page.keyboard.press('Escape');
+    await expect(d).toHaveCount(0);
+
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    await d.getByLabel(/Nome da nova categoria/).fill('Suspensão');
+    await page.keyboard.press('Escape');
+    await expect(d).toBeVisible();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await d.getByRole('button', { name: 'Continuar editando' }).click();
+    await expect(d.getByLabel(/Nome da nova categoria/)).toHaveValue('Suspensão');
+
+    await d.getByRole('button', { name: 'Fechar' }).click();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    await expect(d).toHaveCount(0);
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    await expect(d.getByLabel(/Nome da nova categoria/)).toHaveValue('');
+  });
+});
+
 test.describe('estados', () => {
   test('sem peças: estado vazio com chamada para cadastrar', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
