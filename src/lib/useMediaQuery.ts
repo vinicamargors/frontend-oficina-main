@@ -14,3 +14,11 @@ export function useMediaQuery(consulta: string): boolean {
   }, [consulta]);
   return casa;
 }
+
+/**
+ * Layout de celular/tablet: o complemento exato do `lg` do Tailwind (`min-width: 1024px`).
+ * `max-width: 1023px` deixaria de fora larguras fracionárias entre 1023 e 1024px (zoom).
+ */
+export function useCelular(): boolean {
+  return !useMediaQuery('(min-width: 1024px)');
+}

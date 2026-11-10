@@ -402,6 +402,48 @@ test.describe('celular: troca de etapa na bancada pede confirmação', () => {
   });
 });
 
+test.describe('bancada: etapa atual e confirmações pendentes', () => {
+  test('tocar na etapa que já está ativa não abre confirmação nem grava', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrirBancada(page, tema);
+    const atual = etapas(page).locator('[aria-current="step"]');
+    await expect(atual).toHaveAccessibleName('Em execução');
+    await atual.click();
+    await page.waitForTimeout(300);
+    await expect(folhaEtapa(page)).toHaveCount(0);
+    await expect(folha(page)).toHaveCount(0);
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('trocar de OS com "Mover para…" ou "Confirmar pagamento" aberto: a confirmação não reaparece na outra OS', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await abrirBancada(page, tema);
+    const outra = ordens.find((o) => o.id !== OS_BANCADA_ID)!;
+    const irPara = async (osId: string) => {
+      await page.evaluate((id) => {
+        window.history.pushState({}, '', `/?tab=os&osId=${id}`);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }, osId);
+      await expect(page.getByText(`OS #${osId.slice(0, 8).toUpperCase()}`)).toBeVisible();
+    };
+
+    let destino = outra.id;
+    if (largura < 1024) {
+      await etapas(page).getByRole('button', { name: 'Finalizado', exact: true }).click();
+      await expect(page.getByRole('dialog', { name: 'Mover para Finalizado?' })).toBeVisible();
+      await irPara(outra.id);
+      await expect(folhaEtapa(page)).toHaveCount(0);
+      destino = OS_BANCADA_ID;
+    }
+
+    await etapas(page).getByRole('button', { name: 'Pago / entregue', exact: true }).click();
+    await expect(folha(page)).toBeVisible();
+    await irPara(destino);
+    await expect(folha(page)).toHaveCount(0);
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+});
+
 test('celular: chips de etapa numa linha só, com rolagem só dentro da faixa', async ({ page }, info) => {
   const { tema, largura } = contextoDoProjeto(info);
   test.skip(largura >= 1024, 'só celular');

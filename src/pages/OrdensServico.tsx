@@ -44,7 +44,7 @@ import { FORMAS_PAGAMENTO } from './ordens/formasPagamento';
 import { ETAPAS_OS, mensagemEtapa } from './ordens/etapas';
 import { LinhaOrdem } from './ordens/LinhaOrdem';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
-import { useMediaQuery } from '../lib/useMediaQuery';
+import { useCelular } from '../lib/useMediaQuery';
 
 interface OrdensServicoProps {
   empresaId: string;
@@ -129,7 +129,7 @@ export function OrdensServico({
   // Folha obrigatória de forma de pagamento antes de marcar como PAGO
   const [pagamentoPendente, setPagamentoPendente] = useState<{ osId: string; total: number } | null>(null);
   // Celular: toda troca de etapa na bancada passa por "Mover para…?" (toque acidental não muda o status)
-  const celular = useMediaQuery('(max-width: 1023px)');
+  const celular = useCelular();
   const [etapaPendente, setEtapaPendente] = useState<{ osId: string; status: StatusOS } | null>(null);
 
   // Estado da OS aberta na Bancada
@@ -137,6 +137,12 @@ export function OrdensServico({
     initialOsId && initialOsId !== 'NOVA_OS' ? initialOsId : null
   );
   const [dossie, setDossie] = useState<OSDossie | null>(null);
+
+  // Confirmação aberta é da OS/tela em que foi pedida: trocou de OS ou saiu da bancada, ela some
+  useEffect(() => {
+    setEtapaPendente(null);
+    setPagamentoPendente(null);
+  }, [selectedOsId, view]);
   const [loadingDossie, setLoadingDossie] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [erroOperacao, setErroOperacao] = useState<string | null>(null);
@@ -2087,11 +2093,12 @@ export function OrdensServico({
                     <button
                       type="button"
                       aria-current={ativo ? 'step' : undefined}
-                      onClick={() =>
-                        st !== 'PAGO' && celular
-                          ? setEtapaPendente({ osId: os.id, status: st })
-                          : pedirMudancaStatus(os.id, st, os.total_geral)
-                      }
+                      onClick={() => {
+                        // A etapa atual já é esta: nada a confirmar nem gravar
+                        if (st === statusAtual) return;
+                        if (st !== 'PAGO' && celular) setEtapaPendente({ osId: os.id, status: st });
+                        else pedirMudancaStatus(os.id, st, os.total_geral);
+                      }}
                       className={`flex h-full min-h-11 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-center text-[0.8125rem] font-medium leading-tight sm:flex-row sm:gap-1.5 sm:rounded-full sm:px-3 sm:py-1.5 sm:text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                         ativo
                           ? classe
