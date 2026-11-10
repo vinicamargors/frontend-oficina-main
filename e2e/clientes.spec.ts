@@ -121,6 +121,51 @@ test.describe('ações do cliente (menu)', () => {
     await expect(page.getByRole('menu')).toHaveCount(0);
   });
 
+  test('Tab fecha o menu e o foco segue adiante; escolher um item devolve o foco ao gatilho', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    const gatilho = linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` });
+    await gatilho.click();
+    await expect(page.getByRole('menuitem').first()).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    expect(await page.evaluate(() => document.activeElement === document.body || document.activeElement?.getAttribute('role') === 'menuitem')).toBe(false);
+
+    await gatilho.click();
+    await page.getByRole('menuitem', { name: /Editar ficha/ }).click();
+    const d = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
+    await expect(d).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(d).toBeHidden();
+    await expect(gatilho).toBeFocused();
+  });
+
+  test('o menu reavalia o espaço (variável --barra-inferior-h) ao rolar/redimensionar com ele aberto', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    const gatilho = linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` });
+    await gatilho.click();
+    const menu = page.getByRole('menu');
+    const acimaDoGatilho = async () => {
+      const m = (await menu.boundingBox())!;
+      const g = (await gatilho.boundingBox())!;
+      return m.y + m.height <= g.y + 1;
+    };
+    const definirReserva = (v: string | null) =>
+      page.evaluate((valor) => {
+        const raiz = document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!;
+        if (valor === null) raiz.style.removeProperty('--barra-inferior-h');
+        else raiz.style.setProperty('--barra-inferior-h', valor);
+      }, v);
+    expect(await acimaDoGatilho()).toBe(false);
+    await definirReserva('900px'); // reserva real maior que o espaço abaixo
+    await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
+    await expect.poll(acimaDoGatilho).toBe(true);
+    await definirReserva('0px');
+    await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+    await expect.poll(acimaDoGatilho).toBe(false);
+  });
+
   test('editar ficha envia PUT com os dados novos', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     const escritas = gravarEscritas(page);
