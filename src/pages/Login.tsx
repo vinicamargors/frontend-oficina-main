@@ -371,7 +371,7 @@ export function Login() {
 
       <main
         id="conteudo-principal"
-        className="flex min-h-dvh flex-col px-4 pb-8 pt-3 sm:px-8 lg:min-h-0 lg:justify-center lg:px-12"
+        className="relative flex min-h-dvh flex-col px-4 pb-8 pt-3 sm:px-8 lg:min-h-0 lg:justify-center lg:px-12"
       >
         <div className="mx-auto flex w-full max-w-md items-center justify-between pb-4 lg:hidden">
           <Logo tamanho={32} legenda />
@@ -501,7 +501,7 @@ export function Login() {
                   variante="fantasma"
                   tamanho="sm"
                   icone={ArrowLeft}
-                  className="self-start"
+                  className="-ml-3 self-start"
                   onClick={() => switchMode("login")}
                 >
                   Voltar para o login
@@ -546,7 +546,7 @@ export function Login() {
               >
                 {mode === "cadastro" && (
                   <>
-                    <Field rotulo="Nome da oficina" erro={erroDe("oficina")}>
+                    <Field rotulo="Nome da oficina" erro={erroDe("oficina")} anunciar>
                       <input
                         ref={oficinaInputRef}
                         name="organization"
@@ -559,7 +559,7 @@ export function Login() {
                         className={classeInput}
                       />
                     </Field>
-                    <Field rotulo="Seu nome" erro={erroDe("nome")}>
+                    <Field rotulo="Seu nome" erro={erroDe("nome")} anunciar>
                       <input
                         ref={nomeInputRef}
                         name="name"
@@ -588,7 +588,7 @@ export function Login() {
                 )}
 
                 {mode !== "nova-senha" && (
-                  <Field rotulo="E-mail" erro={erroDe("email")}>
+                  <Field rotulo="E-mail" erro={erroDe("email")} anunciar>
                     <input
                       ref={emailInputRef}
                       name="email"
@@ -607,54 +607,56 @@ export function Login() {
                 )}
 
                 {mode !== "recuperar" && (
-                  <div className="relative">
-                    <Field
-                      rotulo={mode === "nova-senha" ? "Nova senha" : "Senha"}
-                      dica={
-                        mode !== "login" ? "Mínimo de 6 caracteres." : undefined
-                      }
-                      erro={erroDe("senha")}
-                    >
-                      <input
-                        ref={senhaInputRef}
-                        name="password"
-                        type={mostrarSenha ? "text" : "password"}
-                        autoComplete={
-                          mode === "login" ? "current-password" : "new-password"
+                  <Field
+                    rotulo={mode === "nova-senha" ? "Nova senha" : "Senha"}
+                    dica={
+                      mode !== "login" ? "Mínimo de 6 caracteres." : undefined
+                    }
+                    erro={erroDe("senha")}
+                    anunciar
+                    adorno={
+                      <button
+                        type="button"
+                        onClick={() => setMostrarSenha((v) => !v)}
+                        aria-label={
+                          mostrarSenha ? "Ocultar senha" : "Mostrar senha"
                         }
-                        required
-                        minLength={6}
-                        value={senha}
-                        onChange={(e) => setSenha(e.target.value)}
-                        placeholder={
-                          mode === "nova-senha"
-                            ? "Digite a nova senha"
-                            : "Digite sua senha"
-                        }
-                        className={`${classeInput} pr-12`}
-                      />
-                    </Field>
-                    <button
-                      type="button"
-                      onClick={() => setMostrarSenha((v) => !v)}
-                      aria-label={
-                        mostrarSenha ? "Ocultar senha" : "Mostrar senha"
+                        className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      >
+                        {mostrarSenha ? (
+                          <EyeOff className="h-5 w-5" aria-hidden="true" />
+                        ) : (
+                          <Eye className="h-5 w-5" aria-hidden="true" />
+                        )}
+                      </button>
+                    }
+                  >
+                    <input
+                      ref={senhaInputRef}
+                      name="password"
+                      type={mostrarSenha ? "text" : "password"}
+                      autoComplete={
+                        mode === "login" ? "current-password" : "new-password"
                       }
-                      className="absolute right-0 top-[26px] flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                    >
-                      {mostrarSenha ? (
-                        <EyeOff className="h-5 w-5" aria-hidden="true" />
-                      ) : (
-                        <Eye className="h-5 w-5" aria-hidden="true" />
-                      )}
-                    </button>
-                  </div>
+                      required
+                      minLength={6}
+                      value={senha}
+                      onChange={(e) => setSenha(e.target.value)}
+                      placeholder={
+                        mode === "nova-senha"
+                          ? "Digite a nova senha"
+                          : "Digite sua senha"
+                      }
+                      className={`${classeInput} pr-12`}
+                    />
+                  </Field>
                 )}
 
                 {mode === "nova-senha" && (
                   <Field
                     rotulo="Repita a nova senha"
                     erro={erroDe("confirmar")}
+                    anunciar
                   >
                     <input
                       ref={confirmarSenhaInputRef}

@@ -90,4 +90,51 @@ test.describe('login', () => {
     await expect(page.getByLabel('Nova senha', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Repita a nova senha')).toBeVisible();
   });
+
+  test('erros por campo são anunciados (role alert) e o foco vai ao primeiro campo inválido', async ({ page }) => {
+    await abrir(page);
+    await page.getByRole('button', { name: 'Entrar no Mecanify' }).click();
+    const alerta = page.getByRole('alert').filter({ hasText: 'e-mail válido' });
+    await expect(alerta).toHaveCount(1);
+    await expect(page.getByLabel('E-mail')).toBeFocused();
+    await page.getByLabel('E-mail').fill('a@b.com');
+    await page.getByRole('button', { name: 'Entrar no Mecanify' }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'pelo menos 6' })).toHaveCount(1);
+    await expect(page.getByLabel('Senha', { exact: true })).toBeFocused();
+  });
+
+  test('toggle de senha fica sobre o campo, com ou sem dica/erro', async ({ page }) => {
+    await abrir(page, 'cadastro');
+    const centro = async () => {
+      const campo = await page.getByLabel('Senha', { exact: true }).boundingBox();
+      const botao = await page.getByRole('button', { name: 'Mostrar senha' }).boundingBox();
+      expect(Math.abs(campo!.y + campo!.height / 2 - (botao!.y + botao!.height / 2))).toBeLessThanOrEqual(1);
+      expect(Math.abs(campo!.x + campo!.width - (botao!.x + botao!.width))).toBeLessThanOrEqual(1);
+    };
+    await centro();
+    await page.getByLabel('Nome da oficina').fill('Oficina');
+    await page.getByLabel('Seu nome').fill('Carlos');
+    await page.getByLabel('E-mail').fill('a@b.com');
+    await page.getByRole('button', { name: 'Criar conta' }).last().click();
+    await expect(page.getByRole('alert').filter({ hasText: 'pelo menos 6' })).toBeVisible();
+    await centro();
+  });
+
+  test('ThemeToggle de desktop tem ancestral posicionado (rola junto com a página)', async ({ page }, info) => {
+    test.skip(contextoDoProjeto(info).largura < 1024, 'só desktop');
+    await abrir(page);
+    const ancestral = await page.evaluate(() => {
+      const el = [...document.querySelectorAll('main > div')].find((d) => getComputedStyle(d).position === 'absolute') as HTMLElement | undefined;
+      return el?.offsetParent?.tagName ?? null;
+    });
+    expect(ancestral).toBe('MAIN');
+  });
+
+  test('"Voltar para o login" alinha rente à borda do título', async ({ page }) => {
+    await abrir(page, 'recuperar');
+    const voltar = page.getByRole('button', { name: 'Voltar para o login' });
+    const icone = await voltar.locator('svg').boundingBox();
+    const titulo = await page.getByRole('heading', { level: 1 }).boundingBox();
+    expect(Math.abs(icone!.x - titulo!.x)).toBeLessThanOrEqual(1);
+  });
 });

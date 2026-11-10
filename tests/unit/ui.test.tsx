@@ -56,6 +56,20 @@ describe('Field', () => {
     const id = input.getAttribute('aria-describedby')!;
     expect(document.getElementById(id)?.textContent).toBe('Placa inválida');
   });
+  it('anunciar: erro vira role=alert; sem a opção, não', () => {
+    const { rerender } = render(
+      <Field rotulo="Placa" erro="Placa inválida">
+        <input />
+      </Field>,
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    rerender(
+      <Field rotulo="Placa" erro="Placa inválida" anunciar>
+        <input />
+      </Field>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Placa inválida');
+  });
 });
 
 describe('PlateChip', () => {
