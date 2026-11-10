@@ -11,30 +11,31 @@ import {
   StatusTransacao,
 } from '../types';
 import {
-  DollarSign,
-  TrendingUp,
-  Calendar,
   Download,
   RefreshCw,
   Plus,
-  ArrowUpRight,
-  ArrowDownRight,
   CheckCircle2,
-  Clock,
   AlertTriangle,
-  CreditCard,
-  PieChart,
-  Users,
-  Wrench,
-  Car,
-  FileSpreadsheet,
-  Check,
-  X,
-  Pencil,
   Trash2,
-  Search,
   ShieldAlert,
 } from 'lucide-react';
+import { Button, CLASSE_CAMPO, Field, PageHeader, Panel, Tabs, type TabItem } from '../components/ui';
+import { Folha } from '../components/Folha';
+import {
+  formatBRL,
+  formatData,
+  intervaloDoAtalho,
+  rotuloCategoriaFinanceira,
+  rotuloPeriodo,
+  valorComSinal,
+  type AtalhoPeriodo,
+} from './financeiro/auxiliares';
+import { SeletorPeriodo } from './financeiro/SeletorPeriodo';
+import { ResumoPeriodo } from './financeiro/ResumoPeriodo';
+import { AbaBalanco } from './financeiro/AbaBalanco';
+import { AbaDre } from './financeiro/AbaDre';
+import { AbaContas } from './financeiro/AbaContas';
+import { AbaBi } from './financeiro/AbaBi';
 
 interface FinanceiroProps {
   empresaId: string;
@@ -72,19 +73,18 @@ const FORMAS_PAGAMENTO = [
   'TED / Transferência',
 ];
 
-const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    Number(valor || 0)
-  );
+const ABAS: TabItem[] = [
+  { id: 'balanco', rotulo: 'Balanço' },
+  { id: 'dre', rotulo: 'DRE' },
+  { id: 'contas', rotulo: 'Contas' },
+  { id: 'bi', rotulo: 'BI' },
+];
 
-const formatData = (iso?: string | null) => {
-  if (!iso) return '—';
-  try {
-    const [y, m, d] = iso.slice(0, 10).split('-');
-    return `${d}/${m}/${y}`;
-  } catch {
-    return iso.slice(0, 10);
-  }
+const NOME_ABA: Record<TabFinanceiro, string> = {
+  balanco: 'o balanço',
+  dre: 'a DRE',
+  contas: 'os lançamentos',
+  bi: 'o BI',
 };
 
 export function Financeiro({ empresaId }: FinanceiroProps) {
@@ -147,42 +147,21 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   const [itemParaExcluir, setItemParaExcluir] = useState<TransacaoFinanceira | null>(null);
   const [excluindo, setExcluindo] = useState(false);
 
-  // Atalhos de Período
-  const aplicarAtalhoPeriodo = (
-    atalho: 'HOJE' | '7D' | '30D' | 'MES_ATUAL' | 'MES_ANTERIOR' | 'ANO_ATUAL'
-  ) => {
-    setPeriodoAtalho(atalho);
-    const hoje = new Date();
-    const formatYMD = (d: Date) => d.toISOString().slice(0, 10);
+  // Confirmação de Baixa (nenhuma baixa com um toque só)
+  const [itemParaBaixa, setItemParaBaixa] = useState<TransacaoFinanceira | null>(null);
+  const [baixando, setBaixando] = useState(false);
 
-    if (atalho === 'HOJE') {
-      const hStr = formatYMD(hoje);
-      setDataInicio(hStr);
-      setDataFim(hStr);
-    } else if (atalho === '7D') {
-      const d = new Date();
-      d.setDate(d.getDate() - 7);
-      setDataInicio(formatYMD(d));
-      setDataFim(formatYMD(hoje));
-    } else if (atalho === '30D') {
-      const d = new Date();
-      d.setDate(d.getDate() - 30);
-      setDataInicio(formatYMD(d));
-      setDataFim(formatYMD(hoje));
-    } else if (atalho === 'MES_ATUAL') {
-      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-      setDataInicio(formatYMD(primeiroDia));
-      setDataFim(formatYMD(hoje));
-    } else if (atalho === 'MES_ANTERIOR') {
-      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
-      const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
-      setDataInicio(formatYMD(primeiroDia));
-      setDataFim(formatYMD(ultimoDia));
-    } else if (atalho === 'ANO_ATUAL') {
-      const primeiroDia = new Date(hoje.getFullYear(), 0, 1);
-      setDataInicio(formatYMD(primeiroDia));
-      setDataFim(formatYMD(hoje));
-    }
+  // Formulário: erro de validação na própria folha e confirmação de descarte com dados digitados
+  const [formErro, setFormErro] = useState<string | null>(null);
+  const [formInicial, setFormInicial] = useState('');
+  const [descartePendente, setDescartePendente] = useState(false);
+
+  // Atalhos de Período
+  const aplicarAtalhoPeriodo = (atalho: AtalhoPeriodo) => {
+    setPeriodoAtalho(atalho);
+    const { inicio, fim } = intervaloDoAtalho(atalho);
+    setDataInicio(inicio);
+    setDataFim(fim);
   };
 
   const dispararFeedback = (msg: string) => {
@@ -314,43 +293,110 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     return lista;
   }, [transacoes, filtroTipoTransacao, filtroStatusTransacao, buscaTransacao]);
 
+  // Retrato dos campos do formulário, para saber se há algo digitado a perder
+  const retratoFormulario = (c: {
+    tipo: TipoTransacao;
+    descricao: string;
+    categoria: string;
+    valor: string;
+    vencimento: string;
+    forma: string;
+    observacoes: string;
+    jaPago: boolean;
+  }) => JSON.stringify(c);
+
   // Modal Abrir Cadastro
   const abrirModalCadastroTransacao = (tipo: TipoTransacao) => {
+    const campos = {
+      tipo,
+      descricao: '',
+      categoria: tipo === 'DESPESA' ? 'ALUGUEL' : 'APORTE',
+      valor: '',
+      vencimento: new Date().toISOString().slice(0, 10),
+      forma: 'PIX',
+      observacoes: '',
+      jaPago: false,
+    };
     setTransacaoEmEdicao(null);
-    setFormTipo(tipo);
-    setFormDescricao('');
-    setFormCategoria(tipo === 'DESPESA' ? 'ALUGUEL' : 'APORTE');
-    setFormValor('');
-    setFormVencimento(new Date().toISOString().slice(0, 10));
-    setFormForma('PIX');
-    setFormObservacoes('');
-    setFormJaPago(false);
+    setFormTipo(campos.tipo);
+    setFormDescricao(campos.descricao);
+    setFormCategoria(campos.categoria);
+    setFormValor(campos.valor);
+    setFormVencimento(campos.vencimento);
+    setFormForma(campos.forma);
+    setFormObservacoes(campos.observacoes);
+    setFormJaPago(campos.jaPago);
+    setFormInicial(retratoFormulario(campos));
+    setFormErro(null);
+    setErro(null);
     setModalTransacaoAberto(true);
   };
 
   const abrirModalEdicaoTransacao = (t: TransacaoFinanceira) => {
+    const campos = {
+      tipo: t.tipo,
+      descricao: t.descricao,
+      categoria: t.categoria,
+      valor: String(t.valor),
+      vencimento: t.data_vencimento,
+      forma: t.forma_pagamento || 'PIX',
+      observacoes: t.observacoes || '',
+      jaPago: t.status === 'LIQUIDADO',
+    };
     setTransacaoEmEdicao(t);
-    setFormTipo(t.tipo);
-    setFormDescricao(t.descricao);
-    setFormCategoria(t.categoria);
-    setFormValor(String(t.valor));
-    setFormVencimento(t.data_vencimento);
-    setFormForma(t.forma_pagamento || 'PIX');
-    setFormObservacoes(t.observacoes || '');
-    setFormJaPago(t.status === 'LIQUIDADO');
+    setFormTipo(campos.tipo);
+    setFormDescricao(campos.descricao);
+    setFormCategoria(campos.categoria);
+    setFormValor(campos.valor);
+    setFormVencimento(campos.vencimento);
+    setFormForma(campos.forma);
+    setFormObservacoes(campos.observacoes);
+    setFormJaPago(campos.jaPago);
+    setFormInicial(retratoFormulario(campos));
+    setFormErro(null);
+    setErro(null);
     setModalTransacaoAberto(true);
+  };
+
+  // Troca de tipo no cadastro: mesma categoria padrão de quando o formulário abre com o tipo
+  const trocarTipoFormulario = (tipo: TipoTransacao) => {
+    setFormTipo(tipo);
+    setFormCategoria(tipo === 'DESPESA' ? 'ALUGUEL' : 'APORTE');
+  };
+
+  const formularioSujo =
+    modalTransacaoAberto &&
+    retratoFormulario({
+      tipo: formTipo,
+      descricao: formDescricao,
+      categoria: formCategoria,
+      valor: formValor,
+      vencimento: formVencimento,
+      forma: formForma,
+      observacoes: formObservacoes,
+      jaPago: formJaPago,
+    }) !== formInicial;
+
+  useEffect(() => {
+    if (!modalTransacaoAberto) setDescartePendente(false);
+  }, [modalTransacaoAberto]);
+
+  const sairDoFormulario = () => {
+    if (formularioSujo) setDescartePendente(true);
+    else setModalTransacaoAberto(false);
   };
 
   // Salvar Transação
   const handleSalvarTransacao = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErro(null);
     if (!formDescricao.trim()) {
-      alert('Informe a descrição.');
+      setFormErro('Informe a descrição.');
       return;
     }
     const val = parseFloat(formValor.replace(',', '.')) || 0;
     if (val <= 0) {
-      alert('Informe um valor válido maior que zero.');
+      setFormErro('Informe um valor válido maior que zero.');
       return;
     }
 
@@ -588,1098 +634,413 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     dispararFeedback(`Relatório ${tipoRelatorio} exportado com sucesso!`);
   };
 
+
+  // Dar baixa só depois da confirmação na folha (mesma chamada de antes)
+  const confirmarBaixa = async () => {
+    if (!itemParaBaixa) return;
+    setBaixando(true);
+    await handleLiquidar(itemParaBaixa);
+    setBaixando(false);
+    setItemParaBaixa(null);
+  };
+
+  const exportarAbaAtual = () => {
+    if (activeTab === 'dre') handleExportarCsv('DRE');
+    else if (activeTab === 'contas') handleExportarCsv('CONTAS');
+    else if (activeTab === 'bi') handleExportarCsv('BI');
+    else handleExportarCsv('BALANCO');
+  };
+
+  const periodoTexto = rotuloPeriodo(periodoAtalho, dataInicio, dataFim);
+
+  const alertaErro = (mensagem: string) => (
+    <p role="alert" className="flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
+      <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span>{mensagem}</span>
+    </p>
+  );
+
   if (!canSeeFinanceiro) {
     return (
-      <div className="bg-surface border-2 border-danger rounded-lg p-6 sm:p-10 text-center space-y-4 max-w-xl mx-auto my-8">
-        <div className="w-16 h-16 rounded-lg bg-danger/15 border border-danger text-danger flex items-center justify-center mx-auto">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
-        <h2 className="text-xl sm:text-2xl font-semibold text-ink">
-          Acesso Restrito ao Módulo Financeiro
-        </h2>
-        <p className="text-sm text-ink-muted">
-          Este painel contém informações estratégicas, DRE, margens e dados contábeis da oficina.
-          Seu perfil ({user?.cargo}) não possui permissão para visualizar estes números.
-        </p>
+      <div>
+        <PageHeader titulo="Caixa & Financeiro" />
+        <Panel espaco="lg" className="mx-auto flex max-w-xl flex-col items-center gap-3 text-center">
+          <ShieldAlert className="h-10 w-10 text-danger" strokeWidth={1.5} aria-hidden="true" />
+          <h2 className="text-base font-semibold text-ink">Acesso restrito ao módulo financeiro</h2>
+          <p className="text-sm text-ink-muted">
+            Este painel contém informações estratégicas, DRE, margens e dados contábeis da oficina.
+            Seu perfil ({user?.cargo}) não possui permissão para visualizar estes números.
+          </p>
+        </Panel>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-4 max-w-7xl mx-auto pb-12">
-      {/* CABEÇALHO FINANCEIRO & BARRA GLOBAL DE PERÍODO */}
-      <header className="bg-surface border-2 border-line rounded-lg p-3.5 sm:p-5 space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-muted border-2 border-brand text-brand-ink flex items-center justify-center shrink-0">
-              <DollarSign className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight flex items-center gap-2">
-                <span>Gestão Financeira &amp; BI</span>
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-success/15 border border-success text-xs font-mono font-semibold text-success">
-                  DRE &bull; Balanço
-                </span>
-              </h1>
-              <p className="text-xs text-ink-subtle">
-                Controle de caixa, receitas, custos variáveis, contas a pagar e inteligência de oficina.
-              </p>
-            </div>
-          </div>
+  const categoriasDoTipo = formTipo === 'DESPESA' ? CATEGORIAS_DESPESA : CATEGORIAS_RECEITA;
+  // Categoria gravada fora da lista padrão (ex.: vinda do backend) continua visível e selecionada
+  const opcoesCategoria = categoriasDoTipo.includes(formCategoria)
+    ? categoriasDoTipo
+    : [formCategoria, ...categoriasDoTipo];
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
+  const baixaDespesa = itemParaBaixa?.tipo === 'DESPESA';
+
+  return (
+    <div>
+      <PageHeader
+        titulo="Caixa & Financeiro"
+        abaixo={
+          <span className="hidden sm:inline">
+            Caixa, contas a pagar e receber, DRE e indicadores da oficina.
+          </span>
+        }
+        acoes={
+          <>
+            <Button icone={Plus} onClick={() => abrirModalCadastroTransacao('DESPESA')}>
+              Novo lançamento
+            </Button>
+            <Button
+              variante="secundario"
+              icone={Download}
+              onClick={exportarAbaAtual}
+              title={`Exportar ${NOME_ABA[activeTab]} em CSV (Excel)`}
+              aria-label="Exportar CSV"
+            >
+              <span className="hidden sm:inline">Exportar CSV</span>
+            </Button>
+            <Button
+              variante="secundario"
+              icone={RefreshCw}
               onClick={carregarDados}
-              disabled={carregando}
+              carregando={carregando}
               title="Atualizar dados financeiros"
               aria-label="Atualizar dados financeiros"
-              className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-sunken hover:bg-muted border border-line text-ink-muted flex items-center justify-center cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${carregando ? 'animate-spin text-brand-ink' : ''}`}
-                aria-hidden="true"
-              />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (activeTab === 'dre') handleExportarCsv('DRE');
-                else if (activeTab === 'contas') handleExportarCsv('CONTAS');
-                else if (activeTab === 'bi') handleExportarCsv('BI');
-                else handleExportarCsv('BALANCO');
-              }}
-              title="Exportar dados da aba atual para CSV/Excel"
-              className="min-h-[40px] px-3 py-1.5 rounded-xl bg-sunken hover:bg-muted border border-line text-ink font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
-            >
-              <Download className="w-4 h-4 text-brand-ink" aria-hidden="true" />
-              <span>Exportar CSV</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => abrirModalCadastroTransacao('DESPESA')}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-danger-solid hover:bg-danger-solid text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-danger/40"
-            >
-              <ArrowDownRight className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
-              <span>+ Despesa</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => abrirModalCadastroTransacao('RECEITA')}
-              className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-success-solid hover:bg-success-solid text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-md shadow-success/40"
-            >
-              <ArrowUpRight className="w-4 h-4 stroke-[2.5]" aria-hidden="true" />
-              <span>+ Receita / Aporte</span>
-            </button>
-          </div>
-        </div>
-
-        {/* BARRA DE ATALHOS DE PERÍODO */}
-        <div className="pt-2 border-t border-line flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
-            {(
-              [
-                { id: 'HOJE', label: 'Hoje' },
-                { id: '7D', label: '7 Dias' },
-                { id: '30D', label: '30 Dias' },
-                { id: 'MES_ATUAL', label: 'Este Mês' },
-                { id: 'MES_ANTERIOR', label: 'Mês Anterior' },
-                { id: 'ANO_ATUAL', label: 'Ano Atual' },
-              ] as const
-            ).map((at) => (
-              <button
-                key={at.id}
-                type="button"
-                onClick={() => aplicarAtalhoPeriodo(at.id)}
-                className={`px-2.5 py-1 rounded-lg font-semibold shrink-0 cursor-pointer transition-colors ${
-                  periodoAtalho === at.id
-                    ? 'bg-muted text-ink'
-                    : 'bg-sunken text-ink-muted border border-line hover:bg-muted'
-                }`}
-              >
-                {at.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 font-mono text-xs text-ink-muted">
-            <Calendar className="w-3.5 h-3.5 text-brand-ink shrink-0" aria-hidden="true" />
-            <input
-              type="date"
-              value={dataInicio}
-              onChange={(e) => {
-                setDataInicio(e.target.value);
-                setPeriodoAtalho('CUSTOM');
-              }}
-              className="px-2 py-0.5 rounded bg-sunken border border-line text-ink text-xs"
             />
-            <span>até</span>
-            <input
-              type="date"
-              value={dataFim}
-              onChange={(e) => {
-                setDataFim(e.target.value);
-                setPeriodoAtalho('CUSTOM');
-              }}
-              className="px-2 py-0.5 rounded bg-sunken border border-line text-ink text-xs"
-            />
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      {/* FEEDBACK DE SUCESSO / ERRO */}
+      <SeletorPeriodo
+        atalho={periodoAtalho}
+        dataInicio={dataInicio}
+        dataFim={dataFim}
+        aoEscolherAtalho={aplicarAtalhoPeriodo}
+        aoPersonalizar={() => setPeriodoAtalho('CUSTOM')}
+        aoMudarInicio={(v) => {
+          setDataInicio(v);
+          setPeriodoAtalho('CUSTOM');
+        }}
+        aoMudarFim={(v) => {
+          setDataFim(v);
+          setPeriodoAtalho('CUSTOM');
+        }}
+      />
+
       <div aria-live="polite">
         {sucessoMsg && (
-          <div className="p-3 rounded-xl bg-success/15 border border-success text-success flex items-center gap-2 text-xs sm:text-sm font-semibold">
-            <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+          <p role="status" className="mb-4 flex items-center gap-2 rounded-xl bg-success/15 px-4 py-3 text-sm font-medium text-success">
+            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{sucessoMsg}</span>
-          </div>
-        )}
-        {erro && (
-          <div className="p-3 rounded-xl bg-danger/15 border border-danger text-danger flex items-center gap-2 text-xs sm:text-sm font-semibold">
-            <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
-            <span>{erro}</span>
-          </div>
+          </p>
         )}
       </div>
+      {erro && !modalTransacaoAberto && <div className="mb-4">{alertaErro(erro)}</div>}
 
-      {/* 4 ABAS PRINCIPAIS DO MÓDULO FINANCEIRO */}
-      <nav
-        aria-label="Abas Financeiras"
-        className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 bg-sunken p-1.5 rounded-lg border-2 border-line"
+      <ResumoPeriodo
+        periodo={periodoTexto}
+        carregando={carregando && !dadosFinanceiros}
+        lucroLiquido={resumoFinanceiro.lucroLiquidoReal}
+        margemLiquida={resumoFinanceiro.margemLiquida}
+        entradas={resumoFinanceiro.caixaTotal}
+        aReceber={resumoFinanceiro.totalAReceber}
+        despesasPagas={resumoFinanceiro.despesasPagas}
+        despesasPendentes={resumoFinanceiro.despesasPendentes}
+      />
+
+      <div className="mb-4">
+        <Tabs
+          itens={ABAS}
+          ativo={activeTab}
+          aoMudar={(id) => setActiveTab(id as TabFinanceiro)}
+          rotuloGrupo="Seções do financeiro"
+          idPainel="painel-financeiro"
+        />
+      </div>
+
+      <div role="tabpanel" id="painel-financeiro" aria-labelledby={`aba-${activeTab}`}>
+        {activeTab === 'balanco' && (
+          <AbaBalanco
+            caixaTotal={resumoFinanceiro.caixaTotal}
+            totalAReceber={resumoFinanceiro.totalAReceber}
+            patrimonioEstoque={patrimonioEstoque}
+            totalAtivo={resumoFinanceiro.totalAtivo}
+            totalPassivo={resumoFinanceiro.totalPassivo}
+            posicaoLiquida={resumoFinanceiro.posicaoLiquida}
+          />
+        )}
+
+        {activeTab === 'dre' && (
+          <AbaDre
+            periodo={periodoTexto}
+            receitaBrutaTotal={resumoFinanceiro.receitaBrutaTotal}
+            faturamentoOS={resumoFinanceiro.faturamentoOS}
+            receitasAvulsasRecebidas={resumoFinanceiro.receitasAvulsasRecebidas}
+            custoPecasOS={resumoFinanceiro.custoPecasOS}
+            lucroBrutoOperacional={resumoFinanceiro.lucroBrutoOperacional}
+            margemBruta={resumoFinanceiro.margemBruta}
+            despesasPagas={resumoFinanceiro.despesasPagas}
+            despesasPorCategoria={resumoFinanceiro.despesasPorCategoria}
+            lucroLiquidoReal={resumoFinanceiro.lucroLiquidoReal}
+            margemLiquida={resumoFinanceiro.margemLiquida}
+          />
+        )}
+
+        {activeTab === 'contas' && (
+          <AbaContas
+            totalNoPeriodo={transacoes.length}
+            transacoes={transacoesFiltradas}
+            busca={buscaTransacao}
+            filtroTipo={filtroTipoTransacao}
+            filtroStatus={filtroStatusTransacao}
+            aoBuscar={setBuscaTransacao}
+            aoFiltrarTipo={setFiltroTipoTransacao}
+            aoFiltrarStatus={setFiltroStatusTransacao}
+            aoLimparFiltros={() => {
+              setBuscaTransacao('');
+              setFiltroTipoTransacao('TODAS');
+              setFiltroStatusTransacao('TODAS');
+            }}
+            aoNovo={() => abrirModalCadastroTransacao('DESPESA')}
+            aoDarBaixa={setItemParaBaixa}
+            aoEditar={abrirModalEdicaoTransacao}
+            aoExcluir={setItemParaExcluir}
+          />
+        )}
+
+        {activeTab === 'bi' && <AbaBi ticketMedio={dadosFinanceiros?.ticket_medio} bi={biData} />}
+      </div>
+
+      {/* FOLHA: CADASTRO / EDIÇÃO DE LANÇAMENTO (DESPESA OU RECEITA AVULSA) */}
+      <Folha
+        aberto={modalTransacaoAberto}
+        tamanho="lg"
+        fecharNoFundo={false}
+        titulo={transacaoEmEdicao ? 'Editar lançamento' : 'Novo lançamento'}
+        aoCancelar={sairDoFormulario}
       >
-        <button
-          type="button"
-          onClick={() => setActiveTab('balanco')}
-          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-            activeTab === 'balanco'
-              ? 'bg-brand text-on-brand'
-              : 'text-ink-muted hover:bg-muted'
-          }`}
-        >
-          <PieChart className="w-4 h-4" aria-hidden="true" />
-          <span>Balanço &amp; Posição</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('dre')}
-          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-            activeTab === 'dre'
-              ? 'bg-brand text-on-brand'
-              : 'text-ink-muted hover:bg-muted'
-          }`}
-        >
-          <FileSpreadsheet className="w-4 h-4" aria-hidden="true" />
-          <span>DRE Operacional</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('contas')}
-          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-            activeTab === 'contas'
-              ? 'bg-brand text-on-brand'
-              : 'text-ink-muted hover:bg-muted'
-          }`}
-        >
-          <CreditCard className="w-4 h-4" aria-hidden="true" />
-          <span>Contas a Pagar &amp; Receber</span>
-          {resumoFinanceiro.despesasPendentes > 0 && (
-            <span className="w-2 h-2 rounded-full bg-danger shrink-0" />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('bi')}
-          className={`min-h-[44px] rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-            activeTab === 'bi'
-              ? 'bg-brand text-on-brand'
-              : 'text-ink-muted hover:bg-muted'
-          }`}
-        >
-          <TrendingUp className="w-4 h-4" aria-hidden="true" />
-          <span>BI &amp; Inteligência</span>
-        </button>
-      </nav>
-
-      {/* ========================================================
-          ABA 1: BALANÇO PATRIMONIAL & FOTOGRAFIA DO MOMENTO
-          ======================================================== */}
-      {activeTab === 'balanco' && (
-        <div className="space-y-4">
-          {/* 4 CARDS EXECUTIVOS NO TOPO (2x2 NO MOBILE) */}
-          <section
-            aria-label="Indicadores Financeiros Executivos"
-            className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3"
-          >
-            <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-ink-subtle text-xs font-semibold">
-                <span>Caixa Realizado</span>
-                <ArrowUpRight className="w-4 h-4 text-success" aria-hidden="true" />
-              </div>
-              <div className="text-lg sm:text-2xl font-semibold font-mono text-success mt-1 tabular-nums">
-                {formatBRL(resumoFinanceiro.caixaTotal)}
-              </div>
-              <div className="text-xs text-ink-subtle">OS Pagas + Aportes recebidos</div>
-            </div>
-
-            <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-ink-subtle text-xs font-semibold">
-                <span>A Receber (Projetado)</span>
-                <Clock className="w-4 h-4 text-info" aria-hidden="true" />
-              </div>
-              <div className="text-lg sm:text-2xl font-semibold font-mono text-info mt-1 tabular-nums">
-                {formatBRL(resumoFinanceiro.totalAReceber)}
-              </div>
-              <div className="text-xs text-ink-subtle">OS em execução / a faturar</div>
-            </div>
-
-            <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 flex flex-col justify-between">
-              <div className="flex items-center justify-between text-ink-subtle text-xs font-semibold">
-                <span>Despesas Pagas</span>
-                <ArrowDownRight className="w-4 h-4 text-danger" aria-hidden="true" />
-              </div>
-              <div className="text-lg sm:text-2xl font-semibold font-mono text-danger mt-1 tabular-nums">
-                {formatBRL(resumoFinanceiro.despesasPagas)}
-              </div>
-              <div className="text-xs text-ink-subtle">
-                Pendente: {formatBRL(resumoFinanceiro.despesasPendentes)}
-              </div>
-            </div>
-
-            <div className="bg-surface border-2 border-brand rounded-xl p-3 sm:p-4 flex flex-col justify-between shadow-lg shadow-info/20">
-              <div className="flex items-center justify-between text-brand-ink text-xs font-semibold">
-                <span>Lucro Líquido Real</span>
-                <TrendingUp className="w-4 h-4 text-brand-ink" aria-hidden="true" />
-              </div>
-              <div className="text-lg sm:text-2xl font-semibold font-mono text-ink mt-1 tabular-nums">
-                {formatBRL(resumoFinanceiro.lucroLiquidoReal)}
-              </div>
-              <div className="text-xs text-success font-semibold">
-                Margem Líquida: {resumoFinanceiro.margemLiquida.toFixed(1)}%
-              </div>
-            </div>
-          </section>
-
-          {/* ESTRUTURA DO BALANÇO PATRIMONIAL ATIVO VS PASSIVO */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* ATIVO CIRCULANTE */}
-            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-line pb-2.5">
-                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-success" />
-                  <span>Ativo Circulante (Bens e Direitos)</span>
-                </h3>
-                <span className="font-mono font-semibold text-sm text-success">
-                  {formatBRL(resumoFinanceiro.totalAtivo)}
-                </span>
-              </div>
-
-              <div className="space-y-2 text-xs sm:text-sm font-mono tabular-nums">
-                <div className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between">
-                  <span className="text-ink-muted font-sans">Caixa &amp; Bancos Realizado</span>
-                  <strong className="text-ink">{formatBRL(resumoFinanceiro.caixaTotal)}</strong>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between">
-                  <span className="text-ink-muted font-sans">Contas a Receber (OS em Aberto)</span>
-                  <strong className="text-info">{formatBRL(resumoFinanceiro.totalAReceber)}</strong>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between">
-                  <span className="text-ink-muted font-sans">Patrimônio em Peças (Estoque Almoxarifado)</span>
-                  <strong className="text-warning">{formatBRL(patrimonioEstoque)}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* PASSIVO CIRCULANTE & POSIÇÃO LÍQUIDA */}
-            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-line pb-2.5">
-                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-danger" />
-                  <span>Passivo Circulante (Obrigações)</span>
-                </h3>
-                <span className="font-mono font-semibold text-sm text-danger">
-                  {formatBRL(resumoFinanceiro.totalPassivo)}
-                </span>
-              </div>
-
-              <div className="space-y-2 text-xs sm:text-sm font-mono tabular-nums">
-                <div className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between">
-                  <span className="text-ink-muted font-sans">Contas a Pagar Pendentes / A Vencer</span>
-                  <strong className="text-danger">{formatBRL(resumoFinanceiro.despesasPendentes)}</strong>
-                </div>
-
-                <div className="p-3 rounded-xl bg-info/30 border-2 border-brand flex items-center justify-between mt-3">
-                  <div className="font-sans">
-                    <div className="text-xs font-semibold text-brand-ink uppercase tracking-wider">
-                      Posição Patrimonial Líquida
-                    </div>
-                    <div className="text-xs text-ink-muted mt-0.5">
-                      Ativo Circulante Total &minus; Passivo Pendente
-                    </div>
-                  </div>
-                  <strong className="text-lg sm:text-xl font-semibold text-ink">
-                    {formatBRL(resumoFinanceiro.posicaoLiquida)}
-                  </strong>
-                </div>
-              </div>
+        {descartePendente && (
+          <div role="alert" ref={(el) => el?.scrollIntoView({ block: 'nearest' })} className="space-y-3 rounded-xl bg-warning/15 p-4">
+            <p className="text-sm font-medium text-ink">Descartar alterações? O que você digitou será perdido.</p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variante="secundario" onClick={() => setDescartePendente(false)}>
+                Continuar editando
+              </Button>
+              <Button
+                variante="perigo"
+                onClick={() => {
+                  setDescartePendente(false);
+                  setModalTransacaoAberto(false);
+                }}
+              >
+                Descartar
+              </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          ABA 2: DRE OPERACIONAL DA OFICINA (DEMONSTRATIVO)
-          ======================================================== */}
-      {activeTab === 'dre' && (
-        <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
-            <div>
-              <h2 className="text-base sm:text-lg font-semibold text-ink flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-brand-ink" aria-hidden="true" />
-                <span>Demonstrativo do Resultado do Exercício (DRE)</span>
-              </h2>
-              <p className="text-xs text-ink-subtle">
-                Detalhamento vertical de receitas, CMV de peças, despesas fixas/variáveis e lucro líquido.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleExportarCsv('DRE')}
-              className="min-h-[38px] px-3.5 rounded-xl bg-sunken hover:bg-muted border border-line text-ink font-semibold text-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
-            >
-              <Download className="w-4 h-4 text-brand-ink" aria-hidden="true" />
-              <span>Baixar DRE (Excel)</span>
-            </button>
-          </div>
-
-          {/* TABELA VERTICAL DE DRE ESTRUTURADA */}
-          <div className="space-y-2 text-xs sm:text-sm font-mono tabular-nums">
-            {/* 1. RECEITA BRUTA */}
-            <div className="p-3 rounded-xl bg-sunken border border-info/60 flex items-center justify-between font-semibold">
-              <span className="font-sans text-info flex items-center gap-2">
-                <span>1. RECEITA BRUTA TOTAL</span>
-              </span>
-              <span className="text-base text-info font-semibold">
-                {formatBRL(resumoFinanceiro.receitaBrutaTotal)}
-              </span>
-            </div>
-
-            <div className="pl-4 pr-3 py-1.5 flex items-center justify-between text-ink-muted text-xs">
-              <span className="font-sans">(+) Faturamento de Ordens de Serviço (Peças + Mão de Obra)</span>
-              <span>{formatBRL(resumoFinanceiro.faturamentoOS)}</span>
-            </div>
-
-            {resumoFinanceiro.receitasAvulsasRecebidas > 0 && (
-              <div className="pl-4 pr-3 py-1.5 flex items-center justify-between text-ink-muted text-xs">
-                <span className="font-sans">(+) Receitas Avulsas Liquidadas (Aportes, Sucata, etc.)</span>
-                <span>{formatBRL(resumoFinanceiro.receitasAvulsasRecebidas)}</span>
-              </div>
-            )}
-
-            {/* 2. CUSTO VARIÁVEL (CMV) */}
-            <div className="p-3 rounded-xl bg-sunken border border-danger flex items-center justify-between font-semibold">
-              <span className="font-sans text-danger">
-                2. (-) CUSTOS VARIÁVEIS DIRETOS (CMV / PEÇAS DAS OS)
-              </span>
-              <span className="text-danger font-semibold">
-                &minus; {formatBRL(resumoFinanceiro.custoPecasOS)}
-              </span>
-            </div>
-
-            {/* 3. LUCRO BRUTO */}
-            <div className="p-3.5 rounded-xl bg-warning/40 border-2 border-warning/70 flex items-center justify-between font-semibold">
-              <div className="font-sans">
-                <span className="text-warning">3. (=) LUCRO BRUTO OPERACIONAL</span>
-                <span className="ml-2 text-xs text-warning font-mono">
-                  (Margem Bruta: {resumoFinanceiro.margemBruta.toFixed(1)}%)
-                </span>
-              </div>
-              <span className="text-base text-warning font-semibold">
-                {formatBRL(resumoFinanceiro.lucroBrutoOperacional)}
-              </span>
-            </div>
-
-            {/* 4. DESPESAS OPERACIONAIS / CONTAS A PAGAR */}
-            <div className="p-3 rounded-xl bg-sunken border border-danger flex items-center justify-between font-semibold mt-2">
-              <span className="font-sans text-danger">
-                4. (-) DESPESAS OPERACIONAIS LIQUIDADAS (CONTAS PAGAS)
-              </span>
-              <span className="text-danger font-semibold">
-                &minus; {formatBRL(resumoFinanceiro.despesasPagas)}
-              </span>
-            </div>
-
-            {/* Detalhamento por Categoria de Despesa */}
-            {Object.keys(resumoFinanceiro.despesasPorCategoria).length === 0 ? (
-              <div className="pl-4 pr-3 py-1 text-ink-subtle text-xs italic font-sans">
-                Nenhuma conta a pagar liquidada no período.
-              </div>
-            ) : (
-              Object.entries(resumoFinanceiro.despesasPorCategoria).map(([cat, val]) => (
-                <div
-                  key={cat}
-                  className="pl-4 pr-3 py-1 flex items-center justify-between text-ink-subtle text-xs"
-                >
-                  <span className="font-sans">(&minus;) {cat}</span>
-                  <span>&minus; {formatBRL(val)}</span>
-                </div>
-              ))
-            )}
-
-            {/* 5. LUCRO LÍQUIDO REAL */}
-            <div className="p-4 rounded-xl bg-sunken border-2 border-success flex items-center justify-between font-semibold shadow-lg shadow-success/40 mt-3">
-              <div className="font-sans">
-                <span className="text-base sm:text-lg text-success font-semibold block">
-                  5. (=) LUCRO LÍQUIDO REAL DO PERÍODO
-                </span>
-                <span className="text-xs text-ink-muted">
-                  Sobrou no caixa após todas as peças e contas pagas
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-xl sm:text-2xl text-success font-semibold font-mono">
-                  {formatBRL(resumoFinanceiro.lucroLiquidoReal)}
-                </span>
-                <div className="text-xs font-mono text-success">
-                  Margem Líquida: {resumoFinanceiro.margemLiquida.toFixed(1)}%
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          ABA 3: GESTÃO DE CONTAS A PAGAR & RECEITAS AVULSAS
-          ======================================================== */}
-      {activeTab === 'contas' && (
-        <div className="space-y-3.5">
-          {/* BARRA DE FILTROS & AÇÕES DE LANÇAMENTOS */}
-          <div className="bg-surface border-2 border-line rounded-xl p-3 sm:p-4 space-y-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-              <search className="flex-1 relative">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-ink-subtle" aria-hidden="true" />
-                <input
-                  type="search"
-                  value={buscaTransacao}
-                  onChange={(e) => setBuscaTransacao(e.target.value)}
-                  placeholder="Buscar lançamento por descrição, categoria…"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck="false"
-                  className="w-full min-h-[40px] pl-9 pr-3 bg-sunken border border-line rounded-xl text-ink text-xs sm:text-sm"
-                />
-              </search>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => abrirModalCadastroTransacao('DESPESA')}
-                  className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-danger-solid hover:bg-danger-solid text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>+ Despesa</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => abrirModalCadastroTransacao('RECEITA')}
-                  className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-success-solid hover:bg-success-solid text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>+ Receita</span>
-                </button>
-              </div>
-            </div>
-
-            {/* SUB-FILTROS DE TIPO E STATUS */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line text-xs">
-              <div className="flex items-center gap-1.5">
-                {(
-                  [
-                    { id: 'TODAS', label: 'Todas as Contas' },
-                    { id: 'DESPESA', label: 'A Pagar (Despesas)' },
-                    { id: 'RECEITA', label: 'A Receber (Avulsas)' },
-                  ] as const
-                ).map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => setFiltroTipoTransacao(f.id)}
-                    className={`px-3 py-1.5 rounded-lg font-semibold cursor-pointer transition-colors ${
-                      filtroTipoTransacao === f.id
-                        ? 'bg-muted text-ink'
-                        : 'bg-sunken text-ink-muted border border-line'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                {(
-                  [
-                    { id: 'TODAS', label: 'Todos Status' },
-                    { id: 'PENDENTE', label: 'Pendentes' },
-                    { id: 'LIQUIDADO', label: 'Pagas / Recebidas' },
-                    { id: 'ATRASADO', label: 'Atrasadas' },
-                  ] as const
-                ).map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setFiltroStatusTransacao(s.id)}
-                    className={`px-2.5 py-1 rounded-lg font-semibold cursor-pointer text-xs transition-colors ${
-                      filtroStatusTransacao === s.id
-                        ? 'bg-brand text-on-brand'
-                        : 'bg-sunken text-ink-muted border border-line'
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* LISTA DE TRANSAÇÕES */}
-          {transacoesFiltradas.length === 0 ? (
-            <div className="bg-surface border-2 border-line rounded-xl p-8 text-center text-ink-subtle space-y-2">
-              <CreditCard className="w-8 h-8 text-ink-subtle mx-auto" />
-              <p className="text-sm font-semibold text-ink">Nenhum lançamento no filtro atual</p>
-              <p className="text-xs text-ink-subtle">
-                Cadastre contas de aluguel, luz, taxas, folha de pagamento ou aportes para controlar seu fluxo.
-              </p>
-            </div>
+        )}
+        {erro && alertaErro(erro)}
+        <form onSubmit={handleSalvarTransacao} className="space-y-5">
+          {transacaoEmEdicao ? (
+            <p className="text-sm text-ink-muted">
+              {formTipo === 'DESPESA' ? 'Despesa (a pagar)' : 'Receita (a receber)'}
+            </p>
           ) : (
-            <div className="bg-sunken border-2 border-line rounded-xl divide-y divide-line">
-              {transacoesFiltradas.map((t) => {
-                const isDespesa = t.tipo === 'DESPESA';
-                const isLiquidado = t.status === 'LIQUIDADO';
-                const isAtrasado = t.status === 'ATRASADO';
-
-                return (
-                  <article
-                    key={t.id}
-                    className="p-3 sm:px-4 sm:py-3 hover:bg-surface/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+            <fieldset>
+              <legend className="mb-1.5 text-sm font-medium text-ink">Tipo de lançamento</legend>
+              <div className="flex w-full gap-1 rounded-full bg-muted p-1 sm:inline-flex sm:w-auto">
+                {(
+                  [
+                    { id: 'DESPESA', rotulo: 'Despesa (a pagar)' },
+                    { id: 'RECEITA', rotulo: 'Receita (a receber)' },
+                  ] as const
+                ).map((op) => (
+                  <label
+                    key={op.id}
+                    className={`relative inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-full px-4 text-sm font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-brand md:min-h-9 ${
+                      formTipo === op.id ? 'bg-surface text-ink shadow-card dark:bg-line' : 'text-ink-muted hover:text-ink'
+                    }`}
                   >
-                    {/* Linha 1: Descrição e Badges */}
-                    <div className="min-w-0 sm:flex-1 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
-                            isDespesa
-                              ? 'bg-danger/15 text-danger border border-danger'
-                              : 'bg-success/15 text-success border border-success'
-                          }`}
-                        >
-                          {isDespesa ? 'A PAGAR' : 'A RECEBER'}
-                        </span>
-
-                        <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-surface text-ink-muted border border-line">
-                          {t.categoria}
-                        </span>
-
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
-                            isLiquidado
-                              ? 'bg-success/15 text-success border border-success'
-                              : isAtrasado
-                              ? 'bg-danger/15 text-danger border border-danger animate-pulse'
-                              : 'bg-warning/15 text-warning border border-warning'
-                          }`}
-                        >
-                          {isLiquidado
-                            ? isDespesa
-                              ? 'PAGO'
-                              : 'RECEBIDO'
-                            : isAtrasado
-                            ? 'ATRASADO'
-                            : 'PENDENTE'}
-                        </span>
-                      </div>
-
-                      <h4 className="text-sm font-semibold text-ink break-words">
-                        {t.descricao}
-                      </h4>
-
-                      <div className="text-xs text-ink-subtle font-mono">
-                        Vencimento: <strong>{formatData(t.data_vencimento)}</strong>
-                        {t.data_liquidacao && (
-                          <span className="ml-2 text-success">
-                            &bull; Liquidado em: {formatData(t.data_liquidacao)}
-                          </span>
-                        )}
-                        {t.observacoes && <span className="ml-2">&bull; {t.observacoes}</span>}
-                      </div>
-                    </div>
-
-                    {/* Linha 2 (Mobile) / Lado Direito: Valor e Ações */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-line">
-                      <div className="text-right font-mono tabular-nums">
-                        <div
-                          className={`text-base sm:text-lg font-semibold ${
-                            isDespesa ? 'text-danger' : 'text-success'
-                          }`}
-                        >
-                          {isDespesa ? '-' : '+'} {formatBRL(t.valor)}
-                        </div>
-                        {t.forma_pagamento && (
-                          <div className="text-xs text-ink-subtle">{t.forma_pagamento}</div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {!isLiquidado && (
-                          <button
-                            type="button"
-                            onClick={() => handleLiquidar(t)}
-                            title={isDespesa ? 'Marcar como Pago' : 'Marcar como Recebido'}
-                            className="h-8 px-2.5 rounded-lg bg-success-solid hover:bg-success-solid text-white font-semibold text-xs flex items-center gap-1 cursor-pointer"
-                          >
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            <span className="hidden sm:inline">
-                              {isDespesa ? 'Pagar' : 'Receber'}
-                            </span>
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => abrirModalEdicaoTransacao(t)}
-                          title="Editar Lançamento"
-                          aria-label={`Editar ${t.descricao}`}
-                          className="w-8 h-8 rounded-lg bg-surface hover:bg-muted border border-line-strong text-warning flex items-center justify-center cursor-pointer"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setItemParaExcluir(t)}
-                          title="Excluir Lançamento"
-                          aria-label={`Excluir ${t.descricao}`}
-                          className="w-8 h-8 rounded-lg bg-danger/60 hover:bg-danger/15 border border-danger text-danger flex items-center justify-center cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+                    <input
+                      type="radio"
+                      name="tipo-lancamento"
+                      value={op.id}
+                      checked={formTipo === op.id}
+                      onChange={() => trocarTipoFormulario(op.id)}
+                      className="absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-full opacity-0"
+                    />
+                    {op.rotulo}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           )}
-        </div>
-      )}
 
-      {/* ========================================================
-          ABA 4: BI & INTELIGÊNCIA ESTRATÉGICA DA OFICINA
-          ======================================================== */}
-      {activeTab === 'bi' && (
-        <div className="space-y-4">
-          {/* CARDS DE EFICIÊNCIA OPERACIONAL */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
-            <div className="bg-surface border-2 border-line rounded-xl p-3.5 flex flex-col justify-between">
-              <span className="text-ink-subtle text-xs font-semibold">Ticket Médio por OS</span>
-              <div className="text-xl sm:text-2xl font-semibold font-mono text-ink mt-1 tabular-nums">
-                {formatBRL(dadosFinanceiros?.ticket_medio)}
-              </div>
-              <span className="text-xs text-ink-subtle">Gasto médio por veículo</span>
-            </div>
+          <Field rotulo="Descrição *">
+            <input
+              type="text"
+              required
+              value={formDescricao}
+              onChange={(e) => setFormDescricao(e.target.value)}
+              placeholder={
+                formTipo === 'DESPESA'
+                  ? 'Ex: Aluguel do galpão, conta de luz…'
+                  : 'Ex: Aporte do sócio, venda de sucata…'
+              }
+              className={CLASSE_CAMPO}
+            />
+          </Field>
 
-            <div className="bg-surface border-2 border-line rounded-xl p-3.5 flex flex-col justify-between">
-              <span className="text-ink-subtle text-xs font-semibold">Taxa de Conversão</span>
-              <div className="text-xl sm:text-2xl font-semibold font-mono text-success mt-1 tabular-nums">
-                {biData?.taxa_conversao_orcamentos ?? 0}%
-              </div>
-              <span className="text-xs text-ink-subtle">Orçamentos que viraram serviço</span>
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 bg-surface border-2 border-line rounded-xl p-3.5 flex flex-col justify-between">
-              <span className="text-ink-subtle text-xs font-semibold">Giro Médio no Pátio</span>
-              <div className="text-xl sm:text-2xl font-semibold font-mono text-warning mt-1 tabular-nums">
-                {biData?.lead_time_medio_horas ?? 0}h
-              </div>
-              <span className="text-xs text-ink-subtle">Tempo médio de permanência</span>
-            </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field rotulo="Categoria *">
+              <select value={formCategoria} onChange={(e) => setFormCategoria(e.target.value)} className={CLASSE_CAMPO}>
+                {opcoesCategoria.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {rotuloCategoriaFinanceira(cat)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field rotulo="Valor (R$) *">
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min={0.01}
+                required
+                value={formValor}
+                onChange={(e) => setFormValor(e.target.value)}
+                placeholder="0,00"
+                className={`${CLASSE_CAMPO} tabular-nums`}
+              />
+            </Field>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* RANKING DE PRODUTIVIDADE POR MECÂNICO */}
-            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-line pb-2.5">
-                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-brand-ink" aria-hidden="true" />
-                  <span>Produtividade &amp; Lucro por Mecânico</span>
-                </h3>
-                <span className="text-xs text-ink-subtle font-mono">
-                  {biData?.produtividade_mecanicos?.length || 0} profissionais
-                </span>
-              </div>
-
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {(biData?.produtividade_mecanicos || []).length === 0 ? (
-                  <p className="text-ink-subtle text-xs py-4 text-center">Nenhum mecânico com OS finalizada.</p>
-                ) : (
-                  biData?.produtividade_mecanicos.map((mec, idx) => (
-                    <div
-                      key={mec.nome}
-                      className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between text-xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-surface text-ink-muted font-semibold flex items-center justify-center text-xs">
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <strong className="text-ink block">{mec.nome}</strong>
-                          <span className="text-ink-subtle text-xs">{mec.qtd_os} OS entregues</span>
-                        </div>
-                      </div>
-
-                      <div className="text-right font-mono tabular-nums">
-                        <div className="text-success font-semibold">
-                          Lucro: {formatBRL(mec.lucro_gerado)}
-                        </div>
-                        <div className="text-ink-subtle text-xs">
-                          Fat: {formatBRL(mec.faturamento_gerado)}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* FORMAS DE PAGAMENTO UTILIZADAS */}
-            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-line pb-2.5">
-                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-info" aria-hidden="true" />
-                  <span>Distribuição por Meio de Pagamento</span>
-                </h3>
-              </div>
-
-              <div className="space-y-2.5">
-                {(biData?.metodos_pagamento || []).length === 0 ? (
-                  <p className="text-ink-subtle text-xs py-4 text-center">Nenhum pagamento registrado no período.</p>
-                ) : (
-                  biData?.metodos_pagamento.map((mp) => {
-                    const totalGeral = biData.metodos_pagamento.reduce(
-                      (acc, i) => acc + i.valor_total,
-                      0
-                    );
-                    const pct = totalGeral > 0 ? (mp.valor_total / totalGeral) * 100 : 0;
-
-                    return (
-                      <div key={mp.forma} className="space-y-1 text-xs">
-                        <div className="flex items-center justify-between text-ink-muted">
-                          <span className="font-semibold text-ink">{mp.forma}</span>
-                          <span className="font-mono tabular-nums">
-                            {formatBRL(mp.valor_total)} ({pct.toFixed(0)}%)
-                          </span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-sunken overflow-hidden">
-                          <div
-                            className="h-full bg-info rounded-full"
-                            style={{ width: `${Math.min(100, Math.max(5, pct))}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* RENTABILIDADE POR MARCA DE VEÍCULO */}
-            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-line pb-2.5">
-                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
-                  <Car className="w-4 h-4 text-warning" aria-hidden="true" />
-                  <span>Rentabilidade por Marca de Veículo</span>
-                </h3>
-              </div>
-
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {(biData?.rentabilidade_marcas || []).length === 0 ? (
-                  <p className="text-ink-subtle text-xs py-4 text-center">Nenhum veículo faturado.</p>
-                ) : (
-                  biData?.rentabilidade_marcas.map((marca) => (
-                    <div
-                      key={marca.marca}
-                      className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between text-xs"
-                    >
-                      <div>
-                        <strong className="text-ink block uppercase">{marca.marca}</strong>
-                        <span className="text-ink-subtle text-xs">{marca.qtd_os} veículos atendidos</span>
-                      </div>
-                      <div className="text-right font-mono tabular-nums">
-                        <div className="text-success font-semibold">{formatBRL(marca.lucro)}</div>
-                        <div className="text-ink-subtle text-xs">Fat: {formatBRL(marca.faturamento)}</div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* TOP 10 CLIENTES (CURVA ABC) */}
-            <div className="bg-surface border-2 border-line rounded-lg p-4 sm:p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-line pb-2.5">
-                <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2">
-                  <Users className="w-4 h-4 text-success" aria-hidden="true" />
-                  <span>Top Clientes Mais Lucrativos (Curva ABC)</span>
-                </h3>
-              </div>
-
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {(biData?.top_10_clientes || []).length === 0 ? (
-                  <p className="text-ink-subtle text-xs py-4 text-center">Nenhum cliente faturado no período.</p>
-                ) : (
-                  biData?.top_10_clientes.map((cli, idx) => (
-                    <div
-                      key={cli.nome}
-                      className="p-2.5 rounded-xl bg-sunken border border-line flex items-center justify-between text-xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-success/15 text-success font-semibold flex items-center justify-center text-xs border border-success">
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <strong className="text-ink block">{cli.nome}</strong>
-                          <span className="text-ink-subtle text-xs">{cli.qtd_os} OS atendidas</span>
-                        </div>
-                      </div>
-                      <div className="text-right font-mono tabular-nums">
-                        <div className="text-success font-semibold">
-                          Lucro: {formatBRL(cli.lucro)}
-                        </div>
-                        <div className="text-ink-subtle text-xs">
-                          Total: {formatBRL(cli.faturamento)}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field rotulo="Vencimento *">
+              <input
+                type="date"
+                required
+                value={formVencimento}
+                onChange={(e) => setFormVencimento(e.target.value)}
+                className={`${CLASSE_CAMPO} tabular-nums`}
+              />
+            </Field>
+            <Field rotulo="Forma de pagamento">
+              <select value={formForma} onChange={(e) => setFormForma(e.target.value)} className={CLASSE_CAMPO}>
+                {FORMAS_PAGAMENTO.map((fp) => (
+                  <option key={fp} value={fp}>
+                    {fp}
+                  </option>
+                ))}
+              </select>
+            </Field>
           </div>
-        </div>
-      )}
 
-      {/* MODAL: CADASTRO / EDIÇÃO DE TRANSAÇÃO (DESPESA OU RECEITA AVULSA) */}
-      {modalTransacaoAberto && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-surface border-2 border-brand rounded-lg w-full max-w-md p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <h2 className="text-base sm:text-lg font-semibold text-ink flex items-center gap-2">
-                {formTipo === 'DESPESA' ? (
-                  <ArrowDownRight className="w-5 h-5 text-danger" />
-                ) : (
-                  <ArrowUpRight className="w-5 h-5 text-success" />
-                )}
-                <span>
-                  {transacaoEmEdicao
-                    ? 'Editar Lançamento'
-                    : formTipo === 'DESPESA'
-                    ? 'Nova Conta a Pagar'
-                    : 'Nova Receita / Aporte'}
-                </span>
-              </h2>
-              <button
-                type="button"
-                onClick={() => setModalTransacaoAberto(false)}
-                className="text-ink-subtle hover:text-ink"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+          <Field rotulo="Observações">
+            <input
+              type="text"
+              value={formObservacoes}
+              onChange={(e) => setFormObservacoes(e.target.value)}
+              placeholder="Nota fiscal, recibo ou detalhes…"
+              className={CLASSE_CAMPO}
+            />
+          </Field>
 
-            <form onSubmit={handleSalvarTransacao} className="space-y-3.5 text-xs sm:text-sm">
-              <div>
-                <label className="block font-semibold text-ink mb-1">
-                  Descrição do Lançamento *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formDescricao}
-                  onChange={(e) => setFormDescricao(e.target.value)}
-                  placeholder={
-                    formTipo === 'DESPESA'
-                      ? 'Ex: Aluguel do Galpão, Conta de Luz Enel…'
-                      : 'Ex: Aporte Sócio Roberto, Venda de Sucata/Baterias…'
-                  }
-                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
-                />
-              </div>
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl bg-muted px-4 py-2 text-sm font-medium text-ink">
+            <input
+              type="checkbox"
+              checked={formJaPago}
+              onChange={(e) => setFormJaPago(e.target.checked)}
+              className="h-5 w-5 shrink-0 cursor-pointer accent-brand"
+            />
+            <span>
+              {formTipo === 'DESPESA'
+                ? 'Já foi paga (baixa no caixa com a data do vencimento)'
+                : 'Já foi recebida (caiu na conta, com a data do vencimento)'}
+            </span>
+          </label>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-ink mb-1">Categoria *</label>
-                  <select
-                    value={formCategoria}
-                    onChange={(e) => setFormCategoria(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-semibold"
-                  >
-                    {(formTipo === 'DESPESA' ? CATEGORIAS_DESPESA : CATEGORIAS_RECEITA).map(
-                      (cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </div>
+          {formErro && alertaErro(formErro)}
 
-                <div>
-                  <label className="block font-semibold text-ink mb-1">Valor (R$) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min={0.01}
-                    required
-                    value={formValor}
-                    onChange={(e) => setFormValor(e.target.value)}
-                    placeholder="0,00"
-                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-ink mb-1">
-                    Data de Vencimento *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={formVencimento}
-                    onChange={(e) => setFormVencimento(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-ink mb-1">
-                    Forma de Pagamento
-                  </label>
-                  <select
-                    value={formForma}
-                    onChange={(e) => setFormForma(e.target.value)}
-                    className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
-                  >
-                    {FORMAS_PAGAMENTO.map((fp) => (
-                      <option key={fp} value={fp}>
-                        {fp}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-ink mb-1">Observações / Detalhes</label>
-                <input
-                  type="text"
-                  value={formObservacoes}
-                  onChange={(e) => setFormObservacoes(e.target.value)}
-                  placeholder="Número de nota fiscal, recibo ou detalhes…"
-                  className="w-full min-h-[42px] px-3 bg-sunken border border-line rounded-xl text-ink"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-sunken border border-line">
-                <input
-                  type="checkbox"
-                  id="chk-ja-liquidado"
-                  checked={formJaPago}
-                  onChange={(e) => setFormJaPago(e.target.checked)}
-                  className="w-4 h-4 rounded text-brand-ink cursor-pointer"
-                />
-                <label
-                  htmlFor="chk-ja-liquidado"
-                  className="text-xs font-semibold text-ink cursor-pointer select-none"
-                >
-                  {formTipo === 'DESPESA'
-                    ? 'Já foi paga hoje (dar baixa imediata no caixa)'
-                    : 'Já foi recebida hoje (caiu na conta)'}
-                </label>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
-                <button
-                  type="button"
-                  onClick={() => setModalTransacaoAberto(false)}
-                  className="min-h-[42px] px-4 rounded-xl bg-surface text-ink font-semibold cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvandoTransacao}
-                  className="min-h-[42px] px-5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold cursor-pointer disabled:opacity-50"
-                >
-                  {salvandoTransacao ? 'Salvando…' : 'Salvar Lançamento'}
-                </button>
-              </div>
-            </form>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variante="secundario" onClick={sairDoFormulario}>
+              Cancelar
+            </Button>
+            <Button type="submit" carregando={salvandoTransacao}>
+              {salvandoTransacao ? 'Salvando…' : 'Salvar lançamento'}
+            </Button>
           </div>
-        </div>
-      )}
+        </form>
+      </Folha>
 
-      {/* MODAL: CONFIRMAÇÃO DE EXCLUSÃO */}
-      {itemParaExcluir && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-surface border-2 border-danger rounded-lg w-full max-w-sm p-4 sm:p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-danger/15 border border-danger text-danger flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-ink">Excluir Lançamento?</h3>
-                <p className="text-xs text-ink-subtle">Esta ação não poderá ser desfeita.</p>
-              </div>
+      {/* FOLHA: CONFIRMAÇÃO DE BAIXA (PAGO / RECEBIDO) */}
+      <Folha
+        aberto={itemParaBaixa !== null}
+        titulo="Dar baixa no lançamento?"
+        aoCancelar={() => !baixando && setItemParaBaixa(null)}
+      >
+        {itemParaBaixa && (
+          <>
+            <div>
+              <p className="text-sm font-medium text-ink">{itemParaBaixa.descricao}</p>
+              <p className={`mt-1 text-xl font-semibold tabular-nums ${baixaDespesa ? 'text-danger' : 'text-success'}`}>
+                {valorComSinal(itemParaBaixa.valor, itemParaBaixa.tipo)}
+              </p>
+              <p className="mt-1 text-sm tabular-nums text-ink-muted">
+                Vencimento {formatData(itemParaBaixa.data_vencimento)} &bull; {itemParaBaixa.forma_pagamento || 'PIX'}
+              </p>
+              <p className="mt-3 text-sm text-ink-muted">
+                {baixaDespesa
+                  ? 'O lançamento será marcado como pago hoje e sai do contas a pagar.'
+                  : 'O lançamento será marcado como recebido hoje e entra no caixa.'}
+              </p>
             </div>
-
-            <div className="p-3 bg-sunken rounded-xl border border-line">
-              <div className="text-sm font-semibold text-ink">{itemParaExcluir.descricao}</div>
-              <div className="text-xs text-ink-subtle font-mono mt-0.5">
-                Valor: {formatBRL(itemParaExcluir.valor)} &bull; Venc: {formatData(itemParaExcluir.data_vencimento)}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setItemParaExcluir(null)}
-                className="min-h-[42px] px-4 rounded-xl bg-surface text-ink font-semibold text-xs cursor-pointer"
-              >
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variante="secundario" disabled={baixando} onClick={() => setItemParaBaixa(null)}>
                 Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={excluindo}
-                onClick={handleConfirmarExclusao}
-                className="min-h-[42px] px-4.5 rounded-xl bg-danger-solid hover:bg-danger-solid text-white font-semibold text-xs cursor-pointer disabled:opacity-50"
-              >
-                {excluindo ? 'Excluindo…' : 'Sim, Excluir'}
-              </button>
+              </Button>
+              <Button icone={CheckCircle2} carregando={baixando} onClick={confirmarBaixa}>
+                {baixaDespesa ? 'Confirmar pagamento' : 'Confirmar recebimento'}
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Folha>
+
+      {/* FOLHA: CONFIRMAÇÃO DE EXCLUSÃO */}
+      <Folha
+        aberto={itemParaExcluir !== null}
+        titulo="Excluir lançamento?"
+        aoCancelar={() => setItemParaExcluir(null)}
+      >
+        {itemParaExcluir && (
+          <>
+            <div>
+              <p className="text-sm font-medium text-ink">{itemParaExcluir.descricao}</p>
+              <p className="mt-0.5 text-sm tabular-nums text-ink-muted">
+                {valorComSinal(itemParaExcluir.valor, itemParaExcluir.tipo)} &bull; Venc. {formatData(itemParaExcluir.data_vencimento)}
+              </p>
+              <p className="mt-3 text-sm text-ink-muted">Esta ação não poderá ser desfeita.</p>
+            </div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variante="secundario" onClick={() => setItemParaExcluir(null)}>
+                Cancelar
+              </Button>
+              <Button variante="perigo" icone={Trash2} carregando={excluindo} onClick={handleConfirmarExclusao}>
+                {excluindo ? 'Excluindo…' : 'Excluir lançamento'}
+              </Button>
+            </div>
+          </>
+        )}
+      </Folha>
     </div>
   );
 }
