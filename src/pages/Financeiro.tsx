@@ -99,14 +99,9 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   const [periodoAtalho, setPeriodoAtalho] = useState<
     'HOJE' | '7D' | '30D' | 'MES_ATUAL' | 'MES_ANTERIOR' | 'ANO_ATUAL' | 'CUSTOM'
   >('30D');
-  const [dataInicio, setDataInicio] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return d.toISOString().slice(0, 10);
-  });
-  const [dataFim, setDataFim] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  // Mesmo intervalo do atalho "Últimos 30 dias", no calendário local
+  const [dataInicio, setDataInicio] = useState<string>(() => intervaloDoAtalho('30D').inicio);
+  const [dataFim, setDataFim] = useState<string>(() => intervaloDoAtalho('30D').fim);
 
   // Dados do Financeiro & Transações
   const [carregando, setCarregando] = useState(true);
@@ -147,10 +142,12 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   // Modal Confirmação Exclusão
   const [itemParaExcluir, setItemParaExcluir] = useState<TransacaoFinanceira | null>(null);
   const [excluindo, setExcluindo] = useState(false);
+  const [erroExclusao, setErroExclusao] = useState<string | null>(null);
 
   // Confirmação de Baixa (nenhuma baixa com um toque só)
   const [itemParaBaixa, setItemParaBaixa] = useState<TransacaoFinanceira | null>(null);
   const [baixando, setBaixando] = useState(false);
+  const [erroBaixa, setErroBaixa] = useState<string | null>(null);
 
   // Formulário: erro de validação na própria folha e confirmação de descarte com dados digitados
   const [formErro, setFormErro] = useState<string | null>(null);
@@ -454,8 +451,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     }
   };
 
-  // Dar Baixa / Liquidar
-  const handleLiquidar = async (t: TransacaoFinanceira) => {
+  // Dar Baixa / Liquidar (true = gravou; o erro fica na folha de confirmação)
+  const handleLiquidar = async (t: TransacaoFinanceira): Promise<boolean> => {
     try {
       const atualizada = await api.liquidarTransacaoFinanceira(
         empresaId,
@@ -468,8 +465,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       dispararFeedback(
         `"${t.descricao}" marcado como ${t.tipo === 'DESPESA' ? 'PAGO' : 'RECEBIDO'} com sucesso!`
       );
+      return true;
     } catch {
-      alert('Erro ao dar baixa no lançamento.');
+      setErroBaixa('Erro ao dar baixa no lançamento. Nada foi alterado; tente de novo.');
+      return false;
     }
   };
 
@@ -478,12 +477,13 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     if (!itemParaExcluir) return;
     try {
       setExcluindo(true);
+      setErroExclusao(null);
       await api.deletarTransacaoFinanceira(empresaId, itemParaExcluir.id);
       setTransacoes((prev) => prev.filter((i) => i.id !== itemParaExcluir.id));
       dispararFeedback(`"${itemParaExcluir.descricao}" removido.`);
       setItemParaExcluir(null);
     } catch {
-      alert('Erro ao excluir transação.');
+      setErroExclusao('Erro ao excluir transação. Nada foi apagado; tente de novo.');
     } finally {
       setExcluindo(false);
     }
@@ -640,9 +640,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   const confirmarBaixa = async () => {
     if (!itemParaBaixa) return;
     setBaixando(true);
-    await handleLiquidar(itemParaBaixa);
+    setErroBaixa(null);
+    const ok = await handleLiquidar(itemParaBaixa);
     setBaixando(false);
-    setItemParaBaixa(null);
+    if (ok) setItemParaBaixa(null);
   };
 
   const exportarAbaAtual = () => {
@@ -814,9 +815,15 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               setFiltroStatusTransacao('TODAS');
             }}
             aoNovo={() => abrirModalCadastroTransacao('DESPESA')}
-            aoDarBaixa={setItemParaBaixa}
+            aoDarBaixa={(t) => {
+              setErroBaixa(null);
+              setItemParaBaixa(t);
+            }}
             aoEditar={abrirModalEdicaoTransacao}
-            aoExcluir={setItemParaExcluir}
+            aoExcluir={(t) => {
+              setErroExclusao(null);
+              setItemParaExcluir(t);
+            }}
           />
         )}
 
@@ -1007,6 +1014,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   : 'O lançamento será marcado como recebido hoje e entra no caixa.'}
               </p>
             </div>
+            {erroBaixa && alertaErro(erroBaixa)}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button variante="secundario" disabled={baixando} onClick={() => setItemParaBaixa(null)}>
                 Cancelar
@@ -1034,6 +1042,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               </p>
               <p className="mt-3 text-sm text-ink-muted">Esta ação não poderá ser desfeita.</p>
             </div>
+            {erroExclusao && alertaErro(erroExclusao)}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button variante="secundario" disabled={excluindo} onClick={() => setItemParaExcluir(null)}>
                 Cancelar

@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Calendar } from 'lucide-react';
 import { CLASSE_CAMPO } from '../../components/ui';
 import { PERIODOS, type AtalhoPeriodo } from './auxiliares';
@@ -24,6 +25,9 @@ export function SeletorPeriodo({
   aoMudarFim: (valor: string) => void;
 }) {
   const personalizado = atalho === 'CUSTOM';
+  const idErro = useId();
+  // Datas ISO (AAAA-MM-DD) comparam como texto
+  const fimAntesDoInicio = personalizado && !!dataInicio && !!dataFim && dataFim < dataInicio;
   return (
     <div role="group" aria-label="Período do relatório" className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
       <div className="relative w-full sm:w-60">
@@ -56,6 +60,9 @@ export function SeletorPeriodo({
             <input
               type="date"
               value={dataInicio}
+              max={dataFim || undefined}
+              aria-invalid={fimAntesDoInicio || undefined}
+              aria-describedby={fimAntesDoInicio ? idErro : undefined}
               onChange={(e) => aoMudarInicio(e.target.value)}
               className={`${CLASSE_CAMPO} min-w-0 tabular-nums sm:w-40`}
             />
@@ -65,11 +72,19 @@ export function SeletorPeriodo({
             <input
               type="date"
               value={dataFim}
+              min={dataInicio || undefined}
+              aria-invalid={fimAntesDoInicio || undefined}
+              aria-describedby={fimAntesDoInicio ? idErro : undefined}
               onChange={(e) => aoMudarFim(e.target.value)}
               className={`${CLASSE_CAMPO} min-w-0 tabular-nums sm:w-40`}
             />
           </label>
         </div>
+      )}
+      {fimAntesDoInicio && (
+        <p id={idErro} role="alert" className="w-full text-sm font-medium text-danger">
+          A data final não pode ser anterior à inicial.
+        </p>
       )}
     </div>
   );

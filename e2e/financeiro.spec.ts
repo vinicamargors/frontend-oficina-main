@@ -392,6 +392,86 @@ test.describe('contas a pagar e receber', () => {
   });
 });
 
+test.describe('falha da API nas confirmações', () => {
+  const falha500 = { status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'Servidor fora do ar' }) };
+
+  test('baixa que falha: a folha continua aberta com o erro dentro dela e dá para tentar de novo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let falhar = true;
+    await page.route('**/api/v1/transacoes-financeiras/*/*/liquidar', (r) => (falhar ? r.fulfill(falha500) : r.fallback()));
+    const dialogos: string[] = [];
+    page.on('dialog', (dl) => {
+      dialogos.push(dl.message());
+      void dl.dismiss();
+    });
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect(d.getByRole('alert')).toBeVisible();
+    await expect(d).toBeVisible();
+    expect(dialogos).toEqual([]);
+    falhar = false;
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect(d).toHaveCount(0);
+    await expect(page.getByRole('status').filter({ hasText: 'RECEBIDO' })).toBeVisible();
+  });
+
+  test('exclusão que falha: a folha continua aberta com o erro dentro dela e dá para tentar de novo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let falhar = true;
+    await page.route(`**/api/v1/transacoes-financeiras/*/${DESPESA_PAGA.id}`, (r) =>
+      falhar && r.request().method() === 'DELETE' ? r.fulfill(falha500) : r.fallback()
+    );
+    const dialogos: string[] = [];
+    page.on('dialog', (dl) => {
+      dialogos.push(dl.message());
+      void dl.dismiss();
+    });
+    await irParaContas(page);
+    await menuDe(page, DESPESA_PAGA.descricao);
+    await page.getByRole('menuitem', { name: 'Excluir lançamento' }).click();
+    const d = page.getByRole('dialog', { name: 'Excluir lançamento?' });
+    await d.getByRole('button', { name: 'Excluir lançamento' }).click();
+    await expect(d.getByRole('alert')).toBeVisible();
+    await expect(d).toBeVisible();
+    expect(dialogos).toEqual([]);
+    await expect(lista(page).getByRole('listitem')).toHaveCount(transacoes.length);
+    falhar = false;
+    await d.getByRole('button', { name: 'Excluir lançamento' }).click();
+    await expect(d).toHaveCount(0);
+    await expect(lista(page).getByRole('listitem')).toHaveCount(transacoes.length - 1);
+    // reabrir outra exclusão não mostra o erro antigo
+    await menuDe(page, RECEITA_PAGA.descricao);
+    await page.getByRole('menuitem', { name: 'Excluir lançamento' }).click();
+    await expect(d.getByRole('alert')).toHaveCount(0);
+  });
+});
+
+test.describe('período personalizado inválido', () => {
+  test('data final antes da inicial: limites nos campos e aviso no próprio seletor', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('combobox', { name: 'Período' }).selectOption('CUSTOM');
+    const de = page.getByLabel('De', { exact: true });
+    const ate = page.getByLabel('Até', { exact: true });
+    await de.fill('2026-03-10');
+    await ate.fill('2026-03-20');
+    await expect(de).toHaveAttribute('max', '2026-03-20');
+    await expect(ate).toHaveAttribute('min', '2026-03-10');
+    const grupo = page.getByRole('group', { name: 'Período do relatório' });
+    await expect(grupo.getByRole('alert')).toHaveCount(0);
+    await ate.fill('2026-03-01');
+    await expect(grupo.getByRole('alert')).toHaveText('A data final não pode ser anterior à inicial.');
+    await expect(ate).toHaveAttribute('aria-invalid', 'true');
+    await ate.fill('2026-03-15');
+    await expect(grupo.getByRole('alert')).toHaveCount(0);
+  });
+});
+
 test.describe('formulário de lançamento', () => {
   test('novo lançamento: despesa por padrão; troca para receita muda as categorias; salva o que foi digitado', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   PERIODOS,
   formatBRL,
@@ -48,15 +48,55 @@ describe('intervaloDoAtalho', () => {
     expect(intervaloDoAtalho('30D', hoje)).toEqual({ inicio: '2026-10-11', fim: '2026-11-10' });
   });
   it('este mês, mês anterior e ano atual', () => {
-    expect(intervaloDoAtalho('MES_ATUAL', hoje).fim).toBe('2026-11-10');
-    expect(intervaloDoAtalho('ANO_ATUAL', hoje).fim).toBe('2026-11-10');
-    // primeiro/último dia via toISOString, como no código original
-    expect(intervaloDoAtalho('MES_ATUAL', hoje).inicio).toBe(new Date(2026, 10, 1).toISOString().slice(0, 10));
-    expect(intervaloDoAtalho('MES_ANTERIOR', hoje)).toEqual({
-      inicio: new Date(2026, 9, 1).toISOString().slice(0, 10),
-      fim: new Date(2026, 10, 0).toISOString().slice(0, 10),
-    });
-    expect(intervaloDoAtalho('ANO_ATUAL', hoje).inicio).toBe(new Date(2026, 0, 1).toISOString().slice(0, 10));
+    expect(intervaloDoAtalho('MES_ATUAL', hoje)).toEqual({ inicio: '2026-11-01', fim: '2026-11-10' });
+    expect(intervaloDoAtalho('MES_ANTERIOR', hoje)).toEqual({ inicio: '2026-10-01', fim: '2026-10-31' });
+    expect(intervaloDoAtalho('ANO_ATUAL', hoje)).toEqual({ inicio: '2026-01-01', fim: '2026-11-10' });
+  });
+});
+
+describe('intervaloDoAtalho no calendário local (America/Sao_Paulo)', () => {
+  const tzOriginal = process.env.TZ;
+  beforeAll(() => {
+    process.env.TZ = 'America/Sao_Paulo';
+  });
+  afterAll(() => {
+    process.env.TZ = tzOriginal;
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('23:30 local (já é amanhã em UTC): "Hoje" e os fins de período continuam sendo hoje', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-11T02:30:00Z')); // 10/11/2026 23:30 em São Paulo
+    expect(new Date().getDate()).toBe(10);
+    expect(intervaloDoAtalho('HOJE')).toEqual({ inicio: '2026-11-10', fim: '2026-11-10' });
+    expect(intervaloDoAtalho('7D')).toEqual({ inicio: '2026-11-03', fim: '2026-11-10' });
+    expect(intervaloDoAtalho('30D')).toEqual({ inicio: '2026-10-11', fim: '2026-11-10' });
+    expect(intervaloDoAtalho('MES_ATUAL')).toEqual({ inicio: '2026-11-01', fim: '2026-11-10' });
+    expect(intervaloDoAtalho('ANO_ATUAL')).toEqual({ inicio: '2026-01-01', fim: '2026-11-10' });
+  });
+
+  it('virada de ano: 1º de janeiro às 23:30', () => {
+    const anoNovo = new Date(2026, 0, 1, 23, 30);
+    expect(intervaloDoAtalho('HOJE', anoNovo)).toEqual({ inicio: '2026-01-01', fim: '2026-01-01' });
+    expect(intervaloDoAtalho('MES_ATUAL', anoNovo)).toEqual({ inicio: '2026-01-01', fim: '2026-01-01' });
+    expect(intervaloDoAtalho('MES_ANTERIOR', anoNovo)).toEqual({ inicio: '2025-12-01', fim: '2025-12-31' });
+    expect(intervaloDoAtalho('ANO_ATUAL', anoNovo)).toEqual({ inicio: '2026-01-01', fim: '2026-01-01' });
+    expect(intervaloDoAtalho('7D', anoNovo)).toEqual({ inicio: '2025-12-25', fim: '2026-01-01' });
+  });
+
+  it('virada de mês: 1º de março (fevereiro de 28 dias) às 23:30', () => {
+    const marco = new Date(2026, 2, 1, 23, 30);
+    expect(intervaloDoAtalho('MES_ANTERIOR', marco)).toEqual({ inicio: '2026-02-01', fim: '2026-02-28' });
+    expect(intervaloDoAtalho('30D', marco)).toEqual({ inicio: '2026-01-30', fim: '2026-03-01' });
+    expect(intervaloDoAtalho('7D', marco)).toEqual({ inicio: '2026-02-22', fim: '2026-03-01' });
+  });
+
+  it('meia-noite e meia local: o mês ainda é o novo', () => {
+    const cedo = new Date(2026, 1, 1, 0, 30);
+    expect(intervaloDoAtalho('MES_ATUAL', cedo)).toEqual({ inicio: '2026-02-01', fim: '2026-02-01' });
+    expect(intervaloDoAtalho('MES_ANTERIOR', cedo)).toEqual({ inicio: '2026-01-01', fim: '2026-01-31' });
   });
 });
 
