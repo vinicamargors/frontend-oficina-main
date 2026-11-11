@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { BotaoAjuda } from './BotaoAjuda';
 
 /**
  * Título da tela + ações. `inicio` vem antes do título (ex.: placa), `complemento` logo depois (ex.: contagem,
@@ -32,11 +33,15 @@ export function PageHeader({
             {inicio}
             {h1}
             {complemento}
+            <BotaoAjuda />
           </div>
           {abaixo && <div className="mt-1 text-sm text-ink-muted">{abaixo}</div>}
         </div>
       ) : (
-        h1
+        <div className="flex items-center gap-1">
+          {h1}
+          <BotaoAjuda />
+        </div>
       )}
       {acoes && <div className={`flex flex-wrap items-center gap-2 ${acoesClasse}`}>{acoes}</div>}
     </div>

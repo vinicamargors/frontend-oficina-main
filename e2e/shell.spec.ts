@@ -91,6 +91,7 @@ test.describe('shell desktop', () => {
       'Ordens de serviço',
       'Clientes & veículos',
       'Estoque de peças',
+      'Ajuda',
     ]);
     await expect(menu.getByText('Mecânico', { exact: true })).toBeVisible();
     exigirRedeCompleta(page);
