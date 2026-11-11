@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { test } from '@playwright/test';
 import { EMPRESA_ID, TELAS, abrirTela, clientes, entrarComo, exigirRedeCompleta, ordens, simularBackend, type Cenario } from './mocks';
 import { contextoDoProjeto } from './contexto';
+import { formatarPlaca } from '../src/components/ui/PlateChip';
 
 /**
  * Prints de referência: `prints/<tela>-<tema>-<largura>-<cenario>.png`.
@@ -574,5 +575,43 @@ test('print radar antigas (lista das ordens fora do período)', async ({ page },
   await page.getByText('7 ordens abertas mais antigas ficam fora do período').waitFor();
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   await page.screenshot({ path: join(PASTA, `radar-antigas-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+  exigirRedeCompleta(page);
+});
+
+// Mover card de etapa: `radar-arrastando-<tema>-1440.png` (arrasto no meio, colunas realçadas; só desktop),
+// `radar-menu-mover-<tema>-<largura>.png` (menu "…" aberto) e `radar-mover-sheet-<tema>-<largura>.png` (confirmação).
+test('print radar mover (arrasto, menu e confirmação)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'radar');
+  const os = ordens[0]; // orçamento mais novo
+  const placa = formatarPlaca(os.veiculos!.placa!);
+
+  if (largura >= 1024) {
+    // O dragAndDrop do Playwright é atômico: aqui o arrasto começa (dragstart) e para sobre "Em execução" sem soltar
+    await page.evaluate((id) => {
+      const quadro = document.querySelector('[data-testid="quadro-patio"]')!;
+      const dt = new DataTransfer();
+      quadro.querySelector(`[data-os-id="${id}"]`)!.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      const alvo = quadro.querySelector('[data-etapa="EXECUCAO"]')!;
+      alvo.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      alvo.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    }, os.id);
+    await page.locator('[data-etapa="EXECUCAO"][data-alvo="sobre"]').waitFor();
+    await page.screenshot({ path: join(PASTA, `radar-arrastando-${tema}-${largura}.png`), animations: 'disabled' });
+    await page.locator(`[data-testid="quadro-patio"] [data-os-id="${os.id}"]`).dispatchEvent('dragend');
+    await page.locator('[data-alvo]').first().waitFor({ state: 'detached' });
+  }
+
+  const area = page.getByTestId(largura >= 1024 ? 'quadro-patio' : 'patio-lista');
+  await area.getByRole('button', { name: `Ações da ordem ${placa}` }).click();
+  await page.getByRole('menu').waitFor();
+  await page.screenshot({ path: join(PASTA, `radar-menu-mover-${tema}-${largura}.png`), animations: 'disabled' });
+  await page.getByRole('menuitem', { name: 'Mover para Em execução' }).click();
+  await page.getByRole('dialog', { name: `Mover ${placa} para Em execução?` }).waitFor();
+  await page.screenshot({ path: join(PASTA, `radar-mover-sheet-${tema}-${largura}.png`), animations: 'disabled' });
   exigirRedeCompleta(page);
 });

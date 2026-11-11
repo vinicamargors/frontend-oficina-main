@@ -271,7 +271,7 @@ test.describe('radar: arrastar o card para mudar a etapa (desktop)', () => {
     await preparar(page, tema);
     const dica = page.getByText('Arraste um card para outra etapa para mudar o status');
     await expect(dica).toBeVisible();
-    const abrir = cardDe(page, largura, 'ORCAMENTO').getByRole('button', { name: new RegExp(PLACA) });
+    const abrir = cardDe(page, largura, 'ORCAMENTO').getByRole('button', { name: new RegExp(`^Placa ${PLACA}`) });
     await expect(abrir).toHaveAccessibleDescription('Use o menu … para mover para outra etapa');
 
     await cardDe(page, largura, 'ORCAMENTO').dragTo(coluna(page, largura, 'AGUARDANDO_PECA'));
@@ -403,7 +403,7 @@ test.describe('radar: quem pode mudar a etapa', () => {
     await expect(gatilhoMenu(page, largura, 'ORCAMENTO')).toHaveCount(0);
     await expect(page.getByRole('menuitem', { name: /^Mover para / })).toHaveCount(0);
     await expect(page.getByText('Arraste um card para outra etapa para mudar o status')).toHaveCount(0);
-    await expect(card.getByRole('button', { name: new RegExp(PLACA) })).not.toHaveAttribute('aria-describedby', /.+/);
+    await expect(card.getByRole('button', { name: new RegExp(`^Placa ${PLACA}`) })).not.toHaveAttribute('aria-describedby', /.+/);
     if (largura >= 1024) {
       await card.dragTo(coluna(page, largura, 'EXECUCAO'));
       await page.waitForTimeout(300);
@@ -411,7 +411,7 @@ test.describe('radar: quem pode mudar a etapa', () => {
     }
     expect(escritas).toEqual([]);
     // abrir a ordem continua igual
-    await card.getByRole('button', { name: new RegExp(PLACA) }).click();
+    await card.getByRole('button', { name: new RegExp(`^Placa ${PLACA}`) }).click();
     await expect(page).toHaveURL(/osId=/);
   });
 });

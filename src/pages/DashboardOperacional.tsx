@@ -1,8 +1,21 @@
-import { useEffect, useState, useCallback, useRef, useId } from 'react';
+import { useEffect, useState, useCallback, useRef, useId, type DragEvent } from 'react';
 import { api } from '../api/client';
 import { ItemCritico, StatusOS, UltimaOS } from '../types';
-import { AlertOctagon, ChevronDown, CircleCheck, MessageCircle, RefreshCw } from 'lucide-react';
-import { Button, PageHeader, Panel, PlateChip, Skeleton, StatusBadge, STATUS_OS } from '../components/ui';
+import { AlertOctagon, AlertTriangle, ChevronDown, CircleCheck, FileText, MessageCircle, Move, RefreshCw } from 'lucide-react';
+import { Button, PageHeader, Panel, PlateChip, Skeleton, StatusBadge, STATUS_OS, formatarPlaca } from '../components/ui';
+import { useAuth } from '../context/AuthContext';
+import { MenuAcoes, type ItemMenu } from './clientes/MenuAcoes';
+import {
+  ETAPAS_QUADRO,
+  TIPO_ARRASTO,
+  anuncioMovida,
+  destinosDe,
+  moverNoQuadro,
+  podeMudarEtapa,
+  podeSoltar,
+  type EtapaQuadro,
+} from './radar/mover';
+import { ConfirmarMovimento, type PedidoMovimento } from './radar/ConfirmarMovimento';
 import { diasDesde, nivelAtraso, textoDias, textoParada } from './radar/diasNaEtapa';
 import { ABERTAS, maisAntigas, type Antigas } from './radar/antigas';
 import { MarcaAtraso } from '../components/MarcaAtraso';
@@ -21,15 +34,30 @@ const formatBRL = (valor: number) =>
   }).format(valor || 0);
 
 // Etapas que viram coluna do quadro. "Pago / entregue" sai do pátio e fica só como contagem.
-const ETAPAS: StatusOS[] = ['ORCAMENTO', 'AGUARDANDO_PECA', 'EXECUCAO', 'FINALIZADO'];
+const ETAPAS = ETAPAS_QUADRO;
+// Some depois da primeira mudança de etapa que dá certo no Radar.
+const CHAVE_DICA_ARRASTAR = 'mecanify_radar_dica_arrastar';
 // Quantas ordens antigas (fora do período) o aviso lista.
 const LIMITE_ANTIGAS = 5;
 // Quantos cards cada etapa desenha; o total exato vem da contagem da API.
 const LIMITE_POR_ETAPA = 20;
 
-interface Etapa {
-  items: UltimaOS[];
-  total: number;
+type Etapa = EtapaQuadro;
+
+function lerDicaVista(): boolean {
+  try {
+    return localStorage.getItem(CHAVE_DICA_ARRASTAR) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function lembrarDicaVista(): void {
+  try {
+    localStorage.setItem(CHAVE_DICA_ARRASTAR, '1');
+  } catch {
+    /* localStorage indisponível: a dica só volta a aparecer */
+  }
 }
 
 interface Quadro {
@@ -41,7 +69,61 @@ interface Quadro {
   criticosCount: number;
 }
 
-function CardOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
+/** O que o quadro precisa para mover cards de etapa (arrastar no desktop, menu "…" em todas as larguras). */
+interface ControleMover {
+  /** O cargo pode trocar a etapa (mesma regra da tela da Ordem). Sem isso: sem arrasto, sem menu. */
+  pode: boolean;
+  /** Uma gravação em andamento: nada mais arrasta e os itens "Mover para" ficam inativos. */
+  gravando: boolean;
+  /** Id do elemento com a dica para leitor de tela (`aria-describedby` do card). */
+  idDica: string;
+  /** Ordem sendo arrastada agora e a coluna sob o ponteiro. */
+  arrastandoId: string | null;
+  sobre: StatusOS | null;
+  podeSoltarEm: (st: StatusOS) => boolean;
+  aoIniciarArrasto: (os: UltimaOS, de: StatusOS, e: DragEvent<HTMLElement>) => void;
+  aoFimArrasto: () => void;
+  aoSobre: (st: StatusOS | null) => void;
+  aoSoltar: (st: StatusOS) => void;
+  aoPedir: (os: UltimaOS, de: StatusOS, para: StatusOS) => void;
+}
+
+/** Menu "…" do card: "Abrir ordem" e "Mover para" cada outra coluna. Fica num `data-os-acoes` para o foco achar o card movido. */
+function AcoesCard({ os, st, onAbrir, mover }: { os: UltimaOS; st: StatusOS; onAbrir: () => void; mover: ControleMover }) {
+  const placa = formatarPlaca(os.veiculos?.placa || 'SEM-PLACA');
+  const itens: ItemMenu[] = [
+    { rotulo: 'Abrir ordem', icone: FileText, aoClicar: onAbrir },
+    ...destinosDe(st).map((para) => ({
+      rotulo: `Mover para ${STATUS_OS[para].rotulo}`,
+      icone: STATUS_OS[para].icone,
+      aoClicar: () => mover.aoPedir(os, st, para),
+      desabilitado: mover.gravando,
+    })),
+  ];
+  return (
+    <div data-os-acoes={os.id} draggable={false}>
+      <MenuAcoes rotulo={`Ações da ordem ${placa}`} itens={itens} />
+    </div>
+  );
+}
+
+function LinkWhatsApp({ fone, clienteNome, className }: { fone: string; clienteNome: string; className: string }) {
+  return (
+    <a
+      href={`https://wa.me/55${fone}`}
+      target="_blank"
+      rel="noreferrer"
+      draggable={false}
+      aria-label={`Conversar no WhatsApp com ${clienteNome}`}
+      title="WhatsApp"
+      className={`flex h-11 w-11 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${className}`}
+    >
+      <MessageCircle size={20} strokeWidth={1.5} aria-hidden="true" />
+    </a>
+  );
+}
+
+function CardOS({ os, onAbrir, mover }: { os: UltimaOS; onAbrir: () => void; mover: ControleMover }) {
   const st = (os.status as StatusOS) || 'ORCAMENTO';
   const placa = os.veiculos?.placa || 'SEM-PLACA';
   const modelo = os.veiculos?.modelo || 'Veículo';
@@ -49,16 +131,28 @@ function CardOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
   const foneLimpo = (os.clientes?.telefone || '').replace(/\D/g, '');
   const dias = diasDesde(os.data_abertura);
   const nivel = nivelAtraso(st, dias);
+  const arrastando = mover.arrastandoId === os.id;
 
   return (
-    <li className="relative">
+    // O `li` é o que arrasta; dentro dele o card continua um botão que abre a OS e os ícones são irmãos
+    <li
+      data-os-id={os.id}
+      data-arrastando={arrastando || undefined}
+      draggable={mover.pode ? !mover.gravando : undefined}
+      onDragStart={mover.pode ? (e) => mover.aoIniciarArrasto(os, st, e) : undefined}
+      onDragEnd={mover.pode ? mover.aoFimArrasto : undefined}
+      className={`relative transition-opacity motion-reduce:transition-none ${arrastando ? 'opacity-50' : ''}`}
+    >
       <Panel espaco="nenhum">
         <button
           type="button"
           onClick={onAbrir}
-          className="block w-full cursor-pointer rounded-2xl p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          aria-describedby={mover.pode ? mover.idDica : undefined}
+          className={`block w-full rounded-2xl p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            mover.pode && !mover.gravando ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+          }`}
         >
-          <span className="flex flex-wrap items-center justify-between gap-2">
+          <span className={`flex flex-wrap items-center justify-between gap-2 ${mover.pode ? 'pr-10' : ''}`}>
             <PlateChip placa={placa} />
             {nivel !== 'ok' && <MarcaAtraso nivel={nivel} />}
           </span>
@@ -69,24 +163,18 @@ function CardOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
             <span className="block text-xs text-ink-muted">{textoDias(dias)}</span>
           </span>
         </button>
-        {foneLimpo && (
-          <a
-            href={`https://wa.me/55${foneLimpo}`}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`Conversar no WhatsApp com ${clienteNome}`}
-            title="WhatsApp"
-            className="absolute bottom-1 right-1 flex h-11 w-11 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          >
-            <MessageCircle size={20} strokeWidth={1.5} aria-hidden="true" />
-          </a>
+        {mover.pode && (
+          <div className="absolute right-1 top-1">
+            <AcoesCard os={os} st={st} onAbrir={onAbrir} mover={mover} />
+          </div>
         )}
+        {foneLimpo && <LinkWhatsApp fone={foneLimpo} clienteNome={clienteNome} className="absolute bottom-1 right-1" />}
       </Panel>
     </li>
   );
 }
 
-function LinhaOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
+function LinhaOS({ os, onAbrir, mover }: { os: UltimaOS; onAbrir: () => void; mover: ControleMover }) {
   const st = (os.status as StatusOS) || 'ORCAMENTO';
   const placa = os.veiculos?.placa || 'SEM-PLACA';
   const modelo = os.veiculos?.modelo || 'Veículo';
@@ -94,14 +182,17 @@ function LinhaOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
   const foneLimpo = (os.clientes?.telefone || '').replace(/\D/g, '');
   const dias = diasDesde(os.data_abertura);
   const nivel = nivelAtraso(st, dias);
+  const controles = (foneLimpo ? 1 : 0) + (mover.pode ? 1 : 0);
 
   return (
-    <li className="relative">
+    // Celular e tablet: sem arrasto (não funciona no toque); mudar de etapa é pelo "…"
+    <li data-os-id={os.id} className="group/linha relative">
       <button
         type="button"
         onClick={onAbrir}
-        className={`flex min-h-16 w-full cursor-pointer items-center gap-3 py-2.5 pl-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand ${
-          foneLimpo ? 'pr-14' : 'pr-4'
+        aria-describedby={mover.pode ? mover.idDica : undefined}
+        className={`flex min-h-16 w-full cursor-pointer items-center gap-3 py-2.5 pl-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand group-first/linha:rounded-t-2xl group-last/linha:rounded-b-2xl ${
+          controles === 2 ? 'pr-[6.25rem]' : controles === 1 ? 'pr-14' : 'pr-4'
         }`}
       >
         <span className="min-w-0 flex-1">
@@ -119,17 +210,12 @@ function LinhaOS({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
           {nivel !== 'ok' && <MarcaAtraso nivel={nivel} />}
         </span>
       </button>
-      {foneLimpo && (
-        <a
-          href={`https://wa.me/55${foneLimpo}`}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`Conversar no WhatsApp com ${clienteNome}`}
-          title="WhatsApp"
-          className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        >
-          <MessageCircle size={20} strokeWidth={1.5} aria-hidden="true" />
-        </a>
+      {controles > 0 && (
+        // Sem `transform` aqui: ele criaria um contexto de empilhamento e a linha de baixo cobriria o menu aberto
+        <div className="absolute inset-y-0 right-1 flex items-center">
+          {foneLimpo && <LinkWhatsApp fone={foneLimpo} clienteNome={clienteNome} className="" />}
+          {mover.pode && <AcoesCard os={os} st={st} onAbrir={onAbrir} mover={mover} />}
+        </div>
       )}
     </li>
   );
@@ -139,20 +225,61 @@ function EtapaQuadro({
   st,
   etapa,
   onNavigateTab,
+  mover,
   compacto = false,
 }: {
   st: StatusOS;
   etapa: Etapa;
   onNavigateTab: DashboardProps['onNavigateTab'];
+  mover: ControleMover;
   compacto?: boolean;
 }) {
   const rotulo = STATUS_OS[st].rotulo;
   const cards = etapa.items;
   const total = Math.max(etapa.total, cards.length);
   const abrir = (id: string) => onNavigateTab('os', undefined, id);
+  // Só o quadro do desktop recebe cards soltos; a coluna de origem nunca acende
+  const solta = !compacto && mover.pode;
+  const alvo = solta && mover.arrastandoId && mover.podeSoltarEm(st) ? (mover.sobre === st ? 'sobre' : 'valido') : undefined;
+
+  const aceitar = (e: DragEvent<HTMLElement>) => {
+    if (!solta || !e.dataTransfer.types.includes(TIPO_ARRASTO) || !mover.podeSoltarEm(st)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (mover.sobre !== st) mover.aoSobre(st);
+  };
 
   return (
-    <section aria-label={rotulo} className="min-w-0">
+    <section
+      aria-label={rotulo}
+      data-etapa={compacto ? undefined : st}
+      data-alvo={alvo}
+      onDragEnter={solta ? aceitar : undefined}
+      onDragOver={solta ? aceitar : undefined}
+      onDragLeave={
+        solta
+          ? (e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null) && mover.sobre === st) mover.aoSobre(null);
+            }
+          : undefined
+      }
+      onDrop={
+        solta
+          ? (e) => {
+              if (!e.dataTransfer.types.includes(TIPO_ARRASTO) || !mover.podeSoltarEm(st)) return;
+              e.preventDefault();
+              mover.aoSoltar(st);
+            }
+          : undefined
+      }
+      className={
+        compacto
+          ? 'min-w-0'
+          : `min-w-0 rounded-2xl p-2 transition-colors motion-reduce:transition-none ${
+              alvo === 'sobre' ? 'bg-brand/20' : alvo === 'valido' ? 'bg-brand/10' : ''
+            }`
+      }
+    >
       <div className={`flex items-center justify-between gap-2 px-1 ${total === 0 && compacto ? '' : 'mb-3'}`}>
         <StatusBadge status={st} />
         <span data-testid="contagem-etapa" className="text-sm font-medium tabular-nums text-ink-muted">
@@ -160,22 +287,33 @@ function EtapaQuadro({
         </span>
       </div>
       {total === 0 ? (
-        !compacto && <p className="px-1 text-sm text-ink-muted">Nenhum veículo</p>
+        !compacto &&
+        (mover.pode ? (
+          // Coluna vazia ainda é um lugar visível para soltar
+          <div
+            data-testid="area-soltar"
+            className="flex min-h-28 items-center justify-center rounded-2xl bg-muted/60 px-3 text-sm text-ink-muted"
+          >
+            Nenhum veículo
+          </div>
+        ) : (
+          <p className="px-1 text-sm text-ink-muted">Nenhum veículo</p>
+        ))
       ) : (
         <>
           {cards.length > 0 &&
             (compacto ? (
-              <Panel espaco="nenhum" className="overflow-hidden">
+              <Panel espaco="nenhum">
                 <ul className="divide-y divide-line">
                   {cards.map((os) => (
-                    <LinhaOS key={os.id} os={os} onAbrir={() => abrir(os.id)} />
+                    <LinhaOS key={os.id} os={os} onAbrir={() => abrir(os.id)} mover={mover} />
                   ))}
                 </ul>
               </Panel>
             ) : (
               <ul className="space-y-3">
                 {cards.map((os) => (
-                  <CardOS key={os.id} os={os} onAbrir={() => abrir(os.id)} />
+                  <CardOS key={os.id} os={os} onAbrir={() => abrir(os.id)} mover={mover} />
                 ))}
               </ul>
             ))}
@@ -317,11 +455,28 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   const [error, setError] = useState<string | null>(null);
   const seqRadar = useRef(0);
 
+  // Mover card de etapa (arrastar no desktop, menu "…" em todas as larguras); sempre com confirmação
+  const { user } = useAuth();
+  const podeMover = podeMudarEtapa(user?.cargo);
+  const idDica = useId();
+  const [arrasto, setArrasto] = useState<{ osId: string; de: StatusOS } | null>(null);
+  // O estado da tela atrasa um quadro em relação aos eventos de arrasto; a ref responde na hora
+  const arrastoRef = useRef<{ osId: string; placa: string; de: StatusOS } | null>(null);
+  const [sobre, setSobre] = useState<StatusOS | null>(null);
+  const [pedido, setPedido] = useState<PedidoMovimento | null>(null);
+  const [gravando, setGravando] = useState(false);
+  const gravandoRef = useRef(false);
+  const [erroMover, setErroMover] = useState<string | null>(null);
+  const [anuncio, setAnuncio] = useState('');
+  const [dicaVista, setDicaVista] = useState(lerDicaVista);
+  const focarAcoesDe = useRef<string | null>(null);
+
   const carregarRadar = useCallback(async () => {
     if (!empresaId) return;
     const minha = ++seqRadar.current;
     setLoading(true);
     setError(null);
+    setErroMover(null);
     try {
       const { inicio, fim } = intervaloDoPeriodo(periodo);
       const doPeriodo = { empresaId, dataInicio: inicio, dataFim: fim, ordenacao: 'data_desc' as const };
@@ -360,6 +515,93 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   useEffect(() => {
     carregarRadar();
   }, [carregarRadar]);
+
+  const fimArrasto = () => {
+    arrastoRef.current = null;
+    setArrasto(null);
+    setSobre(null);
+  };
+
+  const pedirMovimento = (os: UltimaOS, de: StatusOS, para: StatusOS, viaMenu: boolean) => {
+    if (!podeMover || gravandoRef.current || !podeSoltar(de, para)) return;
+    setErroMover(null);
+    setPedido({ osId: os.id, placa: os.veiculos?.placa || 'SEM-PLACA', de, para, viaMenu });
+  };
+
+  const controleMover: ControleMover = {
+    pode: podeMover,
+    gravando,
+    idDica,
+    arrastandoId: arrasto?.osId ?? null,
+    sobre,
+    podeSoltarEm: (st) => !!arrastoRef.current && podeSoltar(arrastoRef.current.de, st),
+    aoIniciarArrasto: (os, de, e) => {
+      if (gravandoRef.current) {
+        e.preventDefault();
+        return;
+      }
+      e.dataTransfer.setData(TIPO_ARRASTO, os.id);
+      e.dataTransfer.effectAllowed = 'move';
+      arrastoRef.current = { osId: os.id, placa: os.veiculos?.placa || 'SEM-PLACA', de };
+      setArrasto({ osId: os.id, de });
+    },
+    aoFimArrasto: fimArrasto,
+    aoSobre: setSobre,
+    aoSoltar: (para) => {
+      const a = arrastoRef.current;
+      fimArrasto();
+      if (!a || !quadro) return;
+      const os = quadro.etapas[a.de]?.items.find((o) => o.id === a.osId);
+      if (os) pedirMovimento(os, a.de, para, false);
+    },
+    aoPedir: (os, de, para) => pedirMovimento(os, de, para, true),
+  };
+
+  // Só depois de Confirmar: move na hora (otimista), grava, e recarrega o quadro; se falhar, desfaz e avisa
+  const confirmarMovimento = async () => {
+    const p = pedido;
+    if (!p || !quadro || gravandoRef.current) return;
+    gravandoRef.current = true;
+    setGravando(true);
+    setErroMover(null);
+    setAnuncio('');
+    const anterior = quadro.etapas;
+    const seq = seqRadar.current;
+    setQuadro((q) => (q ? { ...q, etapas: moverNoQuadro(q.etapas, p.osId, p.de, p.para) } : q));
+    try {
+      await api.atualizarOS(empresaId, p.osId, { status: p.para });
+      setAnuncio(anuncioMovida(p.placa, p.para));
+      lembrarDicaVista();
+      setDicaVista(true);
+      if (p.viaMenu) focarAcoesDe.current = p.osId;
+      setPedido(null);
+      carregarRadar();
+    } catch (err: unknown) {
+      // O detalhe técnico fica só no console; a tela diz o que aconteceu com a ordem
+      console.error('Radar do pátio: falha ao mudar a etapa', err);
+      // Só desfaz se nenhum carregamento novo trocou o quadro nesse meio-tempo (aí ele já é a verdade)
+      if (seq === seqRadar.current) setQuadro((q) => (q ? { ...q, etapas: anterior } : q));
+      setErroMover(
+        `Não foi possível mover ${formatarPlaca(p.placa)} para ${STATUS_OS[p.para].rotulo}. A ordem continua em ${STATUS_OS[p.de].rotulo}. Tente novamente.`
+      );
+      setPedido(null);
+    } finally {
+      gravandoRef.current = false;
+      setGravando(false);
+    }
+  };
+
+  // Mudança feita pelo menu: o foco segue o card até a etapa nova (o card antigo saiu da tela com o foco)
+  useEffect(() => {
+    const id = focarAcoesDe.current;
+    if (!id || pedido) return;
+    const alvo = Array.from(document.querySelectorAll<HTMLElement>(`[data-os-acoes="${id}"] button[aria-haspopup]`)).find(
+      (el) => el.offsetParent !== null
+    );
+    if (!alvo) return;
+    if (document.activeElement !== alvo) alvo.focus();
+    if (!loading) focarAcoesDe.current = null;
+  }, [quadro, pedido, loading]);
 
   const escolherPeriodo = (p: Periodo) => {
     // Escolher de novo o que já está valendo não refaz as leituras
@@ -445,6 +687,22 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
     <div>
       {cabecalho}
 
+      {/* Fora da área que fica aria-busy no recarregamento, para o leitor de tela não segurar o aviso */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {anuncio}
+      </p>
+      {podeMover && (
+        <span id={idDica} className="sr-only">
+          Use o menu … para mover para outra etapa
+        </span>
+      )}
+      {erroMover && (
+        <p role="alert" className="mb-4 flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{erroMover}</span>
+        </p>
+      )}
+
       {/* Durante a troca de período o quadro anterior fica na tela, esmaecido, em vez de piscar vazio */}
       <div
         data-testid="radar-conteudo"
@@ -480,16 +738,22 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           </Panel>
         ) : (
           <>
-            {/* Desktop: quadro em 4 colunas com cards */}
-            <div data-testid="quadro-patio" className="hidden gap-4 lg:grid lg:grid-cols-4">
+            {podeMover && !dicaVista && (
+              <p className="mb-2 hidden items-center gap-1.5 text-xs text-ink-muted lg:flex">
+                <Move size={14} aria-hidden="true" />
+                Arraste um card para outra etapa para mudar o status
+              </p>
+            )}
+            {/* Desktop: quadro em 4 colunas com cards. Cada coluna tem p-2 (área de soltar), daí o -mx-2 e sem gap */}
+            <div data-testid="quadro-patio" className="-mx-2 hidden lg:grid lg:grid-cols-4">
               {ETAPAS.map((st) => (
-                <EtapaQuadro key={st} st={st} etapa={quadro.etapas[st]} onNavigateTab={onNavigateTab} />
+                <EtapaQuadro key={st} st={st} etapa={quadro.etapas[st]} onNavigateTab={onNavigateTab} mover={controleMover} />
               ))}
             </div>
             {/* Celular e tablet: todas as etapas empilhadas, linhas compactas, sem rolagem lateral */}
             <div data-testid="patio-lista" className="space-y-6 lg:hidden">
               {ETAPAS.map((st) => (
-                <EtapaQuadro key={st} st={st} etapa={quadro.etapas[st]} onNavigateTab={onNavigateTab} compacto />
+                <EtapaQuadro key={st} st={st} etapa={quadro.etapas[st]} onNavigateTab={onNavigateTab} mover={controleMover} compacto />
               ))}
             </div>
           </>
@@ -541,6 +805,8 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           )}
         </section>
       </div>
+
+      <ConfirmarMovimento pedido={pedido} gravando={gravando} aoConfirmar={confirmarMovimento} aoCancelar={() => setPedido(null)} />
     </div>
   );
 }
