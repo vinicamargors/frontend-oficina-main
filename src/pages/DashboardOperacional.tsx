@@ -268,11 +268,9 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
       });
     } catch (err: unknown) {
       if (minha !== seqRadar.current) return;
-      const customErr = err as Error;
-      setError(
-        customErr.message ||
-          'Não foi possível carregar o Radar do pátio. O servidor pode estar iniciando.'
-      );
+      // O detalhe técnico fica só no console; a tela mostra uma frase que o dono entende.
+      console.error('Radar do pátio: falha ao carregar', err);
+      setError('Não foi possível carregar o Radar. Tente novamente.');
     } finally {
       if (minha === seqRadar.current) setLoading(false);
     }

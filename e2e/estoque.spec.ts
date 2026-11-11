@@ -285,6 +285,37 @@ test.describe('formulário da peça', () => {
     await expect(d).toHaveCount(0);
   });
 
+  test('nome em branco: aviso dentro da folha, sem diálogo nativo e sem gravar', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const nativos: string[] = [];
+    page.on('dialog', (dl) => {
+      nativos.push(dl.message());
+      void dl.dismiss();
+    });
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /Nova peça/ }).click();
+    const d = page.getByRole('dialog', { name: 'Nova peça no estoque' });
+    await d.getByLabel(/Nome da peça/).fill('   ');
+    await d.getByRole('button', { name: 'Salvar peça' }).click();
+    await expect(d.getByRole('alert')).toContainText('Informe o nome da peça/item.');
+    expect(nativos).toEqual([]);
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('exportar sem itens no filtro: aviso na página, sem diálogo nativo e sem arquivo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const nativos: string[] = [];
+    page.on('dialog', (dl) => {
+      nativos.push(dl.message());
+      void dl.dismiss();
+    });
+    await abrir(page, tema);
+    await page.getByRole('searchbox', { name: /Buscar peça/ }).fill('zzzz-nada-assim');
+    await page.getByRole('button', { name: 'Exportar CSV' }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Não há itens para exportar no filtro atual.' })).toBeVisible();
+    expect(nativos).toEqual([]);
+  });
+
   test('editar abre preenchido; Esc com dados alterados pede "Descartar alterações?"', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
@@ -329,6 +360,27 @@ test.describe('categorias', () => {
     await d.getByRole('button', { name: 'Manter categoria' }).click();
     await expect(d.getByRole('alert')).toHaveCount(0);
     expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('reclassificar que falha: aviso dentro da folha, sem diálogo nativo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const nativos: string[] = [];
+    page.on('dialog', (dl) => {
+      nativos.push(dl.message());
+      void dl.dismiss();
+    });
+    await abrir(page, tema);
+    await page.route('**/api/v1/estoque/*/*', (r) =>
+      r.request().method() === 'GET'
+        ? r.fallback()
+        : r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'x' }) }),
+    );
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    const d = page.getByRole('dialog', { name: 'Gerenciar categorias' });
+    await d.getByRole('button', { name: 'Excluir categoria Fluidos' }).click();
+    await d.getByRole('button', { name: 'Reclassificar e excluir' }).click();
+    await expect(d.getByRole('alert')).toContainText('Falha ao reclassificar itens da categoria.');
+    expect(nativos).toEqual([]);
   });
 });
 

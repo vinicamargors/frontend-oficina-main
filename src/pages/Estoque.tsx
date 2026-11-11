@@ -227,6 +227,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         return;
       }
       setCategoriaParaExcluir(null);
+      setErro(null);
 
       try {
         for (const item of itensUsando) {
@@ -234,7 +235,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         }
         await carregarEstoque();
       } catch {
-        alert('Falha ao reclassificar itens da categoria.');
+        setErro('Falha ao reclassificar itens da categoria.');
         return;
       }
     }
@@ -279,7 +280,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
   const handleSalvarItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formNome.trim()) {
-      alert('Informe o nome da peça/item.');
+      setErro('Informe o nome da peça/item.');
       return;
     }
 
@@ -385,9 +386,10 @@ export function Estoque({ empresaId }: EstoqueProps) {
   // Exportação CSV compatível com Excel (UTF-8 com BOM e ponto e vírgula)
   const handleExportarCsv = () => {
     if (itensFiltrados.length === 0) {
-      alert('Não há itens para exportar no filtro atual.');
+      setErro('Não há itens para exportar no filtro atual.');
       return;
     }
+    setErro(null);
 
     const cabecalho = canSeeFinanceiro
       ? [
@@ -641,7 +643,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
           </p>
         )}
       </div>
-      {erro && !modalItemAberto && !modalAjusteAberto && !itemParaExcluir && <div className="mb-4">{alertaErro(erro)}</div>}
+      {erro && !modalItemAberto && !modalAjusteAberto && !itemParaExcluir && !mostrarModalCategorias && <div className="mb-4">{alertaErro(erro)}</div>}
 
       {/* Indicadores: números grandes separados por divisores, sem cards aninhados */}
       <Panel
@@ -974,6 +976,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         aoCancelar={sairDasCategorias}
       >
         {confirmarDescarte}
+        {erro && alertaErro(erro)}
         <form onSubmit={handleAdicionarCategoria} className="flex items-end gap-2">
           <div className="flex-1">
             <Field rotulo="Nome da nova categoria">
