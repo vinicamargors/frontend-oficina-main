@@ -14,7 +14,7 @@ Sistema visual "Grafite + Âmbar". Ferramenta de oficina: some no trabalho; a ma
 | `sunken` | campos de formulário |
 | `line` | divisores decorativos |
 | `line-strong` | borda de campo (>=3:1 contra `sunken` e `surface`) |
-| `ink` / `ink-muted` / `ink-subtle` | texto principal / secundário / legenda e placeholder |
+| `ink` / `ink-muted` / `ink-subtle` | texto principal / secundário / legenda e placeholder (`ink-subtle` claro `#6D665B`, >=4.5:1 também sobre `muted`) |
 | `brand` / `brand-hover` | botão primário, item ativo, foco / hover do primário |
 | `brand-ink` | texto e ícone âmbar |
 | `on-brand` | texto sobre `brand` |

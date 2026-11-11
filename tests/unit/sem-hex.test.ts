@@ -28,3 +28,16 @@ describe('sem hex em src/**/*.tsx', () => {
     expect(achados).toEqual([]);
   });
 });
+
+describe('sem text-white em src/**/*.tsx', () => {
+  it('botões/selos sólidos usam o token text-on-solid', () => {
+    const achados: string[] = [];
+    for (const arq of arquivos(resolve(process.cwd(), 'src'))) {
+      if (EXCECOES.some((r) => r.test(arq))) continue;
+      semBlocoImpressao(readFileSync(arq, 'utf8')).split('\n').forEach((linha, i) => {
+        if (/\btext-white\b/.test(linha)) achados.push(`${arq}:${i + 1}: ${linha.trim()}`);
+      });
+    }
+    expect(achados).toEqual([]);
+  });
+});

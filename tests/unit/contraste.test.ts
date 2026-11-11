@@ -46,7 +46,7 @@ for (const [nome, ler] of Object.entries(temas)) {
     for (const fg of ['ink', 'ink-muted', 'brand-ink', 'danger', 'success', 'warning', 'info', 'done']) {
       for (const bg of ['canvas', 'surface', 'muted']) par(fg, bg, 4.5);
     }
-    par('ink-subtle', 'surface', 4.5);
+    for (const bg of ['canvas', 'surface', 'muted']) par('ink-subtle', bg, 4.5);
     par('line-strong', 'sunken', 3);
     par('line-strong', 'surface', 3);
     par('on-brand', 'brand', 4.5);
