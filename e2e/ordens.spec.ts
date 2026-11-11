@@ -24,6 +24,15 @@ const folha = (page: Page) => page.getByRole('dialog', { name: 'Confirmar pagame
 const folhaEtapa = (page: Page) => page.getByRole('dialog', { name: /^Mover para / });
 
 test.describe('bancada: confirmação do Pago', () => {
+  test('folha de pagamento: o foco inicial é o título e nenhuma forma vem marcada', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrirBancada(page, tema);
+    await etapas(page).getByRole('button', { name: 'Pago / entregue', exact: true }).click();
+    const dialogo = folha(page);
+    await expect(dialogo.getByRole('heading', { name: 'Confirmar pagamento' })).toBeFocused();
+    await expect(dialogo.getByRole('radio', { checked: true })).toHaveCount(0);
+  });
+
   test('clicar em Pago abre a folha com o total; confirmar envia a forma escolhida', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     const erros = coletarErros(page);

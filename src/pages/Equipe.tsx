@@ -878,6 +878,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* FOLHA: CADASTRO / EDIÇÃO DE COLABORADOR */}
       <Folha
         aberto={modalColaboradorAberto}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
         titulo={colaboradorEmEdicao ? 'Editar colaborador' : 'Novo colaborador'}

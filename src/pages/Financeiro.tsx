@@ -832,6 +832,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {/* FOLHA: CADASTRO / EDIÇÃO DE LANÇAMENTO (DESPESA OU RECEITA AVULSA) */}
       <Folha
         aberto={modalTransacaoAberto}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
         titulo={transacaoEmEdicao ? 'Editar lançamento' : 'Novo lançamento'}

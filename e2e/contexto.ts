@@ -1,4 +1,4 @@
-import type { ConsoleMessage, Page, TestInfo } from '@playwright/test';
+import { expect, type ConsoleMessage, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { urlIgnoradaNoConsole } from './mocks/rede';
 
 export type Tema = 'claro' | 'escuro';
@@ -19,4 +19,10 @@ export function coletarErros(page: Page): string[] {
     erros.push(`console.error: ${m.text()} (${m.location().url})`);
   });
   return erros;
+}
+
+/** Folha de formulário: o foco inicial vai ao primeiro campo editável (não ao título). */
+export async function exigirFocoNoPrimeiroCampo(folha: Locator): Promise<void> {
+  const primeiro = folha.locator('input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])').first();
+  await expect(primeiro).toBeFocused();
 }

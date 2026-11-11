@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { abrirTela, entrarComo, exigirRedeCompleta, listaTransacoes, simularBackend, transacoes, type Cenario } from './mocks';
-import { coletarErros, contextoDoProjeto } from './contexto';
+import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
 const ultimaEscrita = (page: Page) =>
@@ -471,6 +471,13 @@ test.describe('datas no calendário local (22h em São Paulo)', () => {
     const e = (await ultimaEscrita(page))!;
     expect(e.caminho).toContain(`/${PENDENTE_RECEITA.id}/liquidar`);
     expect(e.corpo).toEqual({ data_liquidacao: HOJE_SP, forma_pagamento: 'PIX' });
+  });
+
+  test('novo lançamento abre com o foco no primeiro campo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: 'Novo lançamento' }).click();
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Novo lançamento' }));
   });
 
   test('novo lançamento às 22h: vencimento padrão é hoje; "já foi paga" sem vencimento liquida hoje', async ({ page }, info) => {

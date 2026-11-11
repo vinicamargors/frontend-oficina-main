@@ -783,6 +783,7 @@ export function ClientesVeiculos({
       {/* FOLHA 1: FICHA DO CLIENTE + MÚLTIPLOS VEÍCULOS (CRIAR OU EDITAR) */}
       <Folha
         aberto={fichaAberta}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
         titulo={clienteEmEdicao ? `Ficha de ${clienteEmEdicao.nome}` : 'Novo cliente e veículos'}
@@ -1036,6 +1037,7 @@ export function ClientesVeiculos({
       {/* FOLHA 2: EDITAR VEÍCULO EXISTENTE */}
       <Folha
         aberto={veiculoEmEdicao !== null}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
         titulo={veiculoEmEdicao ? `Editar Veículo — ${veiculoEmEdicao.placa}` : ''}
@@ -1233,6 +1235,7 @@ export function ClientesVeiculos({
       {/* FOLHA 4: ABRIR NOVA OS RÁPIDA DIRETO DO VEÍCULO */}
       <Folha
         aberto={novaOsRapida !== null}
+        focoInicial="primeiro-campo"
         fecharNoFundo={false}
         titulo="Abrir Ordem de Serviço"
         aoCancelar={() => sairDaFolha(osSuja, fecharOsRapida)}

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { API_URL, abrirTela, clientes, entrarComo, exigirRedeCompleta, simularBackend, veiculos, type Cenario } from './mocks';
-import { coletarErros, contextoDoProjeto } from './contexto';
+import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> };
 
@@ -166,6 +166,18 @@ test.describe('ações do cliente (menu)', () => {
     await expect.poll(acimaDoGatilho).toBe(false);
   });
 
+  test('as folhas de formulário focam o primeiro campo ao abrir', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` }).click();
+    await page.getByRole('menuitem', { name: /Editar ficha/ }).click();
+    const ficha = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
+    await exigirFocoNoPrimeiroCampo(ficha);
+    await page.keyboard.press('Escape');
+    await expect(ficha).toBeHidden();
+
+  });
+
   test('editar ficha envia PUT com os dados novos', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     const escritas = gravarEscritas(page);
@@ -231,6 +243,18 @@ test.describe('veículos do cliente', () => {
     await l.getByRole('button', { name: new RegExp(JOAO.nome) }).first().click();
     return l.getByRole('list', { name: `Veículos de ${JOAO.nome}` });
   }
+
+  test('folhas de veículo e de OS rápida focam o primeiro campo ao abrir', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    const veics = await expandir(page);
+    await veics.getByRole('button', { name: 'Editar veículo ABC1234' }).click();
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: /Editar Veículo — / }));
+    await page.keyboard.press('Escape');
+
+    await veics.getByRole('button', { name: 'Abrir OS para ABC1234' }).click();
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Abrir Ordem de Serviço' }));
+  });
 
   test('editar veículo: abre com os dados, consulta a placa e salva com PUT', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);

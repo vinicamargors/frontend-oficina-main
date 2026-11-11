@@ -793,6 +793,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
       {/* FOLHA 1: CADASTRO / EDIÇÃO DE PEÇA NO ESTOQUE */}
       <Folha
         aberto={modalItemAberto}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
         titulo={itemEmEdicao ? 'Editar peça' : 'Nova peça no estoque'}

@@ -3,7 +3,8 @@ import { useEffect, useId, useRef, type MouseEvent, type ReactNode, type Synthet
 /**
  * Casca das folhas de confirmação: `<dialog>` nativo com `showModal()` (Esc, foco preso, fundo).
  * Esc e clique no fundo chamam `aoCancelar`. No celular vira folha inferior; ≥640px, cartão central.
- * O foco inicial vai para o título (nunca para uma opção, que pareceria pré-marcada).
+ * O foco inicial vai para o título (nunca para uma opção, que pareceria pré-marcada); nos formulários,
+ * `focoInicial="primeiro-campo"` leva direto ao primeiro campo (evita um Tab extra).
  */
 export function Folha({
   aberto,
@@ -12,6 +13,7 @@ export function Folha({
   children,
   tamanho = 'sm',
   fecharNoFundo = true,
+  focoInicial = 'titulo',
 }: {
   aberto: boolean;
   titulo: string;
@@ -21,6 +23,8 @@ export function Folha({
   tamanho?: 'sm' | 'lg';
   /** false: o clique no fundo não fecha (formulários, para um toque errado não descartar o que foi digitado). */
   fecharNoFundo?: boolean;
+  /** `titulo` (padrão): confirmações e pagamento. `primeiro-campo`: formulários. */
+  focoInicial?: 'titulo' | 'primeiro-campo';
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
@@ -31,7 +35,11 @@ export function Folha({
     if (!d) return;
     if (aberto && !d.open) {
       d.showModal();
-      tituloRef.current?.focus();
+      const campo =
+        focoInicial === 'primeiro-campo'
+          ? d.querySelector<HTMLElement>('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])')
+          : null;
+      (campo ?? tituloRef.current)?.focus();
     } else if (!aberto && d.open) {
       d.close();
     }

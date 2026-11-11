@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { EMPRESA_ID, abrirTela, avaliacoes, entrarComo, escalas, exigirRedeCompleta, simularBackend, usuarios, type Cenario } from './mocks';
-import { coletarErros, contextoDoProjeto } from './contexto';
+import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
 const ultimaEscrita = (page: Page) =>
@@ -129,6 +129,13 @@ test.describe('colaboradores', () => {
 });
 
 test.describe('formulário do colaborador', () => {
+  test('abre com o foco no primeiro campo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /Novo colaborador/ }).click();
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Novo colaborador' }));
+  });
+
   test('novo: salva todos os campos de RH digitados', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
