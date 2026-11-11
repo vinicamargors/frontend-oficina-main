@@ -266,8 +266,12 @@ export const ordens: UltimaOS[] = PLANO_OS.map(([status, dias, total], i) => {
 /** OS aberta na bancada (`?tab=os&osId=`). */
 export const OS_BANCADA_ID = ordens[1].id;
 
-export function listaOS(cenario: Cenario, q: URLSearchParams): OSPaginatedResponse {
-  let items = cenario === 'vazio' ? [] : [...ordens];
+/**
+ * `/os/` simulado. `statusAtual` (opcional) sobrescreve o status de ordens por id: os testes que mudam a etapa
+ * guardam ali o que foi gravado, para a próxima leitura já trazer a ordem na etapa nova.
+ */
+export function listaOS(cenario: Cenario, q: URLSearchParams, statusAtual: Record<string, StatusOS> = {}): OSPaginatedResponse {
+  let items = cenario === 'vazio' ? [] : ordens.map((o) => (statusAtual[o.id] ? { ...o, status: statusAtual[o.id] } : o));
   const status = q.get('status');
   if (status) items = items.filter((o) => o.status === status);
   // `data_inicio`/`data_fim` (AAAA-MM-DD, inclusivos) valem para o dia de `data_abertura` no fuso da oficina
