@@ -168,6 +168,17 @@ test.describe('radar: seletor de período', () => {
     await expect(botaoPeriodo(page)).toHaveAccessibleName('Últimos 14 dias');
   });
 
+  test('o botão Ver fica na mesma faixa do texto do aviso (sem linha própria)', async ({ page }, info) => {
+    await preparar(page, contextoDoProjeto(info).tema);
+    await abrirTela(page, 'radar');
+    const aviso = page.getByText('2 ordens abertas mais antigas ficam fora do período');
+    await expect(aviso).toBeVisible();
+    const t = (await aviso.boundingBox())!;
+    const v = (await page.getByRole('button', { name: 'Ver', exact: true }).boundingBox())!;
+    expect(v.y).toBeLessThan(t.y + t.height); // começa antes do fim do texto: não desceu para uma linha abaixo
+    expect(v.x).toBeGreaterThan(t.x);
+  });
+
   test('aviso de ordens abertas mais antigas: aparece com o N certo e some quando N = 0', async ({ page }, info) => {
     await preparar(page, contextoDoProjeto(info).tema);
     await abrirTela(page, 'radar');

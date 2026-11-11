@@ -404,13 +404,13 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         )}
 
         {antigas.total > 0 && (
-          <p className="mt-4 flex flex-wrap items-center gap-x-1 text-sm text-ink-muted">
-            <span>
+          <p className="mt-4 flex items-center gap-x-1 text-sm text-ink-muted">
+            <span className="min-w-0">
               {antigas.total === 1
                 ? '1 ordem aberta mais antiga fica fora do período'
                 : `${antigas.total} ordens abertas mais antigas ficam fora do período`}
             </span>
-            <Button variante="fantasma" tamanho="sm" onClick={() => onNavigateTab('os', antigas.status)}>
+            <Button variante="fantasma" tamanho="sm" className="shrink-0" onClick={() => onNavigateTab('os', antigas.status)}>
               Ver
             </Button>
           </p>

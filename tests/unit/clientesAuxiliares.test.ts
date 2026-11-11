@@ -5,6 +5,7 @@ import {
   filtrarVeiculos,
   montarLinkWhatsApp,
   agruparPor,
+  formatarDataCurta,
 } from '../../src/pages/clientes/auxiliares';
 import type { Cliente, Veiculo } from '../../src/types';
 
@@ -64,5 +65,24 @@ describe('faixaDaPagina', () => {
     expect(faixaDaPagina(1, 120, 50)).toEqual({ inicio: 1, fim: 50, totalPaginas: 3 });
     expect(faixaDaPagina(3, 120, 50)).toEqual({ inicio: 101, fim: 120, totalPaginas: 3 });
     expect(faixaDaPagina(1, 0, 50)).toEqual({ inicio: 0, fim: 0, totalPaginas: 1 });
+  });
+});
+
+describe('formatarDataCurta', () => {
+  it('data pura AAAA-MM-DD não recua um dia em BRT', () => {
+    const antes = process.env.TZ;
+    process.env.TZ = 'America/Sao_Paulo';
+    try {
+      expect(formatarDataCurta('2026-11-10')).toBe('10/11/2026');
+      expect(formatarDataCurta('2026-01-01')).toBe('01/01/2026');
+    } finally {
+      if (antes === undefined) delete process.env.TZ;
+      else process.env.TZ = antes;
+    }
+  });
+  it('timestamps e vazios continuam como antes', () => {
+    expect(formatarDataCurta('2026-11-10T15:00:00Z')).toBe('10/11/2026');
+    expect(formatarDataCurta(null)).toBe('—');
+    expect(formatarDataCurta('lixo')).toBe('—');
   });
 });
