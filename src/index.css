@@ -165,6 +165,8 @@ progress.loading-spinner:indeterminate {
  * Impressão isolada: com um bloco `.area-impressao` na página (holerite, etiqueta, folha A4 da OS), o papel leva
  * só esse bloco — nunca a tela por trás (ex.: a lista da equipe com os salários). Só vale em `@media print`;
  * na tela nada muda. Sem `.area-impressao`, a impressão da página segue como sempre.
+ * Depende de `:has()` (Chrome/Edge 105+, Safari 15.4+, Firefox 121+); num navegador sem `:has()` as regras são
+ * ignoradas e a impressão volta ao comportamento antigo (a página inteira).
  */
 @media print {
   html:has(.area-impressao),

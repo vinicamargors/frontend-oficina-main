@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { abrirTela, entrarComo, estoque, simularBackend, usuarios } from './mocks';
+import { OS_BANCADA_ID, abrirTela, clientes, entrarComo, estoque, ordens, simularBackend, usuarios } from './mocks';
 import { contextoDoProjeto } from './contexto';
 
 /**
@@ -37,6 +37,9 @@ const visiveisForaDaArea = (page: Page) =>
   );
 
 const TIAGO = usuarios[3];
+const OS_DA_BANCADA = ordens.find((o) => o.id === OS_BANCADA_ID)!;
+const CLIENTE_DA_OS = clientes.find((c) => c.id === OS_DA_BANCADA.cliente_id)!.nome.slice(0, 20);
+const OUTROS_CLIENTES = clientes.filter((c) => c.id !== OS_DA_BANCADA.cliente_id).map((c) => c.nome);
 const OUTROS = usuarios.filter((u) => u.id !== TIAGO.id);
 
 test.describe('impressão isolada', () => {
@@ -88,6 +91,11 @@ test.describe('impressão isolada', () => {
     await page.emulateMedia({ media: 'print' });
     const lista = page.getByRole('list', { name: 'Colaboradores' });
     expect(await lista.evaluate((el) => getComputedStyle(el).visibility)).toBe('visible');
+    await expect(page.getByRole('heading', { level: 1, name: 'Equipe & RH' })).toBeVisible();
+    // o papel traz a tela como antes: título e toda a equipe
+    const { texto } = await textoDoPdf(page);
+    expect(texto).toContain('Equipe & RH');
+    for (const u of usuarios) expect(texto).toContain(u.nome);
   });
 
   test('etiqueta do estoque: só a etiqueta da peça escolhida', async ({ page }, info) => {
@@ -108,16 +116,37 @@ test.describe('impressão isolada', () => {
     expect(texto).not.toContain('Imprimir etiqueta');
   });
 
-  test('folha A4 da OS: só a folha da OS, sem a tela da bancada nem a navegação', async ({ page }, info) => {
+  test('folha A4 da OS: só a folha da OS, sem a tela da bancada, a navegação nem outras ordens', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await simularBackend(page, 'cheio');
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'bancada');
     await page.emulateMedia({ media: 'print' });
     expect(await visiveisForaDaArea(page)).toEqual([]);
-    const { texto } = await textoDoPdf(page);
+    const { texto, paginas } = await textoDoPdf(page);
+    expect(paginas).toBe(1); // a folha desta OS cabe numa página A4
     expect(texto).toContain('Retífica de discos');
-    expect(texto).not.toContain('Radar do Pátio');
-    expect(texto).not.toContain('Imprimir (A4)');
+    expect(texto).toContain(CLIENTE_DA_OS);
+    for (const nome of OUTROS_CLIENTES) expect(texto).not.toContain(nome);
+    for (const chrome of ['Radar do Pátio', 'Ordens de Serviço', 'Imprimir (A4)', 'Mecanify Oficina Modelo', 'Pátio']) {
+      expect(texto).not.toContain(chrome);
+    }
+  });
+
+  test('folha A4 da OS com a confirmação "Mover para…" aberta: a confirmação não vai para o papel', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    test.skip(largura >= 1024, 'a confirmação de etapa na bancada é do celular');
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'bancada');
+    await page.getByRole('list', { name: 'Etapas da ordem de serviço' }).getByRole('button', { name: 'Finalizado', exact: true }).click();
+    await page.getByRole('dialog', { name: 'Mover para Finalizado?' }).waitFor();
+    await page.emulateMedia({ media: 'print' });
+    expect(await visiveisForaDaArea(page)).toEqual([]);
+    const { texto, paginas } = await textoDoPdf(page);
+    expect(paginas).toBe(1);
+    expect(texto).toContain('Retífica de discos');
+    expect(texto).not.toContain('Mover para');
+    expect(texto).not.toContain('Confirmar');
   });
 });

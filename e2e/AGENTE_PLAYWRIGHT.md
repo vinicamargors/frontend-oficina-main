@@ -26,3 +26,5 @@ implementou a mudança.
 2. Para cada cenário: passos, screenshot, requisições de rede relevantes, erros de console.
 3. Conferir **no banco** que o efeito esperado aconteceu — mensagem de sucesso na tela não basta.
 4. Relatório em `auditorias/fase-N.md`: cenário → PASSOU/FALHOU → evidência. Qualquer FALHOU bloqueia a fase.
+
+- `e2e/impressao.spec.ts` lê o PDF gerado com `pdftotext` e `pdfinfo`: precisa do pacote **poppler-utils** instalado na máquina.
