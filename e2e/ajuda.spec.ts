@@ -101,3 +101,25 @@ test.describe('"?" por página', () => {
     });
   }
 });
+
+test.describe('correções da revisão', () => {
+  test('bancada aberta pela lista: "?" refaz o tour da bancada', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, 'DONO', tema, '/?tab=os');
+    await page.getByRole('list', { name: 'Ordens de serviço' }).getByRole('button').first().click();
+    await page.getByRole('heading', { name: 'Etapa do serviço' }).waitFor();
+    await page.waitForTimeout(300);
+    await page.getByRole('main').getByRole('button', { name: 'Ajuda', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Refazer o tour desta página' }).click();
+    await expect(page.getByRole('dialog').filter({ hasText: 'Etapa do serviço' }).filter({ hasText: /Passo 1 de/ })).toBeVisible();
+  });
+
+  test('"Ajuda" no menu com um guia aberto volta para a lista', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    test.skip(largura < 1024, 'menu lateral');
+    await abrir(page, 'DONO', tema, '/?tab=ajuda&guia=abrir-os');
+    await page.getByRole('navigation').getByRole('button', { name: 'Ajuda' }).click();
+    await expect(page.getByRole('list', { name: 'Guias' })).toBeVisible();
+  });
+  });
+});

@@ -198,6 +198,8 @@ function AppShell() {
     // `substituir`: a tela que sai deixou uma entrada extra no histórico (formulário sujo); a nova tela fica no lugar dela
     if (substituir) window.history.replaceState({}, '', url.toString());
     else window.history.pushState({}, '', url.toString());
+    // a Ajuda guarda o guia aberto em estado próprio: avisa que a URL mudou
+    if (nextTab === 'ajuda') window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   useEffect(() => {

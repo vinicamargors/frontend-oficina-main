@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BookOpen, CircleHelp, Route } from 'lucide-react';
 import { useTour } from '../../tour/contexto';
-import { TOUR_POR_ABA } from '../../tour/porAba';
-import { TOUR_BANCADA } from '../../tour/passos/bancada';
 import { GUIAS } from '../../ajuda/guias';
 import { filtrarGuias } from '../../ajuda/busca';
 import type { Cargo } from '../../ajuda/tipos';
@@ -19,11 +17,10 @@ export function BotaoAjuda() {
   const [aberto, setAberto] = useState(false);
   const raiz = useRef<HTMLDivElement>(null);
   const gatilho = useRef<HTMLButtonElement>(null);
-  const { refazer, cargo } = useTour();
+  const { refazer, cargo, paginaDef } = useTour();
   const params = new URLSearchParams(window.location.search);
   const aba = params.get('tab') || 'patio';
-  // a bancada de uma ordem (osId na URL) tem tour próprio
-  const tour = aba === 'os' && params.get('osId') ? TOUR_BANCADA : TOUR_POR_ABA[aba];
+  const tour = paginaDef;
   const guiasDaPagina = cargo ? filtrarGuias(GUIAS, '', cargo as Cargo).filter((g) => g.abas.includes(aba)) : [];
 
   useEffect(() => {
@@ -36,6 +33,15 @@ export function BotaoAjuda() {
       if (e.key === 'Escape') {
         setAberto(false);
         gatilho.current?.focus();
+      } else if (e.key === 'Tab') {
+        setAberto(false);
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const itens = Array.from(raiz.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+        const i = itens.indexOf(document.activeElement as HTMLElement);
+        if (itens.length) {
+          e.preventDefault();
+          itens[(i + (e.key === 'ArrowDown' ? 1 : -1) + itens.length) % itens.length].focus();
+        }
       }
     };
     document.addEventListener('mousedown', fora);
@@ -63,7 +69,7 @@ export function BotaoAjuda() {
         <CircleHelp size={16} strokeWidth={1.5} aria-hidden="true" />
       </button>
       {aberto && (
-        <div role="menu" aria-label="Ajuda" className="absolute left-0 top-full z-30 mt-1 w-72 rounded-xl bg-surface p-1 shadow-card ring-1 ring-line">
+        <div role="menu" aria-label="Ajuda" className="absolute left-0 top-full z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-xl bg-surface p-1 shadow-card ring-1 ring-line">
           {tour && (
             <button
               type="button"
@@ -71,6 +77,7 @@ export function BotaoAjuda() {
               className={ITEM}
               onClick={() => {
                 setAberto(false);
+                gatilho.current?.focus(); // o foco volta aqui quando o tour fechar
                 refazer(tour);
               }}
             >

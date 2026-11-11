@@ -50,11 +50,8 @@ export function CartaoTour({
   const medir = () => {
     if (!passo) return;
     const el = elementoDoAlvo(document, passo.alvo);
-    if (!visivel(el)) {
-      // alvo sumiu: pula o passo
-      setLista((l) => l.filter((p) => p.id !== passo.id));
-      return;
-    }
+    // alvo some por instantes (tela recarregando): mantém o passo e a última posição
+    if (!visivel(el)) return;
     const r = el.getBoundingClientRect();
     setCaixa({ top: r.top, left: r.left, width: r.width, height: r.height });
   };

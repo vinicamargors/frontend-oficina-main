@@ -12,6 +12,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const userId = user?.id ?? null;
   const [meta, setMeta] = useState<TourMeta | null>(null);
   const [ativo, setAtivo] = useState<Ativo | null>(null);
+  const [paginaDef, setPaginaDef] = useState<TourDef | null>(null);
   const ativoRef = useRef<Ativo | null>(null);
   const metaRef = useRef<TourMeta | null>(null);
 
@@ -25,6 +26,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     let vivo = true;
     metaRef.current = null;
     setMeta(null);
+    definirAtivo(null); // saiu ou trocou de conta: nenhum tour fica preso na tela
     if (!userId) return;
     supabase.auth
       .getSession()
@@ -79,8 +81,9 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const refazer = useCallback((def: TourDef) => iniciar(def, { forcar: true }), [iniciar]);
 
   const pularTodos = useCallback(() => {
+    if (!metaRef.current) return; // estado ainda não lido: não sobrescreve o que a conta já tem
     const a = ativoRef.current;
-    let m = comPularTodos(metaRef.current ?? { tours: {} });
+    let m = comPularTodos(metaRef.current);
     if (a) m = comVisto(m, a.def.id, a.def.versao);
     definirAtivo(null);
     gravar(m);
@@ -93,8 +96,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
   }, [gravar]);
 
   const valor = useMemo<Ctx>(
-    () => ({ meta, ativo, iniciar, cancelar, refazer, pularTodos, cargo: user?.cargo ?? null }),
-    [meta, ativo, iniciar, cancelar, refazer, pularTodos, user?.cargo]
+    () => ({ meta, ativo, iniciar, cancelar, refazer, pularTodos, cargo: user?.cargo ?? null, paginaDef, registrar: setPaginaDef }),
+    [meta, ativo, iniciar, cancelar, refazer, pularTodos, user?.cargo, paginaDef]
   );
 
   return (

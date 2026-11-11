@@ -14,6 +14,9 @@ export type Ctx = {
   pularTodos: () => void;
   /** Cargo de quem está logado (para o botão "?" listar só os guias que a pessoa pode usar). */
   cargo: string | null;
+  /** Tour da página que está na tela agora (registrado por `useTourDaPagina`), para o botão "?". */
+  paginaDef: TourDef | null;
+  registrar: (def: TourDef | null) => void;
 };
 
 export const TourContext = createContext<Ctx | null>(null);
@@ -27,5 +30,5 @@ export function useTourContext(): Ctx {
 /** Para o botão "?": refaz o tour da página. Sem provedor (testes de componentes), não faz nada. */
 export function useTour() {
   const c = useContext(TourContext);
-  return { refazer: c?.refazer ?? (() => {}), pularTodos: c?.pularTodos ?? (() => {}), ativo: c?.ativo?.def ?? null, cargo: c?.cargo ?? null };
+  return { refazer: c?.refazer ?? (() => {}), pularTodos: c?.pularTodos ?? (() => {}), ativo: c?.ativo?.def ?? null, cargo: c?.cargo ?? null, paginaDef: c?.paginaDef ?? null };
 }
