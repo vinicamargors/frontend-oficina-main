@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { TourProvider } from './tour/TourProvider';
 import { Login } from './pages/Login';
 import { DashboardOperacional } from './pages/DashboardOperacional';
 import { OrdensServico } from './pages/OrdensServico';
@@ -568,7 +569,9 @@ function AppShell() {
 export function App() {
   return (
     <AuthProvider>
-      <AppShell />
+      <TourProvider>
+        <AppShell />
+      </TourProvider>
     </AuthProvider>
   );
 }

@@ -69,6 +69,8 @@ export const CAMINHO_DA_TELA: Record<Tela, string> = {
 interface Estado {
   semFixture: string[];
   bloqueadas: string[];
+  /** `user_metadata` acumulado pelas chamadas `PUT /auth/v1/user` (updateUser). */
+  metaConta: Record<string, unknown>;
 }
 const estados = new WeakMap<Page, Estado>();
 
@@ -133,7 +135,7 @@ const hosts = (url: string) => {
  *  - qualquer outro host externo (CEP, fontes...): `abort()`.
  */
 export async function simularBackend(page: Page, cenario: Cenario): Promise<void> {
-  const estado: Estado = { semFixture: [], bloqueadas: [] };
+  const estado: Estado = { semFixture: [], bloqueadas: [], metaConta: {} };
   estados.set(page, estado);
 
   const json = (route: Route, corpo: unknown, status = 200) =>
@@ -165,7 +167,7 @@ export async function simularBackend(page: Page, cenario: Cenario): Promise<void
       const auth = req.headers()['authorization'];
       if (u.pathname.startsWith('/auth/v1/')) {
         const cargo = usuarioPorId(usuarioDoToken(auth) ?? '')?.cargo ?? 'DONO';
-        const sessao = sessaoSupabase(cargo);
+        const sessao = sessaoSupabase(cargo, estado.metaConta);
         if (u.pathname.endsWith('/user') && metodo === 'PUT') {
           // updateUser: mescla `data` em user_metadata (como o Supabase) e guarda a escrita
           let corpo: { data?: Record<string, unknown> } | null = null;
@@ -175,9 +177,14 @@ export async function simularBackend(page: Page, cenario: Cenario): Promise<void
             /* sem corpo */
           }
           await page
-            .evaluate((c) => ((window as unknown as { __ultimaAuthUser: unknown }).__ultimaAuthUser = c), corpo)
+            .evaluate((c) => {
+              const w = window as unknown as { __ultimaAuthUser: unknown; __escritasAuth: unknown[] };
+              w.__ultimaAuthUser = c;
+              (w.__escritasAuth ??= []).push(c);
+            }, corpo)
             .catch(() => {});
-          return json(route, { ...sessao.user, user_metadata: { ...sessao.user.user_metadata, ...(corpo?.data ?? {}) } });
+          estado.metaConta = { ...estado.metaConta, ...(corpo?.data ?? {}) };
+          return json(route, { ...sessao.user, user_metadata: { ...sessao.user.user_metadata, ...estado.metaConta } });
         }
         if (u.pathname.endsWith('/user')) return json(route, sessao.user);
         if (u.pathname.endsWith('/logout')) return json(route, {}, 204);

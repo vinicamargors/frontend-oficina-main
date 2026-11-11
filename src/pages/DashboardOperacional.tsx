@@ -20,6 +20,8 @@ import { diasDesde, nivelAtraso, textoDias, textoParada } from './radar/diasNaEt
 import { ABERTAS, maisAntigas, type Antigas } from './radar/antigas';
 import { MarcaAtraso } from '../components/MarcaAtraso';
 import { SeletorPeriodo } from './radar/SeletorPeriodo';
+import { useTourDaPagina } from '../tour/useTourDaPagina';
+import { TOUR_RADAR } from '../tour/passos/radar';
 import { diaAnterior, intervaloDoPeriodo, lerPresetSalvo, salvarPreset, type Periodo } from './radar/periodo';
 
 interface DashboardProps {
@@ -388,7 +390,7 @@ function AvisoAntigas({
   const [aberto, setAberto] = useState(true);
   const idLista = useId();
   return (
-    <section aria-label="Ordens abertas mais antigas" className="mt-6">
+    <section aria-label="Ordens abertas mais antigas" data-tour="radar-antigas" className="mt-6">
       <button
         type="button"
         aria-expanded={aberto}
@@ -637,6 +639,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
     setPeriodo(p);
   };
 
+  useTourDaPagina(TOUR_RADAR, !!quadro && !loading && !error);
   const patioVazio = !!quadro && ETAPAS.every((st) => quadro.etapas[st].total === 0);
   const novaOS = () => onNavigateTab('os', undefined, 'NOVA_OS');
 
@@ -658,7 +661,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
             <span className="hidden md:inline">Atualizar</span>
           </Button>
           {quadro && !error && (
-            <Button className="shrink-0" aria-label="Nova ordem de serviço" onClick={novaOS}>
+            <Button className="shrink-0" aria-label="Nova ordem de serviço" data-tour="radar-nova-os" onClick={novaOS}>
               <span className="sm:hidden">Nova OS</span>
               <span className="hidden sm:inline">Nova ordem de serviço</span>
             </Button>
@@ -778,13 +781,13 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
               </p>
             )}
             {/* Desktop: quadro em 4 colunas com cards. Cada coluna tem p-2 (área de soltar), daí o -mx-2 e sem gap */}
-            <div data-testid="quadro-patio" className="-mx-2 hidden lg:grid lg:grid-cols-4">
+            <div data-testid="quadro-patio" data-tour="radar-quadro" className="-mx-2 hidden lg:grid lg:grid-cols-4">
               {ETAPAS.map((st) => (
                 <EtapaQuadro key={st} st={st} etapa={quadro.etapas[st]} onNavigateTab={onNavigateTab} mover={controleMover} />
               ))}
             </div>
             {/* Celular e tablet: todas as etapas empilhadas, linhas compactas, sem rolagem lateral */}
-            <div data-testid="patio-lista" className="space-y-6 lg:hidden">
+            <div data-testid="patio-lista" data-tour="radar-quadro" className="space-y-6 lg:hidden">
               {ETAPAS.map((st) => (
                 <EtapaQuadro key={st} st={st} etapa={quadro.etapas[st]} onNavigateTab={onNavigateTab} mover={controleMover} compacto />
               ))}

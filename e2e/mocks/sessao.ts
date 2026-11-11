@@ -30,7 +30,7 @@ export function usuarioDoToken(authorization?: string): string | undefined {
   }
 }
 
-export function sessaoSupabase(cargo: CargoUsuario) {
+export function sessaoSupabase(cargo: CargoUsuario, metaExtra: Record<string, unknown> = {}) {
   const perfil = perfilDoCargo(cargo);
   const agora = Math.floor(Date.now() / 1000);
   const expiraEm = agora + 365 * 24 * 3600;
@@ -47,7 +47,7 @@ export function sessaoSupabase(cargo: CargoUsuario) {
       email: perfil.email,
       email_confirmed_at: '2024-01-01T00:00:00Z',
       app_metadata: { provider: 'email' },
-      user_metadata: { nome: perfil.nome },
+      user_metadata: { nome: perfil.nome, ...metaExtra },
       created_at: '2024-01-01T00:00:00Z',
     },
   };
@@ -58,8 +58,14 @@ export function sessaoSupabase(cargo: CargoUsuario) {
  * Deve ser chamada ANTES de `abrirTela`. Só escreve se a chave ainda não existe, para não
  * desfazer um logout ou uma troca de tema feita dentro da própria sessão.
  */
-export async function entrarComo(page: Page, cargo: CargoUsuario, tema: 'claro' | 'escuro'): Promise<void> {
-  const sessao = sessaoSupabase(cargo);
+export async function entrarComo(
+  page: Page,
+  cargo: CargoUsuario,
+  tema: 'claro' | 'escuro',
+  opcoes: { tourAtivo?: boolean; metaExtra?: Record<string, unknown> } = {}
+): Promise<void> {
+  // por padrão a conta já "pulou todos os tours": só os testes do tour os ligam
+  const sessao = sessaoSupabase(cargo, opcoes.tourAtivo ? (opcoes.metaExtra ?? {}) : { tours_pular_todos: true, ...(opcoes.metaExtra ?? {}) });
   await page.addInitScript(
     ({ chaveSessao, sessao, chaveTema, tema }) => {
       try {
