@@ -51,6 +51,23 @@ export function Folha({
     }
   }, [aberto]);
 
+  // Fechada à força durante a gravação (ex.: gesto "voltar" do Android, que não passa por tecla nenhuma): quando a
+  // gravação termina e o dono ainda quer a folha aberta (ex.: falhou e mostra o erro), ela volta à tela.
+  // Quando a gravação acabou de terminar: um `close` nativo que chegue atrasado (do fechamento à força feito
+  // durante a gravação) só reabre a folha, sem cancelar o que o dono quer mostrar (ex.: o erro).
+  const desbloqueadaEm = useRef(0);
+  const estavaBloqueada = useRef(bloquearFechar);
+  useEffect(() => {
+    if (estavaBloqueada.current && !bloquearFechar) desbloqueadaEm.current = Date.now();
+    estavaBloqueada.current = bloquearFechar;
+  }, [bloquearFechar]);
+  useEffect(() => {
+    const d = ref.current;
+    if (!d || !aberto || bloquearFechar || d.open) return;
+    d.showModal();
+    tituloRef.current?.focus();
+  }, [aberto, bloquearFechar]);
+
   const cancelar = (e: SyntheticEvent) => {
     e.preventDefault();
     aoCancelar();
@@ -73,11 +90,11 @@ export function Folha({
   const aoFecharNativo = () => {
     const d = ref.current;
     if (!d || !abertoRef.current || d.open) return;
-    // Gravação em andamento: o Esc já é bloqueado; um fechamento vindo de outro lugar é respeitado e o dono
-    // fecha de vez ao terminar a gravação (aí `aberto` vira false e nada fica pendurado).
+    // Gravação em andamento: o Esc já é barrado no documento; um fechamento vindo de outro lugar é respeitado até a
+    // gravação terminar: aí o dono fecha (`aberto` false) ou a folha volta com o erro (efeito acima).
     if (bloquearFechar) return;
     d.showModal();
-    aoCancelar();
+    if (Date.now() - desbloqueadaEm.current > 1000) aoCancelar();
   };
 
   const cliqueNoFundo = (e: MouseEvent<HTMLDialogElement>) => {
@@ -90,9 +107,6 @@ export function Folha({
       aria-labelledby={idTitulo}
       onCancel={cancelar}
       onClose={aoFecharNativo}
-      onKeyDown={(e) => {
-        if (bloquearFechar && e.key === 'Escape') e.preventDefault();
-      }}
       onClick={cliqueNoFundo}
       className={`m-0 mt-auto w-full max-w-full rounded-t-2xl bg-surface p-0 text-ink backdrop:bg-ink/40 dark:backdrop:bg-black/60 sm:m-auto sm:rounded-2xl ${
         tamanho === 'lg' ? 'max-h-[92dvh] overflow-y-auto sm:w-[40rem]' : 'sm:w-[28rem]'

@@ -677,22 +677,84 @@ test.describe('formulário de lançamento', () => {
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
-    if (await d.isVisible()) {
-      await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
-      await expect(d.getByLabel('Descrição *')).toHaveValue('Outro nome');
-    } else {
-      // fechou: o estado acompanhou e o formulário abre de novo
-      await menuDe(page, DESPESA_PAGA.descricao);
-      await page.getByRole('menuitem', { name: 'Editar lançamento' }).click();
-      await expect(d).toBeVisible();
-    }
+    // a folha continua aberta, com o aviso de descarte e o texto digitado
+    await expect(d).toBeVisible();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await expect(d.getByLabel('Descrição *')).toHaveValue('Outro nome');
+    expect(await ultimaEscrita(page)).toBeUndefined();
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    await expect(d).toHaveCount(0);
     expect(await ultimaEscrita(page)).toBeUndefined();
     // e "Novo lançamento" continua abrindo
-    if (await d.isVisible()) {
+    await page.getByRole('button', { name: 'Novo lançamento' }).click();
+    await expect(page.getByRole('dialog', { name: 'Novo lançamento' })).toBeVisible();
+  });
+
+  for (const caso of ['baixa', 'exclusão'] as const) {
+    test(`${caso} fechada à força (gesto voltar) com gravação que falha: a folha volta com o erro e fecha normalmente`, async ({ page }, info) => {
+      const { tema } = contextoDoProjeto(info);
+      await abrir(page, tema);
+      let liberar: () => void = () => {};
+      const espera = new Promise<void>((r) => (liberar = r));
+      await page.route(/transacoes-financeiras\//, async (route) => {
+        const m = route.request().method();
+        if (m === 'GET' || m === 'OPTIONS') return route.fallback();
+        await espera;
+        return route.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{"detail":"falha"}' });
+      });
+      await irParaContas(page);
+      const alvo = caso === 'baixa' ? PENDENTE_RECEITA : PENDENTE_DESPESA;
+      const titulo = caso === 'baixa' ? 'Dar baixa no lançamento?' : 'Excluir lançamento?';
+      const abrirFolha = async () => {
+        await menuDe(page, alvo.descricao);
+        await page.getByRole('menuitem', { name: caso === 'baixa' ? 'Marcar como recebido' : 'Excluir lançamento' }).click();
+      };
+      await abrirFolha();
+      const d = page.getByRole('dialog', { name: titulo });
+      if (caso === 'baixa') {
+        await d.getByRole('radio', { name: 'PIX' }).check();
+        await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+      } else {
+        await d.getByRole('button', { name: 'Excluir lançamento' }).click();
+      }
+      // gravação em andamento (botão ocupado); então o gesto "voltar" do Android fecha o <dialog> sem tecla nenhuma
+      await expect(d.locator('button[aria-busy="true"]')).toHaveCount(1);
+      await page.evaluate(() => document.querySelector('dialog[open]')?.close());
+      await expect(d).toHaveCount(0);
+      liberar();
+      await expect(d).toBeVisible();
+      await expect(d.getByRole('alert')).toContainText('Nada foi');
       await d.getByRole('button', { name: 'Cancelar' }).click();
-      if (await d.getByRole('button', { name: 'Descartar' }).isVisible()) await d.getByRole('button', { name: 'Descartar' }).click();
-    }
-    await expect(d).toHaveCount(0);
+      await expect(d).toHaveCount(0);
+      // reabre normalmente e o Esc fecha
+      await abrirFolha();
+      await expect(d).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(d).toHaveCount(0);
+    });
+  }
+
+  test('baixa fechada à força com gravação que dá certo: nada fica aberto', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let liberar: () => void = () => {};
+    const espera = new Promise<void>((r) => (liberar = r));
+    await page.route(/\/liquidar/, async (route) => {
+      if (route.request().method() !== 'OPTIONS') await espera;
+      return route.fallback();
+    });
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'PIX' }).check();
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect(d.locator('button[aria-busy="true"]')).toHaveCount(1);
+    await page.evaluate(() => document.querySelector('dialog[open]')?.close());
+    liberar();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    await page.waitForTimeout(300);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     await page.getByRole('button', { name: 'Novo lançamento' }).click();
     await expect(page.getByRole('dialog', { name: 'Novo lançamento' })).toBeVisible();
   });
