@@ -39,6 +39,8 @@ import {
   calcularDistanciaMetros,
   formatBRL,
   formatData,
+  formatMesExtenso,
+  identidadeHolerite,
   rotuloCargo,
   rotuloTipoEscala,
   totalFolhaColaborador,
@@ -89,6 +91,9 @@ export function Equipe({ empresaId }: EquipeProps) {
     lon: number;
     raio: number;
   }>({ lat: -23.55052, lon: -46.633308, raio: 150 });
+
+  // Identidade da oficina impressa no holerite (vem de obterConfiguracoesOficina, já carregado abaixo)
+  const [identidadeOficina, setIdentidadeOficina] = useState(() => identidadeHolerite(null));
 
   const [carregando, setCarregando] = useState(true);
   // Primeira carga concluída: até lá as abas mostram esqueleto (nunca área em branco)
@@ -198,6 +203,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       setPontos(pontosData);
       setAvaliacoes(avsData);
       setParametrosFolha(paramsFolha);
+      setIdentidadeOficina(identidadeHolerite(cfgOficina));
 
       if (cfgOficina.latitude_gps && cfgOficina.longitude_gps) {
         setCoordsOficina({
@@ -1194,37 +1200,38 @@ export function Equipe({ empresaId }: EquipeProps) {
               className="bg-white text-black p-5 rounded-xl border-2 border-black space-y-4 font-mono text-xs select-all"
             >
               <div className="text-center border-b-2 border-black pb-2">
-                <h2 className="text-base font-semibold uppercase">MECANIFY &bull; OFICINA MECÂNICA</h2>
-                <div className="text-xs font-semibold">RECIBO DE PAGAMENTO DE SALÁRIO E COMISSÕES</div>
-                <div className="text-xs">Mês de Referência: {mesFolhaRef}</div>
+                <h2 className="text-base font-semibold uppercase [overflow-wrap:anywhere]">{identidadeOficina.nome}</h2>
+                {identidadeOficina.cnpj && <div className="text-xs">CNPJ {identidadeOficina.cnpj}</div>}
+                <div className="text-xs font-semibold">Recibo de pagamento de salário e comissões</div>
+                <div className="text-xs">Mês de referência: {formatMesExtenso(mesFolhaRef)}</div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 border-b border-black pb-2 text-xs">
-                <div>
+              <div className="grid grid-cols-1 gap-1 border-b border-black pb-2 text-xs [overflow-wrap:anywhere]">
+                <div data-campo="colaborador" className="min-w-0">
                   <strong>Colaborador:</strong> {colaboradorHolerite.nome}
                 </div>
-                <div>
-                  <strong>Cargo:</strong> {colaboradorHolerite.cargo}
+                <div data-campo="cargo" className="min-w-0">
+                  <strong>Cargo:</strong> {rotuloCargo(colaboradorHolerite.cargo)}
                 </div>
-                <div>
+                <div data-campo="email" className="min-w-0">
                   <strong>E-mail:</strong> {colaboradorHolerite.email}
                 </div>
-                <div>
-                  <strong>Data de Pagamento:</strong> Dia {parametrosFolha.dia_pagamento}
+                <div data-campo="pagamento" className="min-w-0">
+                  <strong>Data de pagamento:</strong> Dia {parametrosFolha.dia_pagamento}
                 </div>
               </div>
 
-              <table className="w-full text-left border-collapse">
+              <table className="w-full table-fixed text-left border-collapse [overflow-wrap:anywhere]">
                 <thead>
                   <tr className="border-b border-black text-xs uppercase font-semibold">
-                    <th className="py-1">Descrição</th>
-                    <th className="py-1 text-right">Proventos (R$)</th>
-                    <th className="py-1 text-right">Descontos (R$)</th>
+                    <th className="w-[46%] py-1 pr-1">Descrição</th>
+                    <th className="py-1 px-1 text-right">Proventos (R$)</th>
+                    <th className="w-[24%] py-1 pl-1 text-right">Descontos (R$)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-black/25">
                   <tr>
-                    <td className="py-1">Salário Base Mensal</td>
+                    <td className="py-1">Salário base mensal</td>
                     <td className="py-1 text-right">
                       {colaboradorHolerite.salario_base && colaboradorHolerite.salario_base > 0
                         ? formatBRL(colaboradorHolerite.salario_base)
@@ -1234,21 +1241,21 @@ export function Equipe({ empresaId }: EquipeProps) {
                   </tr>
                   <tr>
                     <td className="py-1">
-                      Comissão Mão de Obra ({colaboradorHolerite.comissao_servico_pct ?? 0}%)
+                      Comissão mão de obra ({colaboradorHolerite.comissao_servico_pct ?? 0}%)
                     </td>
                     <td className="py-1 text-right">{formatBRL(0.0)}</td>
                     <td className="py-1 text-right">—</td>
                   </tr>
                   <tr>
                     <td className="py-1">
-                      Comissão Peças ({colaboradorHolerite.comissao_peca_pct ?? 0}%)
+                      Comissão peças ({colaboradorHolerite.comissao_peca_pct ?? 0}%)
                     </td>
                     <td className="py-1 text-right">{formatBRL(0.0)}</td>
                     <td className="py-1 text-right">—</td>
                   </tr>
                   {colaboradorHolerite.vale_transporte && colaboradorHolerite.vale_transporte > 0 ? (
                     <tr>
-                      <td className="py-1">Auxílio Transporte (VT)</td>
+                      <td className="py-1">Auxílio transporte (VT)</td>
                       <td className="py-1 text-right">
                         {formatBRL(colaboradorHolerite.vale_transporte)}
                       </td>
@@ -1257,7 +1264,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                   ) : null}
                   {colaboradorHolerite.vale_refeicao && colaboradorHolerite.vale_refeicao > 0 ? (
                     <tr>
-                      <td className="py-1">Auxílio Refeição (VR)</td>
+                      <td className="py-1">Auxílio refeição (VR)</td>
                       <td className="py-1 text-right">
                         {formatBRL(colaboradorHolerite.vale_refeicao)}
                       </td>
@@ -1267,9 +1274,9 @@ export function Equipe({ empresaId }: EquipeProps) {
                 </tbody>
               </table>
 
-              <div className="border-t-2 border-black pt-2 flex items-center justify-between text-sm font-semibold">
-                <span>VALOR LÍQUIDO A RECEBER:</span>
-                <span className="text-base">
+              <div className="border-t-2 border-black pt-2 flex flex-wrap items-center justify-between gap-x-3 text-sm font-semibold">
+                <span>Valor líquido a receber:</span>
+                <span className="text-base whitespace-nowrap">
                   {colaboradorHolerite.salario_base && colaboradorHolerite.salario_base > 0
                     ? formatBRL(
                         colaboradorHolerite.salario_base +
@@ -1285,10 +1292,9 @@ export function Equipe({ empresaId }: EquipeProps) {
                 </span>
               </div>
 
-              <div className="pt-8 border-t border-dashed border-black text-center text-xs">
-                ____________________________________________________
-                <br />
-                Assinatura do Colaborador: {colaboradorHolerite.nome}
+              <div className="pt-8 border-t border-dashed border-black text-center text-xs [overflow-wrap:anywhere]">
+                <div aria-hidden="true" className="mx-auto mb-1 w-full max-w-xs border-t border-black" />
+                Assinatura do colaborador: {colaboradorHolerite.nome}
               </div>
             </div>
             {/* codemod:ignore-end */}
