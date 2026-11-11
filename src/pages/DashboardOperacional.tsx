@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useId } from 'react';
 import { api } from '../api/client';
 import { ItemCritico, StatusOS, UltimaOS } from '../types';
-import { AlertOctagon, CircleCheck, MessageCircle, RefreshCw } from 'lucide-react';
+import { AlertOctagon, ChevronDown, CircleCheck, MessageCircle, RefreshCw } from 'lucide-react';
 import { Button, PageHeader, Panel, PlateChip, Skeleton, StatusBadge, STATUS_OS } from '../components/ui';
-import { diasDesde, nivelAtraso, textoDias } from './radar/diasNaEtapa';
+import { diasDesde, nivelAtraso, textoDias, textoParada } from './radar/diasNaEtapa';
+import { ABERTAS, maisAntigas, type Antigas } from './radar/antigas';
 import { MarcaAtraso } from '../components/MarcaAtraso';
 import { SeletorPeriodo } from './radar/SeletorPeriodo';
 import { diaAnterior, intervaloDoPeriodo, lerPresetSalvo, salvarPreset, type Periodo } from './radar/periodo';
@@ -21,8 +22,8 @@ const formatBRL = (valor: number) =>
 
 // Etapas que viram coluna do quadro. "Pago / entregue" sai do pátio e fica só como contagem.
 const ETAPAS: StatusOS[] = ['ORCAMENTO', 'AGUARDANDO_PECA', 'EXECUCAO', 'FINALIZADO'];
-// Etapas em aberto: ordens antigas nelas ficam fora do período e merecem um aviso.
-const ABERTAS: StatusOS[] = ['ORCAMENTO', 'AGUARDANDO_PECA', 'EXECUCAO'];
+// Quantas ordens antigas (fora do período) o aviso lista.
+const LIMITE_ANTIGAS = 5;
 // Quantos cards cada etapa desenha; o total exato vem da contagem da API.
 const LIMITE_POR_ETAPA = 20;
 
@@ -34,8 +35,8 @@ interface Etapa {
 interface Quadro {
   etapas: Record<StatusOS, Etapa>;
   pagas: number;
-  /** Ordens abertas com `data_abertura` anterior ao início do período. */
-  antigas: { total: number; status?: StatusOS };
+  /** Ordens abertas com `data_abertura` anterior ao início do período (as mais antigas primeiro). */
+  antigas: Antigas;
   itensCriticos: ItemCritico[];
   criticosCount: number;
 }
@@ -198,6 +199,90 @@ function EtapaQuadro({
   );
 }
 
+function LinhaAntiga({ os, onAbrir }: { os: UltimaOS; onAbrir: () => void }) {
+  const st = (os.status as StatusOS) || 'ORCAMENTO';
+  const placa = os.veiculos?.placa || 'SEM-PLACA';
+  const modelo = os.veiculos?.modelo || 'Veículo';
+  const clienteNome = os.clientes?.nome || 'Cliente';
+  const dias = diasDesde(os.data_abertura);
+  const nivel = nivelAtraso(st, dias);
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onAbrir}
+        className="flex min-h-16 w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <PlateChip placa={placa} />
+            <span className="truncate text-sm font-medium text-ink">{modelo}</span>
+          </span>
+          <span className="mt-1 flex gap-1 text-xs text-ink-muted">
+            <span className="truncate">{clienteNome}</span>
+            <span className="shrink-0">· {STATUS_OS[st].rotulo}</span>
+          </span>
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          <span className="text-xs tabular-nums text-ink-muted">{textoParada(dias)}</span>
+          {nivel !== 'ok' && <MarcaAtraso nivel={nivel} />}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+/** Rede de segurança: as ordens abertas que o período escondeu. Aberta por padrão; o título recolhe. */
+function AvisoAntigas({
+  antigas,
+  aoAbrir,
+  aoVerTodas,
+}: {
+  antigas: Antigas;
+  aoAbrir: (id: string) => void;
+  aoVerTodas: () => void;
+}) {
+  const [aberto, setAberto] = useState(true);
+  const idLista = useId();
+  return (
+    <section aria-label="Ordens abertas mais antigas" className="mt-6">
+      <button
+        type="button"
+        aria-expanded={aberto}
+        aria-controls={idLista}
+        onClick={() => setAberto((v) => !v)}
+        className="-ml-2 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 text-left text-sm text-ink-muted transition-colors hover:bg-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        <ChevronDown
+          size={16}
+          className={`shrink-0 transition-transform motion-reduce:transition-none ${aberto ? '' : '-rotate-90'}`}
+          aria-hidden="true"
+        />
+        {antigas.total === 1
+          ? '1 ordem aberta mais antiga fica fora do período'
+          : `${antigas.total} ordens abertas mais antigas ficam fora do período`}
+      </button>
+      {aberto && (
+        <div id={idLista} className="mt-2">
+          <Panel espaco="nenhum" className="overflow-hidden">
+            <ul className="divide-y divide-line">
+              {antigas.items.map((os) => (
+                <LinhaAntiga key={os.id} os={os} onAbrir={() => aoAbrir(os.id)} />
+              ))}
+            </ul>
+          </Panel>
+          {antigas.total > antigas.items.length && (
+            <Button variante="fantasma" tamanho="sm" className="mt-1" onClick={aoVerTodas}>
+              Ver todas ({antigas.total})
+            </Button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function Numero({
   rotulo,
   valor,
@@ -240,8 +325,8 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
     try {
       const { inicio, fim } = intervaloDoPeriodo(periodo);
       const doPeriodo = { empresaId, dataInicio: inicio, dataFim: fim, ordenacao: 'data_desc' as const };
-      // Contagens de ordens abertas anteriores ao período: falha aqui só esconde o aviso, não derruba o quadro.
-      const antesDoPeriodo = { empresaId, dataFim: diaAnterior(inicio), limit: 1 };
+      // As mais antigas entre as abertas anteriores ao período: falha aqui só esconde o aviso, não derruba o quadro.
+      const antesDoPeriodo = { empresaId, dataFim: diaAnterior(inicio), ordenacao: 'data_asc' as const, limit: LIMITE_ANTIGAS };
       const [dash, pagas, ...resto] = await Promise.all([
         api.getDashboardOperacional(empresaId),
         api.listarOS({ ...doPeriodo, status: 'PAGO', limit: 1 }),
@@ -255,14 +340,10 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
       ETAPAS.forEach((st, i) => {
         etapas[st] = { items: respostasEtapas[i]?.items ?? [], total: respostasEtapas[i]?.total ?? 0 };
       });
-      const comAntigas = ABERTAS.filter((_, i) => (respostasAntigas[i]?.total ?? 0) > 0);
       setQuadro({
         etapas,
         pagas: pagas.total ?? 0,
-        antigas: {
-          total: ABERTAS.reduce((soma, _, i) => soma + (respostasAntigas[i]?.total ?? 0), 0),
-          status: comAntigas.length === 1 ? comAntigas[0] : undefined,
-        },
+        antigas: maisAntigas(respostasAntigas, LIMITE_ANTIGAS),
         itensCriticos: dash.itens_criticos || [],
         criticosCount: dash.estoque_critico_count || 0,
       });
@@ -293,13 +374,26 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   const cabecalho = (
     <PageHeader
       titulo="Radar do pátio"
+      acoesClasse="w-full flex-nowrap md:w-auto"
       acoes={
         <>
-          <SeletorPeriodo periodo={periodo} aoEscolher={escolherPeriodo} className="basis-full md:basis-auto" />
-          <Button variante="fantasma" icone={RefreshCw} onClick={carregarRadar}>
-            Atualizar
+          <SeletorPeriodo periodo={periodo} aoEscolher={escolherPeriodo} className="mr-auto" />
+          <Button
+            variante="fantasma"
+            aria-label="Atualizar"
+            title="Atualizar"
+            className="w-11 shrink-0 px-0 md:w-auto md:px-4"
+            onClick={carregarRadar}
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin motion-reduce:animate-none' : ''} aria-hidden="true" />
+            <span className="hidden md:inline">Atualizar</span>
           </Button>
-          {quadro && !error && <Button onClick={novaOS}>Nova ordem de serviço</Button>}
+          {quadro && !error && (
+            <Button className="shrink-0" aria-label="Nova ordem de serviço" onClick={novaOS}>
+              <span className="sm:hidden">Nova OS</span>
+              <span className="hidden sm:inline">Nova ordem de serviço</span>
+            </Button>
+          )}
         </>
       }
     />
@@ -402,16 +496,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         )}
 
         {antigas.total > 0 && (
-          <p className="mt-4 flex items-center gap-x-1 text-sm text-ink-muted">
-            <span className="min-w-0">
-              {antigas.total === 1
-                ? '1 ordem aberta mais antiga fica fora do período'
-                : `${antigas.total} ordens abertas mais antigas ficam fora do período`}
-            </span>
-            <Button variante="fantasma" tamanho="sm" className="shrink-0" onClick={() => onNavigateTab('os', antigas.status)}>
-              Ver
-            </Button>
-          </p>
+          <AvisoAntigas antigas={antigas} aoAbrir={(id) => onNavigateTab('os', undefined, id)} aoVerTodas={() => onNavigateTab('os', antigas.status)} />
         )}
 
         {pagas > 0 && (

@@ -556,3 +556,23 @@ test('print avaliacao estados (nota escolhida, enviada, erro)', async ({ page },
   await page.getByRole('heading', { level: 1, name: 'Obrigado pela sua avaliação' }).waitFor();
   await tirar('enviada');
 });
+
+// Aviso das ordens abertas mais antigas com a lista aberta (período "só hoje": 7 ordens, 5 na lista): `radar-antigas-<tema>-<largura>.png`.
+test('print radar antigas (lista das ordens fora do período)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'radar');
+  const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+  await page.getByRole('button', { name: /^Últimos / }).click();
+  await page.getByRole('menuitemradio', { name: 'Personalizado' }).click();
+  await page.getByLabel('De', { exact: true }).fill(hoje);
+  await page.getByLabel('Até', { exact: true }).fill(hoje);
+  await page.getByRole('button', { name: 'Aplicar' }).click();
+  await page.getByText('7 ordens abertas mais antigas ficam fora do período').waitFor();
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  await page.screenshot({ path: join(PASTA, `radar-antigas-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+  exigirRedeCompleta(page);
+});

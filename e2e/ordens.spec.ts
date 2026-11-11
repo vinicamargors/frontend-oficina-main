@@ -222,7 +222,7 @@ test.describe('lista de ordens de serviço', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
 
-    await expect(page.getByRole('heading', { level: 1, name: /ordens de serviço/ })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /ordens de serviço/i })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Nova ordem de serviço' })).toHaveCount(1);
 
     const chips = page.getByRole('group', { name: 'Filtrar por etapa' }).getByRole('button');

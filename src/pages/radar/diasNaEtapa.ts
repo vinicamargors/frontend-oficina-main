@@ -23,3 +23,8 @@ export function nivelAtraso(status: StatusOS, dias: number): NivelAtraso {
 export function textoDias(dias: number): string {
   return dias === 0 ? 'aberta hoje' : `aberta há ${dias} ${dias === 1 ? 'dia' : 'dias'}`;
 }
+
+/** "parada hoje" / "parada há 1 dia" / "parada há N dias" (contado desde `data_abertura`). */
+export function textoParada(dias: number): string {
+  return dias === 0 ? 'parada hoje' : `parada há ${dias} ${dias === 1 ? 'dia' : 'dias'}`;
+}

@@ -90,10 +90,10 @@ export function SeletorPeriodo({
       ref={raiz}
       role="group"
       aria-label="Período do quadro"
-      className={`relative flex items-center gap-2 ${className}`}
+      className={`relative flex min-w-0 items-center gap-2 ${className}`}
       onKeyDown={aoTeclar}
     >
-      <span id={idRotulo} className="text-sm text-ink-muted">
+      <span id={idRotulo} className={`shrink-0 text-sm text-ink-muted ${personalizado ? 'hidden sm:inline' : ''}`}>
         {personalizado ? 'Período' : 'Últimos'}
       </span>
       <button
@@ -103,10 +103,12 @@ export function SeletorPeriodo({
         aria-expanded={aberto}
         aria-labelledby={`${idRotulo} ${idValor}`}
         onClick={() => (aberto ? fechar(false) : setAberto(true))}
-        className="inline-flex h-11 cursor-pointer items-center gap-1.5 rounded-lg bg-muted px-3 text-sm font-medium tabular-nums text-ink transition-colors hover:bg-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand md:h-10"
+        className="inline-flex h-11 min-w-0 cursor-pointer items-center gap-1.5 rounded-lg bg-muted px-3 text-sm font-medium tabular-nums text-ink transition-colors hover:bg-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand md:h-10"
       >
-        <span id={idValor}>{rotuloPeriodo(periodo)}</span>
-        <ChevronDown size={16} className="text-ink-muted" aria-hidden="true" />
+        <span id={idValor} className="truncate">
+          {rotuloPeriodo(periodo)}
+        </span>
+        <ChevronDown size={16} className="shrink-0 text-ink-muted" aria-hidden="true" />
       </button>
 
       {aberto && (

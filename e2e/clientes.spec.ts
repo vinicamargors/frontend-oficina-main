@@ -172,7 +172,7 @@ test.describe('ações do cliente (menu)', () => {
     await linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` }).click();
     await page.getByRole('menuitem', { name: /Editar ficha/ }).click();
     const ficha = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
-    await exigirFocoNoPrimeiroCampo(ficha, /Nome Completo/);
+    await exigirFocoNoPrimeiroCampo(ficha, /Nome completo/);
     await page.keyboard.press('Escape');
     await expect(ficha).toBeHidden();
   });
@@ -185,8 +185,8 @@ test.describe('ações do cliente (menu)', () => {
     await page.getByRole('menuitem', { name: /Editar ficha/ }).click();
     const d = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
     await expect(d).toBeVisible();
-    await expect(d.getByLabel(/Nome Completo/)).toHaveValue(JOAO.nome);
-    await d.getByLabel(/Nome Completo/).fill('João P. da Silva');
+    await expect(d.getByLabel(/Nome completo/)).toHaveValue(JOAO.nome);
+    await d.getByLabel(/Nome completo/).fill('João P. da Silva');
     await d.getByRole('button', { name: /Salvar ficha/i }).click();
     await expect(d).toBeHidden();
     await expect(page.getByRole('status').filter({ hasText: 'João P. da Silva' })).toBeVisible();
@@ -201,7 +201,7 @@ test.describe('ações do cliente (menu)', () => {
     await abrir(page, tema);
     await page.getByRole('button', { name: /Novo cliente/ }).click();
     const d = page.getByRole('dialog', { name: /Novo cliente/ });
-    await d.getByLabel(/Nome Completo/).fill('Só Nome');
+    await d.getByLabel(/Nome completo/).fill('Só Nome');
     await d.getByLabel(/WhatsApp/).fill('   ');
     await d.getByRole('button', { name: /Salvar ficha/i }).click();
     await expect(d.getByRole('alert')).toContainText('Informe o nome e o WhatsApp/telefone do cliente.');
@@ -295,7 +295,7 @@ test.describe('veículos do cliente', () => {
     await veics.getByRole('button', { name: 'Abrir OS para ABC-1234' }).click();
     const d = page.getByRole('dialog', { name: 'Abrir ordem de serviço' });
     await expect(d).toContainText('ABC-1234');
-    await d.getByLabel(/Defeito Relatado/).fill('Barulho no motor');
+    await d.getByLabel(/Defeito relatado/i).fill('Barulho no motor');
     expect(escritas.filter((e) => e.metodo === 'POST')).toHaveLength(0); // nada escrito antes de confirmar
     await d.getByRole('button', { name: /Abrir bancada da OS/ }).click();
     await expect.poll(() => escritas.find((e) => e.metodo === 'POST' && e.caminho.startsWith('/os'))).toBeTruthy();
@@ -312,7 +312,7 @@ test.describe('novo cliente com veículos', () => {
     await page.getByRole('button', { name: /Novo cliente/ }).click();
     const d = page.getByRole('dialog', { name: /Novo cliente/ });
     await expect(d).toBeVisible();
-    await d.getByLabel(/Nome Completo/).fill('Cliente Teste');
+    await d.getByLabel(/Nome completo/).fill('Cliente Teste');
     await d.getByLabel(/WhatsApp/).fill('(11) 91234-5678');
 
     await d.getByRole('textbox', { name: /^Placa/ }).first().fill('ABC1D23');
@@ -340,7 +340,7 @@ test.describe('novo cliente com veículos', () => {
     await abrir(page, tema);
     await page.getByRole('button', { name: /Novo cliente/ }).click();
     const d = page.getByRole('dialog', { name: /Novo cliente/ });
-    await d.getByLabel(/Nome Completo/).fill('Descartado');
+    await d.getByLabel(/Nome completo/).fill('Descartado');
     await d.getByRole('button', { name: 'Cancelar' }).click();
     await d.getByRole('button', { name: 'Descartar' }).click(); // há dados digitados: confirma o descarte
     await expect(d).toBeHidden();
@@ -355,14 +355,14 @@ test.describe('sair das folhas de formulário', () => {
     await abrir(page, tema);
     await page.getByRole('button', { name: /Novo cliente/ }).click();
     const d = page.getByRole('dialog', { name: /Novo cliente/ });
-    await d.getByLabel(/Nome Completo/).fill('Digitado');
+    await d.getByLabel(/Nome completo/).fill('Digitado');
 
     await page.keyboard.press('Escape');
     await expect(d).toBeVisible();
     await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
     await d.getByRole('button', { name: 'Continuar editando' }).click();
     await expect(d.getByRole('alert')).toHaveCount(0);
-    await expect(d.getByLabel(/Nome Completo/)).toHaveValue('Digitado');
+    await expect(d.getByLabel(/Nome completo/)).toHaveValue('Digitado');
 
     await d.getByRole('button', { name: 'Cancelar' }).click();
     await expect(d.getByRole('alert')).toContainText('Descartar alterações?');

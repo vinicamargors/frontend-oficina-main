@@ -10,12 +10,15 @@ export function PageHeader({
   inicio,
   complemento,
   abaixo,
+  acoesClasse = '',
 }: {
   titulo: string;
   acoes?: ReactNode;
   inicio?: ReactNode;
   complemento?: ReactNode;
   abaixo?: ReactNode;
+  /** Classes extras do contêiner das ações (ex.: ocupar a linha inteira no celular). */
+  acoesClasse?: string;
 }) {
   useEffect(() => {
     document.title = `${titulo} · Mecanify`;
@@ -35,7 +38,7 @@ export function PageHeader({
       ) : (
         h1
       )}
-      {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
+      {acoes && <div className={`flex flex-wrap items-center gap-2 ${acoesClasse}`}>{acoes}</div>}
     </div>
   );
 }
