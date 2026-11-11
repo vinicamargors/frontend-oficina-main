@@ -25,6 +25,7 @@ export default {
         warning: token('warning'),
         info: token('info'),
         done: token('done'),
+        chip: { warning: token('chip-warning'), brand: token('chip-brand'), done: token('chip-done') },
       },
       boxShadow: {
         card: 'var(--shadow-card)',

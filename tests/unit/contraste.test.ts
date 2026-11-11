@@ -59,3 +59,30 @@ for (const [nome, ler] of Object.entries(temas)) {
     }
   });
 }
+
+// Chips de status: o fundo é um token com alpha (bg-X/NN) composto sobre o fundo da tela onde o chip aparece.
+describe('chips de status (StatusBadge)', () => {
+  const fonte = readFileSync(resolve(process.cwd(), 'src/components/ui/status.ts'), 'utf8');
+  const chips = [...fonte.matchAll(/([A-Z_]+):\s*\{[^}]*classe:\s*'bg-([a-z-]+)(?:\/(\d+))?\s+text-([a-z-]+)'/g)].map(
+    ([, status, bg, alfa, fg]) => ({ status, bg, alfa: alfa ? Number(alfa) / 100 : 1, fg }),
+  );
+
+  it('encontra os 5 status', () => {
+    expect(chips.map((c) => c.status)).toEqual(['ORCAMENTO', 'AGUARDANDO_PECA', 'EXECUCAO', 'FINALIZADO', 'PAGO']);
+  });
+
+  for (const [nome, ler] of Object.entries(temas)) {
+    describe(nome, () => {
+      const t = ler();
+      for (const c of chips) {
+        for (const tela of ['canvas', 'surface', 'muted']) {
+          it(`${c.status}: ${c.fg} sobre ${c.bg}/${Math.round(c.alfa * 100)} em ${tela} >= 4.5`, () => {
+            const base = t[tela];
+            const mix = t[c.bg].map((v, i) => Math.round(v * c.alfa + base[i] * (1 - c.alfa))) as [number, number, number];
+            expect(razao(t[c.fg], mix)).toBeGreaterThanOrEqual(4.5);
+          });
+        }
+      }
+    });
+  }
+});
