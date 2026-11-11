@@ -1,6 +1,6 @@
 # Landing page mecanify.com.br — Design
 
-Data: 2026-11-11. Status: aprovado em conversa, aguardando revisão desta spec.
+Data: 2026-11-11. Status: aprovado.
 
 ## 1. Objetivo
 
@@ -26,11 +26,12 @@ Página pública de venda do Mecanify em `mecanify.com.br`.
   - `mecanify.com.br` (e `www` → redirect 301 para o apex) → landing.
   - `app.mecanify.com.br` → sistema atual.
 - **Identidade:** tokens Grafite + Âmbar e fontes Geist / Geist Mono copiados de `src/styles/tokens.css` e `DESIGN.md` deste repo. **Tema escuro fixo.**
-- **Config única:** `src/site.config.ts` com:
-  - WhatsApp, e-mail, CNPJ, razão social (placeholders até a publicação);
-  - URL do app e do cadastro;
-  - preços dos planos;
-  - IDs de GA4, Meta Pixel e Google Ads.
+- **Configuração fácil (sem mexer em componente):**
+  - `src/site.config.ts` — único arquivo com dados da empresa e do produto: WhatsApp, mensagem padrão do WhatsApp, e-mail, CNPJ, razão social, URL do app e do cadastro, preços dos planos. Placeholders marcados com `TODO_PREENCHER`.
+  - **IDs de rastreio por variável de ambiente** (painel da Vercel ou `.env`): `PUBLIC_GA4_ID`, `PUBLIC_META_PIXEL_ID`, `PUBLIC_GOOGLE_ADS_ID`, `PUBLIC_GOOGLE_ADS_CONVERSION_LABEL`. Vazia = ferramenta desligada, sem erro.
+  - `.env.example` lista todas as variáveis.
+  - `README.md` com seção "Antes de publicar": tabela de cada item, onde editar e exemplo.
+  - Build de produção emite **aviso** (não falha) se algum `TODO_PREENCHER` ou ID estiver vazio.
 - **Rotas:** `/`, `/privacidade`, `/termos`, `/cookies`, `404`.
 
 ### CTA
@@ -129,8 +130,10 @@ Toggle **Mensal / Anual**. Anual = 2 meses grátis (paga 10, usa 12), mostrado c
 ## 9. Páginas legais
 
 - Rascunhos escritos com base no que o site coleta (GA4, Pixel, Ads, Vercel Analytics, cliques de contato).
-- Aviso visível no topo de cada página até revisão jurídica: "Rascunho — revisão jurídica pendente".
-- Não publicar em produção com o aviso.
+- **Texto em Markdown**, um arquivo por página: `src/content/legal/privacidade.md`, `termos.md`, `cookies.md`. Editar o texto = editar o `.md`, sem tocar em código.
+- Frontmatter: `titulo`, `atualizadoEm`, `revisado` (`false` por padrão).
+- Com `revisado: false`, a página mostra o aviso "Rascunho — revisão jurídica pendente". Após a revisão, trocar para `true` remove o aviso.
+- Dados da empresa (razão social, CNPJ, e-mail) entram nos textos via `site.config.ts`, não digitados no `.md`.
 
 ## 10. Acessibilidade
 
@@ -159,8 +162,10 @@ Toggle **Mensal / Anual**. Anual = 2 meses grátis (paga 10, usa 12), mostrado c
 
 ## 13. Pendências antes de publicar
 
-- WhatsApp, e-mail, CNPJ e razão social reais em `site.config.ts`.
-- IDs de GA4, Meta Pixel e Google Ads.
-- Revisão jurídica das páginas legais.
+Todas ficam para depois, sem bloquear o desenvolvimento:
+
+- Contato e empresa → `src/site.config.ts`.
+- IDs de rastreio → variáveis de ambiente na Vercel.
+- Revisão jurídica → `.md` em `src/content/legal/` + `revisado: true`.
 - DNS: apex e `www` na Vercel da landing; `app.` apontando para o projeto do sistema.
-- Criar o repo `mecanify-site` no GitHub.
+- Repo `mecanify-site`: criado pelo usuário no GitHub (vazio).
