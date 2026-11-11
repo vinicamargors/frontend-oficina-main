@@ -184,7 +184,7 @@ test('print clientes veiculo editar (Editar veículo aberto)', async ({ page }, 
   const { tema, largura } = contextoDoProjeto(info);
   mkdirSync(PASTA, { recursive: true });
   const veics = await abrirVeiculosDoJoao(page, tema);
-  await veics.getByRole('button', { name: 'Editar veículo ABC1234' }).click();
+  await veics.getByRole('button', { name: 'Editar veículo ABC-1234' }).click();
   await page.getByRole('dialog', { name: /Editar Veículo/ }).waitFor();
   await page.mouse.move(1, 1);
   exigirRedeCompleta(page);
@@ -195,8 +195,8 @@ test('print clientes historico (histórico da placa com várias OS)', async ({ p
   const { tema, largura } = contextoDoProjeto(info);
   mkdirSync(PASTA, { recursive: true });
   const veics = await abrirVeiculosDoJoao(page, tema);
-  await veics.getByRole('button', { name: 'Histórico do veículo ABC1234' }).click();
-  await page.getByRole('dialog', { name: 'Histórico do Veículo ABC1234' }).waitFor();
+  await veics.getByRole('button', { name: 'Histórico do veículo ABC-1234' }).click();
+  await page.getByRole('dialog', { name: 'Histórico do Veículo ABC-1234' }).waitFor();
   await page.mouse.move(1, 1);
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `clientes-historico-${tema}-${largura}.png`), animations: 'disabled' });

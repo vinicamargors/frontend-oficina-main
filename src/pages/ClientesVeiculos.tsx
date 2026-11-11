@@ -20,6 +20,7 @@ import {
   PageHeader,
   Panel,
   PlateChip,
+  formatarPlaca,
   Skeleton,
   StatusBadge,
   STATUS_OS,
@@ -436,7 +437,7 @@ export function ClientesVeiculos({
   const abrirHistoricoVeiculo = (veiculo: Veiculo, cliente?: Cliente) => {
     const ordens = osPorVeiculo[veiculo.id] || [];
     setHistoricoModal({
-      titulo: `Histórico do Veículo ${veiculo.placa}`,
+      titulo: `Histórico do Veículo ${formatarPlaca(veiculo.placa)}`,
       subtitulo: `${veiculo.modelo}${veiculo.marca ? ` • ${veiculo.marca}` : ''} — Cliente: ${
         cliente?.nome || veiculo.clientes?.nome || 'Não identificado'
       }`,
@@ -1040,7 +1041,7 @@ export function ClientesVeiculos({
         focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
-        titulo={veiculoEmEdicao ? `Editar Veículo — ${veiculoEmEdicao.placa}` : ''}
+        titulo={veiculoEmEdicao ? `Editar Veículo — ${formatarPlaca(veiculoEmEdicao.placa)}` : ''}
         aoCancelar={() => sairDaFolha(veiculoSujo, fecharEdicaoVeiculo)}
       >
         <p className="-mt-3 text-sm text-ink-muted">Atualize placa, modelo, cor, ano ou quilometragem do veículo.</p>
@@ -1224,7 +1225,7 @@ export function ClientesVeiculos({
                     iniciarNovaOsParaVeiculo(v, c);
                   }}
                 >
-                  Abrir nova OS para {historicoModal.veiculo.placa}
+                  Abrir nova OS para {formatarPlaca(historicoModal.veiculo.placa)}
                 </Button>
               )}
             </div>

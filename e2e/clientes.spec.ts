@@ -248,11 +248,11 @@ test.describe('veículos do cliente', () => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     const veics = await expandir(page);
-    await veics.getByRole('button', { name: 'Editar veículo ABC1234' }).click();
+    await veics.getByRole('button', { name: 'Editar veículo ABC-1234' }).click();
     await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: /Editar Veículo — / }));
     await page.keyboard.press('Escape');
 
-    await veics.getByRole('button', { name: 'Abrir OS para ABC1234' }).click();
+    await veics.getByRole('button', { name: 'Abrir OS para ABC-1234' }).click();
     await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Abrir Ordem de Serviço' }));
   });
 
@@ -261,8 +261,8 @@ test.describe('veículos do cliente', () => {
     const escritas = gravarEscritas(page);
     await abrir(page, tema);
     const veics = await expandir(page);
-    await veics.getByRole('button', { name: 'Editar veículo ABC1234' }).click();
-    const d = page.getByRole('dialog', { name: /Editar Veículo — ABC1234/ });
+    await veics.getByRole('button', { name: 'Editar veículo ABC-1234' }).click();
+    const d = page.getByRole('dialog', { name: /Editar Veículo — ABC-1234/ });
     await expect(d.getByLabel(/^Modelo/)).toHaveValue('Gol 1.0');
 
     await d.getByLabel(/^Modelo/).fill('');
@@ -281,11 +281,11 @@ test.describe('veículos do cliente', () => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     const veics = await expandir(page);
-    await veics.getByRole('button', { name: 'Histórico do veículo ABC1234' }).click();
-    const d = page.getByRole('dialog', { name: 'Histórico do Veículo ABC1234' });
+    await veics.getByRole('button', { name: 'Histórico do veículo ABC-1234' }).click();
+    const d = page.getByRole('dialog', { name: 'Histórico do Veículo ABC-1234' });
     await expect(d).toBeVisible();
     await expect(d.getByRole('button', { name: 'Abrir OS' }).first()).toBeVisible();
-    await expect(d.getByRole('button', { name: /Abrir nova OS para ABC1234/i })).toBeVisible();
+    await expect(d.getByRole('button', { name: /Abrir nova OS para ABC-1234/i })).toBeVisible();
   });
 
   test('+ OS abre a folha rápida e cria a OS para o veículo', async ({ page }, info) => {
@@ -293,7 +293,7 @@ test.describe('veículos do cliente', () => {
     const escritas = gravarEscritas(page);
     await abrir(page, tema);
     const veics = await expandir(page);
-    await veics.getByRole('button', { name: 'Abrir OS para ABC1234' }).click();
+    await veics.getByRole('button', { name: 'Abrir OS para ABC-1234' }).click();
     const d = page.getByRole('dialog', { name: 'Abrir Ordem de Serviço' });
     await expect(d).toContainText('ABC-1234');
     await d.getByLabel(/Defeito Relatado/).fill('Barulho no motor');
@@ -411,7 +411,7 @@ test.describe('sair das folhas de formulário', () => {
     await d.getByRole('button', { name: 'Editar carro' }).first().click();
     await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
     await d.getByRole('button', { name: 'Descartar' }).click();
-    const v = page.getByRole('dialog', { name: /Editar Veículo — ABC1234/ });
+    const v = page.getByRole('dialog', { name: /Editar Veículo — ABC-1234/ });
     await expect(v).toBeVisible();
     await page.keyboard.press('Escape'); // nada mudou no veículo
     await expect(v).toBeHidden();
