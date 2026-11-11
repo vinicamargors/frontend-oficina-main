@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BookOpen, CircleHelp, Route } from 'lucide-react';
-import { useTour } from '../../tour/TourProvider';
+import { useTour } from '../../tour/contexto';
 import { TOUR_POR_ABA } from '../../tour/porAba';
 
 /** Pede ao app para trocar de aba (respeita a proteção de formulário sujo). */

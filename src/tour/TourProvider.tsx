@@ -1,36 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { CartaoTour } from './CartaoTour';
+import { TourContext, type Ativo, type Ctx } from './contexto';
 import { carregarEspelho, comPularTodos, comVisto, lerEstado, salvarEspelho, type TourMeta } from './estado';
 import { passosVisiveis } from './posicao';
-import type { PassoTour, TourDef } from './tipos';
-
-type Ativo = { def: TourDef; passos: PassoTour[]; auto: boolean };
-
-type Ctx = {
-  /** `null` enquanto o estado da conta não foi lido. */
-  meta: TourMeta | null;
-  ativo: Ativo | null;
-  iniciar: (def: TourDef, opcoes?: { forcar?: boolean }) => void;
-  cancelar: (id: string) => void;
-  refazer: (def: TourDef) => void;
-  pularTodos: () => void;
-};
-
-const TourContext = createContext<Ctx | null>(null);
-
-export function useTourContext(): Ctx {
-  const c = useContext(TourContext);
-  if (!c) throw new Error('TourProvider ausente');
-  return c;
-}
-
-/** Para o botão "?": refaz o tour da página e pula todos. */
-export function useTour() {
-  const { refazer, pularTodos, ativo } = useTourContext();
-  return { refazer, pularTodos, ativo: ativo?.def ?? null };
-}
+import type { TourDef } from './tipos';
 
 export function TourProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();

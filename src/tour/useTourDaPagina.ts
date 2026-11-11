@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { TOURS_ATIVOS } from './config';
 import { jaViu } from './estado';
-import { useTourContext } from './TourProvider';
+import { useTourContext } from './contexto';
 import type { TourDef } from './tipos';
 
 const ATRASO_MS = 400;
