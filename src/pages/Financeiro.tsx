@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { Button, CLASSE_CAMPO, Field, PageHeader, Panel, Tabs, type TabItem } from '../components/ui';
 import { Folha } from '../components/Folha';
-import { FORMAS_PAGAMENTO as FORMAS_BAIXA } from './ordens/formasPagamento';
 import {
   formatBRL,
   formatData,
@@ -74,6 +73,8 @@ const FORMAS_PAGAMENTO = [
   'Boleto / Faturado',
   'TED / Transferência',
 ];
+// A baixa oferece as mesmas formas do lançamento (inclui TED, que a lista da OS não tem)
+const FORMAS_BAIXA = FORMAS_PAGAMENTO;
 
 // Aba Contas leva em texto quantas despesas estão pendentes/atrasadas (antes: ponto vermelho só de cor)
 const montarAbas = (despesasEmAberto: number): TabItem[] => [
@@ -1000,6 +1001,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       <Folha
         aberto={itemParaBaixa !== null}
         titulo="Dar baixa no lançamento?"
+        bloquearFechar={baixando}
         aoCancelar={() => !baixando && setItemParaBaixa(null)}
       >
         {itemParaBaixa && (
@@ -1059,6 +1061,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       <Folha
         aberto={itemParaExcluir !== null}
         titulo="Excluir lançamento?"
+        bloquearFechar={excluindo}
         aoCancelar={() => !excluindo && setItemParaExcluir(null)}
       >
         {itemParaExcluir && (

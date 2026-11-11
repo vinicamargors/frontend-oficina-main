@@ -369,7 +369,15 @@ test.describe('contas a pagar e receber', () => {
     await menuDe(page, PENDENTE_RECEITA.descricao);
     await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
     const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
-    await expect(d.getByRole('radio')).toHaveCount(5);
+    // as mesmas 6 formas do formulário de lançamento, incluindo TED
+    await expect(d.locator('label:has(input[type=radio])')).toHaveText([
+      'PIX',
+      'Cartão de Crédito',
+      'Cartão de Débito',
+      'Dinheiro',
+      'Boleto / Faturado',
+      'TED / Transferência',
+    ]);
     await expect(d.getByRole('radio', { checked: true })).toHaveCount(0);
     await expect(d.getByRole('button', { name: 'Confirmar recebimento' })).toBeDisabled();
     await d.getByRole('radio', { name: 'Dinheiro' }).check();
@@ -380,6 +388,19 @@ test.describe('contas a pagar e receber', () => {
     await menuDe(page, PENDENTE_RECEITA.descricao);
     await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
     await expect(d.getByRole('radio', { checked: true })).toHaveCount(0);
+  });
+
+  test('baixa por TED / Transferência envia essa forma', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'TED / Transferência' }).check();
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ forma_pagamento: 'TED / Transferência' });
   });
 
   test('baixa com forma já guardada: ela aparece marcada, pode ser trocada e a escolhida é enviada', async ({ page }, info) => {
@@ -642,6 +663,83 @@ test.describe('formulário de lançamento', () => {
     await d.getByRole('button', { name: 'Descartar' }).click();
     await expect(d).toHaveCount(0);
     expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('Esc duas vezes no formulário alterado: a interface fica coerente e nada é gravado', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, DESPESA_PAGA.descricao);
+    await page.getByRole('menuitem', { name: 'Editar lançamento' }).click();
+    const d = page.getByRole('dialog', { name: 'Editar lançamento' });
+    await d.getByLabel('Descrição *').fill('Outro nome');
+    // o 2º Esc seguido o Chrome não deixa interceptar e fecha o <dialog> à força
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    if (await d.isVisible()) {
+      await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+      await expect(d.getByLabel('Descrição *')).toHaveValue('Outro nome');
+    } else {
+      // fechou: o estado acompanhou e o formulário abre de novo
+      await menuDe(page, DESPESA_PAGA.descricao);
+      await page.getByRole('menuitem', { name: 'Editar lançamento' }).click();
+      await expect(d).toBeVisible();
+    }
+    expect(await ultimaEscrita(page)).toBeUndefined();
+    // e "Novo lançamento" continua abrindo
+    if (await d.isVisible()) {
+      await d.getByRole('button', { name: 'Cancelar' }).click();
+      if (await d.getByRole('button', { name: 'Descartar' }).isVisible()) await d.getByRole('button', { name: 'Descartar' }).click();
+    }
+    await expect(d).toHaveCount(0);
+    await page.getByRole('button', { name: 'Novo lançamento' }).click();
+    await expect(page.getByRole('dialog', { name: 'Novo lançamento' })).toBeVisible();
+  });
+
+  test('baixa em andamento: Esc não fecha a folha no meio da gravação', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let liberar: () => void = () => {};
+    const espera = new Promise<void>((r) => (liberar = r));
+    await page.route(/\/liquidar|transacoes-financeiras\/[^/]+\/[^/]+$/, async (route) => {
+      if (route.request().method() !== 'GET') await espera;
+      return route.fallback();
+    });
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'PIX' }).check();
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    await expect(d).toBeVisible();
+    liberar();
+    await expect(d).toHaveCount(0);
+  });
+
+  test('exclusão em andamento: Esc não fecha a folha no meio da gravação', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let liberar: () => void = () => {};
+    const espera = new Promise<void>((r) => (liberar = r));
+    await page.route(/transacoes-financeiras\//, async (route) => {
+      if (route.request().method() === 'DELETE') await espera;
+      return route.fallback();
+    });
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_DESPESA.descricao);
+    await page.getByRole('menuitem', { name: 'Excluir lançamento' }).click();
+    const d = page.getByRole('dialog', { name: 'Excluir lançamento?' });
+    await d.getByRole('button', { name: 'Excluir lançamento' }).click();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    await expect(d).toBeVisible();
+    liberar();
+    await expect(d).toHaveCount(0);
   });
 
   test('salvar edição envia PUT com o mesmo tipo', async ({ page }, info) => {

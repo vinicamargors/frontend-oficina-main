@@ -32,6 +32,9 @@ export function Folha({
   const ref = useRef<HTMLDialogElement>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const idTitulo = useId();
+  // Último valor de `aberto`, para o `close` nativo saber se o fechamento veio do estado ou do navegador
+  const abertoRef = useRef(aberto);
+  abertoRef.current = aberto;
 
   useEffect(() => {
     const d = ref.current;
@@ -53,6 +56,30 @@ export function Folha({
     aoCancelar();
   };
 
+  // Gravação em andamento: o Esc é barrado no documento inteiro (o botão clicado fica desabilitado e o foco pode
+  // sair da folha; um ouvinte só no <dialog> não veria a tecla e o navegador fecharia a folha).
+  useEffect(() => {
+    if (!aberto || !bloquearFechar) return;
+    const barrarEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') e.preventDefault();
+    };
+    document.addEventListener('keydown', barrarEsc, true);
+    return () => document.removeEventListener('keydown', barrarEsc, true);
+  }, [aberto, bloquearFechar]);
+
+  // O Chrome fecha o <dialog> à força num 2º Esc seguido (sem ativação do usuário, o `cancel` não pode ser
+  // impedido). Se o estado ainda diz "aberto", reabre e segue o mesmo caminho do Esc (`aoCancelar`): o dono
+  // decide (fechar ou pedir "Descartar alterações?") e a tela nunca fica com uma folha escondida e travada.
+  const aoFecharNativo = () => {
+    const d = ref.current;
+    if (!d || !abertoRef.current || d.open) return;
+    // Gravação em andamento: o Esc já é bloqueado; um fechamento vindo de outro lugar é respeitado e o dono
+    // fecha de vez ao terminar a gravação (aí `aberto` vira false e nada fica pendurado).
+    if (bloquearFechar) return;
+    d.showModal();
+    aoCancelar();
+  };
+
   const cliqueNoFundo = (e: MouseEvent<HTMLDialogElement>) => {
     if (fecharNoFundo && !bloquearFechar && e.target === ref.current) aoCancelar();
   };
@@ -62,6 +89,7 @@ export function Folha({
       ref={ref}
       aria-labelledby={idTitulo}
       onCancel={cancelar}
+      onClose={aoFecharNativo}
       onKeyDown={(e) => {
         if (bloquearFechar && e.key === 'Escape') e.preventDefault();
       }}
