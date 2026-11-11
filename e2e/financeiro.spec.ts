@@ -329,7 +329,7 @@ test.describe('contas a pagar e receber', () => {
     expect(await sobraLateral(page)).toBeLessThanOrEqual(0);
   });
 
-  test('dar baixa exige confirmação; cancelar não grava; confirmar liquida com a forma do lançamento', async ({ page }, info) => {
+  test('dar baixa exige confirmação; cancelar não grava; confirmar liquida com a forma escolhida', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     await irParaContas(page);
@@ -351,6 +351,7 @@ test.describe('contas a pagar e receber', () => {
     await menuDe(page, PENDENTE_RECEITA.descricao);
     await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
     await expect(d).toContainText(`+ ${brl(PENDENTE_RECEITA.valor)}`);
+    await d.getByRole('radio', { name: 'PIX' }).check();
     await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     const e = (await ultimaEscrita(page))!;
@@ -359,6 +360,44 @@ test.describe('contas a pagar e receber', () => {
     expect(e.corpo).toMatchObject({ forma_pagamento: 'PIX' });
     await expect(d).toHaveCount(0);
     await expect(page.getByRole('status').filter({ hasText: 'RECEBIDO' })).toBeVisible();
+  });
+
+  test('baixa sem forma no lançamento: nada marcado e confirmar bloqueado até escolher; cancelar não grava', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await expect(d.getByRole('radio')).toHaveCount(5);
+    await expect(d.getByRole('radio', { checked: true })).toHaveCount(0);
+    await expect(d.getByRole('button', { name: 'Confirmar recebimento' })).toBeDisabled();
+    await d.getByRole('radio', { name: 'Dinheiro' }).check();
+    await expect(d.getByRole('button', { name: 'Confirmar recebimento' })).toBeEnabled();
+    await d.getByRole('button', { name: 'Cancelar' }).click();
+    expect(await ultimaEscrita(page)).toBeUndefined();
+    // reabrir: a escolha anterior não volta
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    await expect(d.getByRole('radio', { checked: true })).toHaveCount(0);
+  });
+
+  test('baixa com forma já guardada: ela aparece marcada, pode ser trocada e a escolhida é enviada', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const seguro = transacoes.find((t) => t.descricao.startsWith('Seguro do estab'))!;
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, seguro.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como pago' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await expect(d.getByRole('radio', { name: 'Boleto / Faturado' })).toBeChecked();
+    await expect(d.getByRole('button', { name: 'Confirmar pagamento' })).toBeEnabled();
+    await d.getByRole('radio', { name: 'Dinheiro' }).check();
+    await d.getByRole('button', { name: 'Confirmar pagamento' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    const e = (await ultimaEscrita(page))!;
+    expect(e.caminho).toContain(`/${seguro.id}/liquidar`);
+    expect(e.corpo).toMatchObject({ forma_pagamento: 'Dinheiro' });
   });
 
   test('desktop: botão de baixa na linha também passa pela confirmação', async ({ page }, info) => {
@@ -409,6 +448,7 @@ test.describe('falha da API nas confirmações', () => {
     await menuDe(page, PENDENTE_RECEITA.descricao);
     await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
     const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'PIX' }).check();
     await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
     await expect(d.getByRole('alert')).toBeVisible();
     await expect(d).toBeVisible();
@@ -466,7 +506,9 @@ test.describe('datas no calendário local (22h em São Paulo)', () => {
     await irParaContas(page);
     await menuDe(page, PENDENTE_RECEITA.descricao);
     await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
-    await page.getByRole('dialog', { name: 'Dar baixa no lançamento?' }).getByRole('button', { name: 'Confirmar recebimento' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'PIX' }).check();
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     const e = (await ultimaEscrita(page))!;
     expect(e.caminho).toContain(`/${PENDENTE_RECEITA.id}/liquidar`);

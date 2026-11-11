@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Button, CLASSE_CAMPO, Field, PageHeader, Panel, Tabs, type TabItem } from '../components/ui';
 import { Folha } from '../components/Folha';
+import { FORMAS_PAGAMENTO as FORMAS_BAIXA } from './ordens/formasPagamento';
 import {
   formatBRL,
   formatData,
@@ -147,6 +148,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   const [itemParaBaixa, setItemParaBaixa] = useState<TransacaoFinanceira | null>(null);
   const [baixando, setBaixando] = useState(false);
   const [erroBaixa, setErroBaixa] = useState<string | null>(null);
+  // Forma escolhida na folha: parte do que o lançamento já guarda; sem nada guardado, fica vazia até alguém escolher.
+  const [formaBaixa, setFormaBaixa] = useState<string | null>(null);
 
   // Formulário: erro de validação na própria folha e confirmação de descarte com dados digitados
   const [formErro, setFormErro] = useState<string | null>(null);
@@ -451,12 +454,12 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   };
 
   // Dar Baixa / Liquidar (true = gravou; o erro fica na folha de confirmação)
-  const handleLiquidar = async (t: TransacaoFinanceira): Promise<boolean> => {
+  const handleLiquidar = async (t: TransacaoFinanceira, forma: string): Promise<boolean> => {
     try {
       const atualizada = await api.liquidarTransacaoFinanceira(
         empresaId,
         t.id,
-        t.forma_pagamento || 'PIX'
+        forma
       );
       setTransacoes((prev) =>
         prev.map((item) => (item.id === atualizada.id ? atualizada : item))
@@ -637,10 +640,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
   // Dar baixa só depois da confirmação na folha (mesma chamada de antes)
   const confirmarBaixa = async () => {
-    if (!itemParaBaixa) return;
+    if (!itemParaBaixa || !formaBaixa) return;
     setBaixando(true);
     setErroBaixa(null);
-    const ok = await handleLiquidar(itemParaBaixa);
+    const ok = await handleLiquidar(itemParaBaixa, formaBaixa);
     setBaixando(false);
     if (ok) setItemParaBaixa(null);
   };
@@ -816,6 +819,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
             aoNovo={() => abrirModalCadastroTransacao('DESPESA')}
             aoDarBaixa={(t) => {
               setErroBaixa(null);
+              setFormaBaixa(t.forma_pagamento || null);
               setItemParaBaixa(t);
             }}
             aoEditar={abrirModalEdicaoTransacao}
@@ -1006,7 +1010,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 {valorComSinal(itemParaBaixa.valor, itemParaBaixa.tipo)}
               </p>
               <p className="mt-1 text-sm tabular-nums text-ink-muted">
-                Vencimento {formatData(itemParaBaixa.data_vencimento)} &bull; {itemParaBaixa.forma_pagamento || 'PIX'}
+                Vencimento {formatData(itemParaBaixa.data_vencimento)}
               </p>
               <p className="mt-3 text-sm text-ink-muted">
                 {baixaDespesa
@@ -1014,12 +1018,36 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   : 'O lançamento será marcado como recebido hoje e entra no caixa.'}
               </p>
             </div>
+            <fieldset className="space-y-2" disabled={baixando}>
+              <legend className="mb-2 text-sm font-medium text-ink">Forma de pagamento</legend>
+              {(formaBaixa && !FORMAS_BAIXA.includes(formaBaixa) ? [formaBaixa, ...FORMAS_BAIXA] : FORMAS_BAIXA).map((fp) => {
+                const marcada = formaBaixa === fp;
+                return (
+                  <label
+                    key={fp}
+                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-4 text-sm font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand ${
+                      marcada ? 'bg-brand/15 text-ink' : 'bg-muted text-ink hover:bg-line'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="forma-baixa"
+                      value={fp}
+                      checked={marcada}
+                      onChange={() => setFormaBaixa(fp)}
+                      className="h-5 w-5 shrink-0 accent-brand focus-visible:outline-none"
+                    />
+                    {fp}
+                  </label>
+                );
+              })}
+            </fieldset>
             {erroBaixa && alertaErro(erroBaixa)}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button variante="secundario" disabled={baixando} onClick={() => setItemParaBaixa(null)}>
                 Cancelar
               </Button>
-              <Button icone={CheckCircle2} carregando={baixando} onClick={confirmarBaixa}>
+              <Button icone={CheckCircle2} carregando={baixando} disabled={!formaBaixa} onClick={confirmarBaixa}>
                 {baixaDespesa ? 'Confirmar pagamento' : 'Confirmar recebimento'}
               </Button>
             </div>

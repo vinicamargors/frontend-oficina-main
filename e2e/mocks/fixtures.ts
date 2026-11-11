@@ -421,7 +421,8 @@ export const transacoes: TransacaoFinanceira[] = TRANSACOES_PLANO.map(([tipo, de
   data_vencimento: dataISO(offset),
   data_liquidacao: status === 'LIQUIDADO' ? dataISO(offset) : null,
   status,
-  forma_pagamento: status === 'LIQUIDADO' ? 'PIX' : null,
+  // O seguro está pendente mas já tem forma combinada (boleto): serve para testar a baixa com forma guardada.
+  forma_pagamento: status === 'LIQUIDADO' ? 'PIX' : descricao.startsWith('Seguro do estab') ? 'Boleto / Faturado' : null,
   observacoes: null,
   created_at: diasAtras(Math.abs(offset) + 1),
 }));
