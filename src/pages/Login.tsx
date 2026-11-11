@@ -94,13 +94,13 @@ export function Login() {
 
     const titles: Record<AuthMode, string> = {
       login: "Entrar — Mecanify",
-      cadastro: "Criar Conta da Oficina — Mecanify",
-      recuperar: "Recuperar Senha — Mecanify",
-      "nova-senha": "Definir Nova Senha — Mecanify",
+      cadastro: "Criar conta da oficina — Mecanify",
+      recuperar: "Recuperar senha — Mecanify",
+      "nova-senha": "Definir nova senha — Mecanify",
     };
     document.title = titles[mode];
     return () => {
-      document.title = "Mecanify — Gestão de Oficina"; // ao sair do login, volta o título do app
+      document.title = "Mecanify — Gestão de oficina"; // ao sair do login, volta o título do app
     };
   }, [mode]);
 
@@ -200,7 +200,7 @@ export function Login() {
       if (!nome.trim()) {
         setErroCampo({
           campo: "nome",
-          msg: "Informe seu nome para identificação nas Ordens de Serviço.",
+          msg: "Informe seu nome para identificação nas ordens de serviço.",
         });
         nomeInputRef.current?.focus();
         return;
@@ -401,10 +401,10 @@ export function Login() {
               </div>
               <ol className="list-decimal list-inside space-y-1.5 text-sm text-ink-muted">
                 <li>Abra o aplicativo de e-mail no celular ou computador.</li>
-                <li>Procure o e-mail do Mecanify (olhe também no Spam).</li>
+                <li>Procure o e-mail do Mecanify (olhe também no spam).</li>
                 <li>
                   Toque em{" "}
-                  <strong className="text-ink">Confirmar Meu E-mail</strong>.
+                  <strong className="text-ink">Confirmar meu e-mail</strong>.
                 </li>
               </ol>
               {resendSuccess && avisoSucesso(resendSuccess)}
@@ -451,7 +451,7 @@ export function Login() {
               <ol className="list-decimal list-inside space-y-1.5 text-sm text-ink-muted">
                 <li>
                   Abra seu e-mail e toque em{" "}
-                  <strong className="text-ink">Redefinir Minha Senha</strong>.
+                  <strong className="text-ink">Redefinir minha senha</strong>.
                 </li>
                 <li>Você volta para cá para digitar a senha nova.</li>
               </ol>

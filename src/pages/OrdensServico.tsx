@@ -246,7 +246,7 @@ export function OrdensServico({
     } catch (err: unknown) {
       if (minha !== seqLista.current) return;
       const e = err as Error;
-      setErroLista(e.message || 'Erro ao carregar Ordens de Serviço.');
+      setErroLista(e.message || 'Erro ao carregar ordens de serviço.');
     } finally {
       if (minha === seqLista.current) setLoadingLista(false);
     }
@@ -528,7 +528,7 @@ export function OrdensServico({
       setAvisoPlaca('Dados do veículo preenchidos automaticamente pela placa!');
     } catch {
       setAvisoPlaca(
-        'Placa não localizada na base externa. Preencha o Modelo do veículo abaixo.'
+        'Placa não localizada na base externa. Preencha o modelo do veículo abaixo.'
       );
     } finally {
       setBuscandoPlaca(false);
@@ -547,13 +547,13 @@ export function OrdensServico({
       if (modoClienteOS === 'BUSCAR') {
         if (!clienteSelecionadoId) {
           throw new Error(
-            'Pesquise e selecione um cliente na lista ou clique em "+ Novo Cliente".'
+            'Pesquise e selecione um cliente na lista ou clique em "+ Novo cliente".'
           );
         }
         clienteIdFinal = clienteSelecionadoId;
       } else {
         if (!novoClienteNome.trim() || !novoClienteTelefone.trim()) {
-          throw new Error('Informe o Nome e o Telefone/WhatsApp do novo cliente.');
+          throw new Error('Informe o nome e o telefone/WhatsApp do novo cliente.');
         }
         const novoCli = await api.criarCliente({
           nome: novoClienteNome.trim(),
@@ -567,7 +567,7 @@ export function OrdensServico({
       if (modoClienteOS === 'BUSCAR' && modoVeiculoCliente === 'DO_CLIENTE') {
         if (!veiculoSelecionadoId) {
           throw new Error(
-            'Selecione um dos veículos do cliente ou clique em "+ Novo Veículo".'
+            'Selecione um dos veículos do cliente ou clique em "+ Novo veículo".'
           );
         }
         veiculoIdFinal = veiculoSelecionadoId;
@@ -627,11 +627,11 @@ export function OrdensServico({
         osCriada.id,
         osCriada.reaproveitada
           ? 'Orçamento aberto há menos de 3 meses localizado — abrimos a bancada dele!'
-          : 'Nova Ordem de Serviço aberta com sucesso!'
+          : 'Nova ordem de serviço aberta com sucesso!'
       );
     } catch (err: unknown) {
       const customErr = err as Error;
-      setErroOperacao(customErr.message || 'Erro ao abrir a Ordem de Serviço.');
+      setErroOperacao(customErr.message || 'Erro ao abrir a ordem de serviço.');
     } finally {
       setCriandoOS(false);
     }
@@ -864,7 +864,7 @@ export function OrdensServico({
       setFeedbackMsg(
         `${qtdLancada} ${
           qtdLancada === 1 ? 'item lançado' : 'itens lançados'
-        } na Ordem de Serviço!`
+        } na ordem de serviço!`
       );
     } catch (err: unknown) {
       const customErr = err as Error;
@@ -1080,7 +1080,7 @@ export function OrdensServico({
         <div className="flex items-center justify-between gap-4 bg-surface border-2 border-line rounded-lg p-5">
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold text-ink text-balance">
-              Dar Entrada em Veículo (Nova OS)
+              Dar entrada em veículo (nova OS)
             </h1>
             <p className="text-base text-ink-muted mt-1 text-pretty">
               1º Escolha o cliente (por placa, nome, CPF ou telefone) e 2º selecione o
@@ -1093,7 +1093,7 @@ export function OrdensServico({
             className="min-h-[54px] px-5 py-2.5 rounded-xl bg-surface hover:bg-muted border-2 border-line-strong text-ink font-semibold text-base flex items-center gap-2 cursor-pointer shrink-0"
           >
             <ArrowLeft className="w-5 h-5 text-brand-ink" aria-hidden="true" />
-            <span>Voltar ao Pátio</span>
+            <span>Voltar ao pátio</span>
           </button>
         </div>
 
@@ -1128,7 +1128,7 @@ export function OrdensServico({
                       : 'bg-surface text-ink-muted hover:bg-muted'
                   }`}
                 >
-                  Buscar Cliente ({clientes.length})
+                  Buscar cliente ({clientes.length})
                 </button>
                 <button
                   type="button"
@@ -1145,7 +1145,7 @@ export function OrdensServico({
                   }`}
                 >
                   <UserPlus className="w-4 h-4" aria-hidden="true" />
-                  <span>+ Novo Cliente</span>
+                  <span>+ Novo cliente</span>
                 </button>
               </div>
             </div>
@@ -1157,7 +1157,7 @@ export function OrdensServico({
                     htmlFor="busca-cliente-os"
                     className="block text-sm font-semibold text-ink mb-1.5"
                   >
-                    Pesquisar Cliente por Placa do Veículo, Nome, CPF ou Telefone
+                    Pesquisar cliente por placa do veículo, nome, CPF ou telefone
                   </label>
                   <div className="relative flex items-center">
                     <Search
@@ -1199,7 +1199,7 @@ export function OrdensServico({
                           }}
                           className="min-h-[44px] px-4 py-2 rounded-xl bg-muted text-ink font-semibold text-xs cursor-pointer shrink-0"
                         >
-                          + Cadastrar Novo Cliente
+                          + Cadastrar novo cliente
                         </button>
                       </div>
                     ) : (
@@ -1256,7 +1256,7 @@ export function OrdensServico({
                   <div className="bg-muted/40 border-2 border-brand rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-semibold text-warning">
-                        Cliente Selecionado
+                        Cliente selecionado
                       </div>
                       <div className="text-lg font-semibold text-ink">
                         {clienteSelecionado.nome}{' '}
@@ -1274,7 +1274,7 @@ export function OrdensServico({
                       }}
                       className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-surface hover:bg-muted border border-line-strong text-ink font-semibold text-xs cursor-pointer"
                     >
-                      Trocar Cliente
+                      Trocar cliente
                     </button>
                   </div>
                 )}
@@ -1286,7 +1286,7 @@ export function OrdensServico({
                     htmlFor="input-cli-nome"
                     className="block text-sm font-semibold text-ink mb-1.5"
                   >
-                    Nome do Cliente *
+                    Nome do cliente *
                   </label>
                   <input
                     id="input-cli-nome"
@@ -1305,7 +1305,7 @@ export function OrdensServico({
                     htmlFor="input-cli-fone"
                     className="block text-sm font-semibold text-ink mb-1.5"
                   >
-                    WhatsApp / Telefone *
+                    WhatsApp / telefone *
                   </label>
                   <input
                     id="input-cli-fone"
@@ -1382,7 +1382,7 @@ export function OrdensServico({
                       }`}
                     >
                       <Sparkles className="w-4 h-4" aria-hidden="true" />
-                      <span>+ Novo Veículo (Buscar Placa)</span>
+                      <span>+ Novo veículo (buscar placa)</span>
                     </button>
                   </div>
                 )}
@@ -1463,7 +1463,7 @@ export function OrdensServico({
                         htmlFor="input-nova-placa"
                         className="block text-sm font-semibold text-ink mb-1.5"
                       >
-                        Placa do Veículo
+                        Placa do veículo
                       </label>
                       <input
                         id="input-nova-placa"
@@ -1490,8 +1490,8 @@ export function OrdensServico({
                         <Search className="w-5 h-5" aria-hidden="true" />
                         <span>
                           {buscandoPlaca
-                            ? 'Consultando Placa…'
-                            : 'Puxar Modelo / Marca pela Placa'}
+                            ? 'Consultando placa…'
+                            : 'Puxar modelo / marca pela placa'}
                         </span>
                       </button>
                     </div>
@@ -1509,7 +1509,7 @@ export function OrdensServico({
                         htmlFor="input-novo-modelo"
                         className="block text-xs font-semibold text-ink mb-1"
                       >
-                        Modelo do Carro *
+                        Modelo do carro *
                       </label>
                       <input
                         id="input-novo-modelo"
@@ -1592,7 +1592,7 @@ export function OrdensServico({
                 htmlFor="input-os-km"
                 className="block text-sm font-semibold text-ink mb-1.5"
               >
-                KM Atual no Painel
+                KM atual no painel
               </label>
               <input
                 id="input-os-km"
@@ -1612,7 +1612,7 @@ export function OrdensServico({
                 htmlFor="input-os-problema"
                 className="block text-sm font-semibold text-ink mb-1.5"
               >
-                Relato do Problema / Serviço Solicitado
+                Relato do problema / serviço solicitado
               </label>
               <input
                 id="input-os-problema"
@@ -1634,8 +1634,8 @@ export function OrdensServico({
             <PlusCircle className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
             <span>
               {criandoOS
-                ? 'Verificando Orçamentos e Abrindo Bancada…'
-                : 'Abrir Ordem de Serviço e Ir para Bancada'}
+                ? 'Verificando orçamentos e abrindo bancada…'
+                : 'Abrir ordem de serviço e ir para bancada'}
             </span>
           </button>
         </form>
@@ -1982,8 +1982,8 @@ export function OrdensServico({
             <Button
               variante="fantasma"
               tamanho="sm"
-              aria-label="Cancelar Ordem de Serviço"
-              title="Cancelar / Excluir Ordem de Serviço"
+              aria-label="Cancelar ordem de serviço"
+              title="Cancelar / excluir ordem de serviço"
               aria-expanded={mostrarModalExclusao}
               onClick={() => setMostrarModalExclusao((v) => !v)}
               className="w-11 !px-0 text-danger hover:text-danger md:w-8"
@@ -2010,7 +2010,7 @@ export function OrdensServico({
                   href={gerarLinkWhatsAppOrcamento(dossie)}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label="Mandar Orçamento no WhatsApp"
+                  aria-label="Mandar orçamento no WhatsApp"
                   className={`${classesBotao('secundario')} hidden lg:inline-flex`}
                 >
                   <MessageCircle size={16} aria-hidden="true" />
@@ -2076,7 +2076,7 @@ export function OrdensServico({
           )}
 
           {/* Etapas da OS */}
-          <Panel as="section" aria-label="Etapa atual da Ordem de Serviço" className="mb-4 space-y-4">
+          <Panel as="section" aria-label="Etapa atual da ordem de serviço" className="mb-4 space-y-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h2 className="text-base font-semibold text-ink text-balance">Etapa do serviço</h2>
               <span className="text-xs text-ink-muted">
@@ -2168,9 +2168,9 @@ export function OrdensServico({
                     setItemVenda('');
                   }}
                   itens={[
-                    { id: 'PECA_ESTOQUE', rotulo: 'Peça do Estoque' },
-                    { id: 'PECA_AVULSA', rotulo: 'Peça Avulsa' },
-                    { id: 'MAO_OBRA', rotulo: 'Mão de Obra' },
+                    { id: 'PECA_ESTOQUE', rotulo: 'Peça do estoque' },
+                    { id: 'PECA_AVULSA', rotulo: 'Peça avulsa' },
+                    { id: 'MAO_OBRA', rotulo: 'Mão de obra' },
                     { id: 'TERCEIRIZADO', rotulo: 'Terceirizado' },
                   ]}
                 />
@@ -2439,7 +2439,7 @@ export function OrdensServico({
                   itens={[
                     { id: 'itens-TODOS', rotulo: `Todos (${dossie.itens.length})` },
                     { id: 'itens-PECA', rotulo: `Peças (${pecasImp.length})` },
-                    { id: 'itens-MAO_OBRA', rotulo: `Mão de Obra (${servicosImp.length})` },
+                    { id: 'itens-MAO_OBRA', rotulo: `Mão de obra (${servicosImp.length})` },
                     { id: 'itens-TERCEIRIZADO', rotulo: `Terceirizado (${terceirizadosImp.length})` },
                   ]}
                 />
@@ -2482,7 +2482,7 @@ export function OrdensServico({
                                       }
                                     >
                                       <option value="PECA">Peça</option>
-                                      <option value="MAO_OBRA">Mão de Obra</option>
+                                      <option value="MAO_OBRA">Mão de obra</option>
                                       <option value="TERCEIRIZADO">Terceirizado</option>
                                     </select>
                                   </Field>
@@ -2644,17 +2644,17 @@ export function OrdensServico({
                     <dd className="font-medium tabular-nums text-ink">{formatBRL(os.total_pecas)}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-3 py-2">
-                    <dt className="text-ink-muted">Mão de Obra</dt>
+                    <dt className="text-ink-muted">Mão de obra</dt>
                     <dd className="font-medium tabular-nums text-ink">{formatBRL(os.total_mao_obra)}</dd>
                   </div>
                   {canSeeFinanceiro && (
                     <>
                       <div className="flex items-center justify-between gap-3 py-2">
-                        <dt className="text-ink-muted">Custo Peças</dt>
+                        <dt className="text-ink-muted">Custo peças</dt>
                         <dd className="font-medium tabular-nums text-ink">{formatBRL(custoTotalOS)}</dd>
                       </div>
                       <div className="flex items-center justify-between gap-3 py-2">
-                        <dt className="text-ink-muted">Lucro Líquido</dt>
+                        <dt className="text-ink-muted">Lucro líquido</dt>
                         <dd className="font-semibold tabular-nums text-success">{formatBRL(lucroTotalOS)}</dd>
                       </div>
                     </>
@@ -2665,7 +2665,7 @@ export function OrdensServico({
               <Panel as="section" aria-labelledby="titulo-ficha-tecnica" className="space-y-4">
                 <div className="flex items-center justify-between gap-2">
                   <h2 id="titulo-ficha-tecnica" className="text-base font-semibold text-ink text-balance">
-                    Ficha Técnica &amp; Diagnóstico
+                    Ficha técnica &amp; diagnóstico
                   </h2>
                   <span aria-live="polite" className="text-xs font-medium">
                     {statusAutoSave === 'saving' && <span className="text-ink-muted">Salvando…</span>}
@@ -2674,7 +2674,7 @@ export function OrdensServico({
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <Field rotulo="KM Atual">
+                  <Field rotulo="KM atual">
                     <input
                       id="edit-km"
                       name="km_atual"
@@ -2687,7 +2687,7 @@ export function OrdensServico({
                     />
                   </Field>
 
-                  <Field rotulo="Mecânico Responsável">
+                  <Field rotulo="Mecânico responsável">
                     <select
                       id="edit-mecanico"
                       name="mecanico_responsavel_id"
@@ -2708,7 +2708,7 @@ export function OrdensServico({
                   </Field>
                 </div>
 
-                <Field rotulo="Relato do Problema / Diagnóstico">
+                <Field rotulo="Relato do problema / diagnóstico">
                   <textarea
                     id="edit-problema"
                     name="descricao_problema"
@@ -2733,7 +2733,7 @@ export function OrdensServico({
               href={gerarLinkWhatsAppOrcamento(dossie)}
               target="_blank"
               rel="noreferrer"
-              aria-label="Mandar Orçamento no WhatsApp"
+              aria-label="Mandar orçamento no WhatsApp"
               className={`${classesBotao('secundario')} flex-1`}
             >
               <MessageCircle size={16} aria-hidden="true" />
@@ -2778,7 +2778,7 @@ export function OrdensServico({
     <div>
       {folhaPagamento}
       <PageHeader
-        titulo="Ordens de Serviço"
+        titulo="Ordens de serviço"
         complemento={
           <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle">{totalOrdens}</span>
         }
@@ -2791,7 +2791,7 @@ export function OrdensServico({
                 carregarOrdens();
                 carregarContagens();
               }}
-              aria-label="Atualizar lista de Ordens de Serviço"
+              aria-label="Atualizar lista de ordens de serviço"
             >
               Atualizar
             </Button>
@@ -2828,7 +2828,7 @@ export function OrdensServico({
             <input
               type="search"
               name="busca_patio"
-              aria-label="Buscar Ordem de Serviço por placa, cliente ou sintoma"
+              aria-label="Buscar ordem de serviço por placa, cliente ou sintoma"
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
@@ -3043,7 +3043,7 @@ export function OrdensServico({
 
           {totalOrdens > ITENS_POR_PAGINA && (
             <nav
-              aria-label="Paginação de Ordens de Serviço"
+              aria-label="Paginação de ordens de serviço"
               className="flex flex-col items-center justify-between gap-3 sm:flex-row"
             >
               <p className="text-sm tabular-nums text-ink-muted">

@@ -168,7 +168,7 @@ test.describe('bancada: confirmação do Pago', () => {
     await expect(imprimir).toBeVisible();
     for (const alvo of [whats, imprimir]) expect((await alvo.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 
-    const nav = (await page.getByRole('navigation', { name: 'Navegação Rápida Mobile' }).boundingBox())!;
+    const nav = (await page.getByRole('navigation', { name: 'Navegação rápida mobile' }).boundingBox())!;
     const caixa = (await barra.boundingBox())!;
     expect(caixa.y + caixa.height).toBeLessThanOrEqual(nav.y + 1);
     expect(caixa.y + caixa.height).toBeGreaterThanOrEqual(nav.y - 2);
@@ -186,7 +186,7 @@ test.describe('bancada: confirmação do Pago', () => {
 
     // o fim da página não fica escondido atrás da barra
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const ultimo = page.getByLabel('Relato do Problema / Diagnóstico');
+    const ultimo = page.getByLabel('Relato do problema / diagnóstico');
     const c = (await ultimo.boundingBox())!;
     expect(c.y + c.height).toBeLessThanOrEqual(caixa.y);
     const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -222,7 +222,7 @@ test.describe('lista de ordens de serviço', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
 
-    await expect(page.getByRole('heading', { level: 1, name: /Ordens de Serviço/ })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /ordens de serviço/ })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Nova ordem de serviço' })).toHaveCount(1);
 
     const chips = page.getByRole('group', { name: 'Filtrar por etapa' }).getByRole('button');
@@ -264,7 +264,7 @@ test.describe('lista de ordens de serviço', () => {
     await expect(aprovar.first()).toBeVisible();
     // OS pagas não têm próxima etapa
     const pagas = ordens.filter((o) => o.status === 'PAGO').length;
-    const avancar = lista(page).getByRole('button', { name: /→ Execução|Concluir Serviço|Receber \/ Dar Baixa/ });
+    const avancar = lista(page).getByRole('button', { name: /→ Execução|Concluir serviço|Receber \/ dar baixa/ });
     await expect(avancar).toHaveCount(ordens.length - pagas);
 
     const whats = lista(page).getByRole('link', { name: /WhatsApp/ }).first();
@@ -287,7 +287,7 @@ test.describe('lista de ordens de serviço', () => {
     await abrirTela(page, 'ordens');
 
     await expect(lista(page).getByRole('listitem')).toHaveCount(ordens.length);
-    await expect(lista(page).getByRole('button', { name: /→ Execução|Concluir Serviço|Receber \/ Dar Baixa/ })).toHaveCount(0);
+    await expect(lista(page).getByRole('button', { name: /→ Execução|Concluir serviço|Receber \/ dar baixa/ })).toHaveCount(0);
     const whats = lista(page).getByRole('link', { name: /WhatsApp/ }).first();
     const w = (await whats.boundingBox())!;
     expect(w.height).toBeGreaterThanOrEqual(44);
@@ -300,7 +300,7 @@ test.describe('lista de ordens de serviço', () => {
     expect(await ultimaEscrita(page)).toBeUndefined();
   });
 
-  test('"Receber / Dar Baixa" na lista também passa pela folha de pagamento', async ({ page }, info) => {
+  test('"Receber / dar baixa" na lista também passa pela folha de pagamento', async ({ page }, info) => {
     const { tema, largura } = contextoDoProjeto(info);
     test.skip(largura < 1024, 'o avanço pela lista é só no desktop');
     await simularBackend(page, 'cheio');
@@ -308,7 +308,7 @@ test.describe('lista de ordens de serviço', () => {
     await abrirTela(page, 'ordens');
 
     // a primeira finalizada da lista (mais recente) tem total 1.740,00
-    await lista(page).getByRole('button', { name: 'Receber / Dar Baixa' }).first().click();
+    await lista(page).getByRole('button', { name: 'Receber / dar baixa' }).first().click();
     await expect(folha(page)).toBeVisible();
     await expect(folha(page)).toContainText(/R\$\s1\.740,00/);
     await expect(folha(page).getByRole('button', { name: 'Confirmar pagamento' })).toBeDisabled();
@@ -344,7 +344,7 @@ test.describe('busca da lista: debounce e respostas fora de ordem', () => {
     page.on('request', (r) => {
       if (r.method() === 'GET' && ehLeituraOS(r.url())) leituras.push(r.url());
     });
-    await page.getByRole('searchbox', { name: /Buscar Ordem de Serviço/ }).pressSequentially('QWE4R', { delay: 40 });
+    await page.getByRole('searchbox', { name: /Buscar ordem de serviço/ }).pressSequentially('QWE4R', { delay: 40 });
     await expect(lista(page).getByRole('listitem')).toHaveCount(2);
     await page.waitForTimeout(800);
     // 1 lista + 6 contagens, não 5 × 7
@@ -363,7 +363,7 @@ test.describe('busca da lista: debounce e respostas fora de ordem', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
 
-    const campo = page.getByRole('searchbox', { name: /Buscar Ordem de Serviço/ });
+    const campo = page.getByRole('searchbox', { name: /Buscar ordem de serviço/ });
     await campo.pressSequentially('Q');
     await page.waitForTimeout(450); // dispara a busca "Q" (lenta)
     await campo.pressSequentially('WE');
@@ -540,7 +540,7 @@ test.describe('paginação da lista', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
 
-    const nav = page.getByRole('navigation', { name: 'Paginação de Ordens de Serviço' });
+    const nav = page.getByRole('navigation', { name: 'Paginação de ordens de serviço' });
     await expect(nav).toBeVisible();
     await expect(nav).toContainText(/Mostrando 1–12 de 120/);
     const anterior = nav.getByRole('button', { name: 'Página anterior' });
@@ -562,6 +562,6 @@ test.describe('paginação da lista', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
     await expect(page.getByRole('list', { name: 'Ordens de serviço' }).getByRole('listitem')).toHaveCount(ordens.length);
-    await expect(page.getByRole('navigation', { name: 'Paginação de Ordens de Serviço' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Paginação de ordens de serviço' })).toHaveCount(0);
   });
 });

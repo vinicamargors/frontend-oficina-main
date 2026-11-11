@@ -241,35 +241,35 @@ function AppShell() {
   }[] = [
     {
       id: 'patio',
-      label: 'Radar do Pátio',
+      label: 'Radar do pátio',
       shortLabel: 'Pátio',
       icon: LayoutDashboard,
       visible: true,
     },
     {
       id: 'os',
-      label: 'Ordens de Serviço',
+      label: 'Ordens de serviço',
       shortLabel: 'Ordens',
       icon: ClipboardList,
       visible: true,
     },
     {
       id: 'clientes',
-      label: 'Clientes & Veículos',
+      label: 'Clientes & veículos',
       shortLabel: 'Clientes',
       icon: Users,
       visible: true,
     },
     {
       id: 'estoque',
-      label: 'Estoque de Peças',
+      label: 'Estoque de peças',
       shortLabel: 'Estoque',
       icon: Package,
       visible: true,
     },
     {
       id: 'financeiro',
-      label: 'Caixa & Financeiro',
+      label: 'Caixa & financeiro',
       shortLabel: 'Caixa',
       icon: DollarSign,
       visible: canSeeFinanceiro,
@@ -283,7 +283,7 @@ function AppShell() {
     },
     {
       id: 'oficina',
-      label: 'Dados da Oficina',
+      label: 'Dados da oficina',
       shortLabel: 'Oficina',
       icon: Building2,
       visible: canSeeConfig,
@@ -349,14 +349,14 @@ function AppShell() {
     >
       {/* MENU LATERAL (DESKTOP) */}
       <aside
-        aria-label="Menu Principal da Oficina"
+        aria-label="Menu principal da oficina"
         className="print:hidden hidden lg:flex w-60 shrink-0 bg-canvas flex-col justify-between px-3 py-6 sticky top-0 h-dvh"
       >
         <div className="space-y-8 min-h-0 overflow-y-auto">
           <div className="px-3 space-y-1.5">
             <Logo tamanho={28} />
             <span className="text-xs text-ink-muted truncate block">
-              {empresaAtual?.nome_fantasia || 'Painel Operacional'}
+              {empresaAtual?.nome_fantasia || 'Painel operacional'}
             </span>
           </div>
 
@@ -499,7 +499,7 @@ function AppShell() {
       )}
 
       <Folha aberto={saidaPendente !== null} titulo="Descartar alterações?" aoCancelar={() => setSaidaPendente(null)}>
-        <p className="text-sm text-ink-muted">O que você digitou nos Dados da Oficina será perdido.</p>
+        <p className="text-sm text-ink-muted">O que você digitou nos dados da oficina será perdido.</p>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variante="secundario" onClick={() => setSaidaPendente(null)}>
             Continuar editando
@@ -520,7 +520,7 @@ function AppShell() {
       {/* BARRA INFERIOR (MOBILE) */}
       <nav
         ref={setBarra}
-        aria-label="Navegação Rápida Mobile"
+        aria-label="Navegação rápida mobile"
         className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface px-1 pt-1 flex items-stretch"
         style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
       >

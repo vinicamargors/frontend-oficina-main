@@ -667,7 +667,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   if (!canSeeFinanceiro) {
     return (
       <div>
-        <PageHeader titulo="Caixa & Financeiro" />
+        <PageHeader titulo="Caixa & financeiro" />
         <Panel espaco="lg" className="mx-auto flex max-w-xl flex-col items-center gap-3 text-center">
           <ShieldAlert className="h-10 w-10 text-danger" strokeWidth={1.5} aria-hidden="true" />
           <h2 className="text-base font-semibold text-ink text-balance">Acesso restrito ao módulo financeiro</h2>
@@ -694,7 +694,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   return (
     <div>
       <PageHeader
-        titulo="Caixa & Financeiro"
+        titulo="Caixa & financeiro"
         abaixo={
           <span className="hidden sm:inline">
             Caixa, contas a pagar e receber, DRE e indicadores da oficina.

@@ -123,7 +123,7 @@ test.describe('colaboradores', () => {
     await page.getByRole('button', { name: /Convidar/ }).click();
     const d = page.getByRole('dialog', { name: 'Convidar por WhatsApp' });
     await expect(d.getByLabel('Nome do colaborador')).toBeVisible();
-    await expect(d.getByLabel('Cargo').locator('option')).toHaveText(['Mecânico / Técnico', 'Atendente / Recepção', 'Financeiro', 'Dono / Administrador']);
+    await expect(d.getByLabel('Cargo').locator('option')).toHaveText(['Mecânico / técnico', 'Atendente / recepção', 'Financeiro', 'Dono / administrador']);
     await expect(d.getByRole('button', { name: /Enviar convite no WhatsApp/ })).toBeVisible();
   });
 });
@@ -239,19 +239,19 @@ test.describe('folha e holerite', () => {
     expect(await page.getByRole('main').innerText()).not.toMatch(ENUM_CRU);
   });
 
-  test('lançar a folha no Contas a Pagar exige confirmação com valor e vencimento', async ({ page }, info) => {
+  test('lançar a folha em contas a pagar exige confirmação com valor e vencimento', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     await irParaAba(page, 'Folha');
     await page.getByLabel('Mês de referência').fill('2026-11');
-    await page.getByRole('button', { name: /Lançar no Contas a Pagar/ }).click();
-    const d = page.getByRole('dialog', { name: 'Lançar folha no Contas a Pagar?' });
+    await page.getByRole('button', { name: /Lançar em contas a pagar/ }).click();
+    const d = page.getByRole('dialog', { name: 'Lançar folha em contas a pagar?' });
     await expect(d).toContainText(brl(TOTAL_FOLHA));
     await expect(d).toContainText('05/12/2026');
     await d.getByRole('button', { name: 'Cancelar' }).click();
     expect(await ultimaEscrita(page)).toBeUndefined();
 
-    await page.getByRole('button', { name: /Lançar no Contas a Pagar/ }).click();
+    await page.getByRole('button', { name: /Lançar em contas a pagar/ }).click();
     await d.getByRole('button', { name: /Lançar folha de/ }).click();
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     const e = (await ultimaEscrita(page))!;

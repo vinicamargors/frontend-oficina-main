@@ -376,7 +376,7 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
   if (!carregando && semDados && erroCarga) {
     return (
       <div className="mx-auto max-w-4xl">
-        <PageHeader titulo="Dados da Oficina" />
+        <PageHeader titulo="Dados da oficina" />
         <Panel espaco="lg" className="space-y-4">
           <p role="alert" className="flex items-start gap-2 text-sm font-medium text-danger">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -393,7 +393,7 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader titulo="Dados da Oficina" acoes={botaoAtualizar} />
+      <PageHeader titulo="Dados da oficina" acoes={botaoAtualizar} />
 
       {erroCarga && (
         <p role="alert" className="mb-4 flex items-start gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
@@ -441,7 +441,7 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
                   value={endereco}
                   onChange={(e) => setEndereco(e.target.value)}
                   onBlur={() => resolverCoordenadasAutomaticas(endereco)}
-                  placeholder="Rua, Número, Bairro, Cidade - UF"
+                  placeholder="Rua, número, bairro, cidade - UF"
                 />
               </Field>
             </div>
@@ -504,7 +504,7 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
             {temGps && (
               <div className="relative h-52 w-full overflow-hidden rounded-xl bg-sunken sm:h-64">
                 <iframe
-                  title="Pátio da Oficina"
+                  title="Pátio da oficina"
                   width="100%"
                   height="100%"
                   frameBorder="0"

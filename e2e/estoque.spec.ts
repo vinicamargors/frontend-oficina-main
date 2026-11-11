@@ -29,7 +29,7 @@ test.describe('lista de peças', () => {
     const erros = coletarErros(page);
     await abrir(page, tema);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Estoque de Peças' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Estoque de peças' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 1 }).locator('xpath=..')).toContainText(String(estoque.length));
     await expect(page.getByRole('button', { name: /Nova peça/ })).toHaveCount(1);
     await expect(page.getByRole('searchbox', { name: /Buscar peça/ })).toBeVisible();
@@ -163,7 +163,7 @@ test.describe('ações da peça', () => {
     await abrir(page, tema);
     await menuDe(page, ITEM.nome);
     const menu = (await page.getByRole('menu').boundingBox())!;
-    const nav = (await page.getByRole('navigation', { name: 'Navegação Rápida Mobile' }).boundingBox())!;
+    const nav = (await page.getByRole('navigation', { name: 'Navegação rápida mobile' }).boundingBox())!;
     expect(menu.y + menu.height).toBeLessThanOrEqual(nav.y);
     expect(menu.y).toBeGreaterThanOrEqual(0);
   });

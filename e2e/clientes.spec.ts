@@ -44,7 +44,7 @@ test.describe('lista de clientes', () => {
     const erros = coletarErros(page);
     await abrir(page, tema);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Clientes & Veículos' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Clientes & veículos' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 1 }).locator('xpath=..')).toContainText(String(clientes.length));
     await expect(page.getByText(`${veiculos.length} veículos cadastrados`)).toBeVisible();
     await expect(page.getByRole('button', { name: /Novo cliente/ })).toHaveCount(1);
@@ -204,7 +204,7 @@ test.describe('ações do cliente (menu)', () => {
     await d.getByLabel(/Nome Completo/).fill('Só Nome');
     await d.getByLabel(/WhatsApp/).fill('   ');
     await d.getByRole('button', { name: /Salvar ficha/i }).click();
-    await expect(d.getByRole('alert')).toContainText('Informe o Nome e o WhatsApp/Telefone do cliente.');
+    await expect(d.getByRole('alert')).toContainText('Informe o nome e o WhatsApp/telefone do cliente.');
   });
 
   test('adicionar veículo abre a ficha já com um veículo em branco', async ({ page }, info) => {
@@ -252,7 +252,7 @@ test.describe('veículos do cliente', () => {
     await page.keyboard.press('Escape');
 
     await veics.getByRole('button', { name: 'Abrir OS para ABC-1234' }).click();
-    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Abrir Ordem de Serviço' }), /KM Atual na Entrada/);
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Abrir ordem de serviço' }), /KM atual na entrada/);
   });
 
   test('editar veículo: abre com os dados, consulta a placa e salva com PUT', async ({ page }, info) => {
@@ -265,12 +265,12 @@ test.describe('veículos do cliente', () => {
     await expect(d.getByLabel(/^Modelo/)).toHaveValue('Gol 1.0');
 
     await d.getByLabel(/^Modelo/).fill('');
-    await d.getByRole('button', { name: 'Buscar Placa' }).click();
+    await d.getByRole('button', { name: 'Buscar placa' }).click();
     await expect(d.getByLabel(/^Modelo/)).toHaveValue('Gol 1.0'); // vem da consulta de placa simulada
     await expect(d).toContainText('Dados preenchidos pela consulta de placa!');
 
-    await d.getByLabel(/^KM Atual/).fill('90000');
-    await d.getByRole('button', { name: 'Salvar Alterações' }).click();
+    await d.getByLabel(/^KM atual/).fill('90000');
+    await d.getByRole('button', { name: 'Salvar alterações' }).click();
     await expect(d).toBeHidden();
     const put = escritas.find((e) => e.metodo === 'PUT' && e.caminho.startsWith('/veiculos/'));
     expect(put?.corpo).toMatchObject({ placa: 'ABC1234', km_atual: 90000 });
@@ -293,11 +293,11 @@ test.describe('veículos do cliente', () => {
     await abrir(page, tema);
     const veics = await expandir(page);
     await veics.getByRole('button', { name: 'Abrir OS para ABC-1234' }).click();
-    const d = page.getByRole('dialog', { name: 'Abrir Ordem de Serviço' });
+    const d = page.getByRole('dialog', { name: 'Abrir ordem de serviço' });
     await expect(d).toContainText('ABC-1234');
     await d.getByLabel(/Defeito Relatado/).fill('Barulho no motor');
     expect(escritas.filter((e) => e.metodo === 'POST')).toHaveLength(0); // nada escrito antes de confirmar
-    await d.getByRole('button', { name: /Abrir Bancada da OS/ }).click();
+    await d.getByRole('button', { name: /Abrir bancada da OS/ }).click();
     await expect.poll(() => escritas.find((e) => e.metodo === 'POST' && e.caminho.startsWith('/os'))).toBeTruthy();
     const post = escritas.find((e) => e.metodo === 'POST' && e.caminho.startsWith('/os'))!;
     expect(post.corpo).toMatchObject({ veiculo_id: veiculosDoJoao[0].id, cliente_id: JOAO.id, descricao_problema: 'Barulho no motor' });
@@ -316,7 +316,7 @@ test.describe('novo cliente com veículos', () => {
     await d.getByLabel(/WhatsApp/).fill('(11) 91234-5678');
 
     await d.getByRole('textbox', { name: /^Placa/ }).first().fill('ABC1D23');
-    await d.getByRole('button', { name: 'Buscar Placa' }).first().click();
+    await d.getByRole('button', { name: 'Buscar placa' }).first().click();
     await expect(d.getByLabel(/^Modelo/).first()).toHaveValue('Gol 1.0');
     await expect(d).toContainText('Dados do veículo preenchidos pela placa!');
 
@@ -378,7 +378,7 @@ test.describe('sair das folhas de formulário', () => {
     await page.getByRole('menuitem', { name: /Adicionar veículo/ }).click();
     const d = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
     await d.getByRole('textbox', { name: /^Placa/ }).fill('ZZZ9Z99');
-    await d.getByRole('button', { name: 'Buscar Placa' }).click();
+    await d.getByRole('button', { name: 'Buscar placa' }).click();
     await expect(d.getByLabel(/^Modelo/)).toHaveValue('Gol 1.0');
     // apaga tudo o que aparece; o chassi preenchido pela busca continua no rascunho
     for (const campo of [d.getByRole('textbox', { name: /^Placa/ }), d.getByLabel(/^Modelo/), d.getByLabel(/^Marca/), d.getByLabel(/^Cor/), d.getByLabel(/^Ano/)]) {
@@ -489,7 +489,7 @@ test('enquanto carrega, o cabeçalho não mostra contagem zerada', async ({ page
   });
   await entrarComo(page, 'DONO', tema);
   await page.goto('/?tab=clientes');
-  const h1 = page.getByRole('heading', { level: 1, name: 'Clientes & Veículos' });
+  const h1 = page.getByRole('heading', { level: 1, name: 'Clientes & veículos' });
   await expect(h1).toBeVisible();
   await expect(h1.locator('xpath=..')).not.toContainText('0');
   await expect(page.getByText(/veículos cadastrados/)).toHaveCount(0);

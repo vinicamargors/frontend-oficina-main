@@ -47,7 +47,7 @@ test.describe('cabeçalho, período e resumo', () => {
     const erros = coletarErros(page);
     await abrir(page, tema);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Caixa & Financeiro' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Caixa & financeiro' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Novo lançamento' })).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Exportar CSV' })).toBeVisible();
 

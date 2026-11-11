@@ -600,7 +600,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
   return (
     <div>
       <PageHeader
-        titulo="Estoque de Peças"
+        titulo="Estoque de peças"
         complemento={
           carregando ? undefined : (
             <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle">{itens.length}</span>
@@ -808,7 +808,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               required
               value={formNome}
               onChange={(e) => setFormNome(e.target.value)}
-              placeholder="Ex: Pastilha de Freio Dianteira Onix 1.0"
+              placeholder="Ex: Pastilha de freio dianteira Onix 1.0"
               className={CLASSE_CAMPO}
             />
           </Field>

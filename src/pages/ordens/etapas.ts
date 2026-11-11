@@ -7,9 +7,9 @@ export const ETAPAS_OS: StatusOS[] = ['ORCAMENTO', 'AGUARDANDO_PECA', 'EXECUCAO'
 /** Próxima etapa sugerida na lista (ação primária da linha). "Pago" não tem próxima. */
 const PROXIMA: Partial<Record<StatusOS, { status: StatusOS; rotulo: string }>> = {
   ORCAMENTO: { status: 'EXECUCAO', rotulo: 'Aprovar → Execução' },
-  AGUARDANDO_PECA: { status: 'EXECUCAO', rotulo: 'Peça Chegou → Execução' },
-  EXECUCAO: { status: 'FINALIZADO', rotulo: 'Concluir Serviço' },
-  FINALIZADO: { status: 'PAGO', rotulo: 'Receber / Dar Baixa' },
+  AGUARDANDO_PECA: { status: 'EXECUCAO', rotulo: 'Peça chegou → Execução' },
+  EXECUCAO: { status: 'FINALIZADO', rotulo: 'Concluir serviço' },
+  FINALIZADO: { status: 'PAGO', rotulo: 'Receber / dar baixa' },
 };
 
 export function proximaEtapa(status: StatusOS): { status: StatusOS; rotulo: string } | null {

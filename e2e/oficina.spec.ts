@@ -30,14 +30,14 @@ async function abrirComHistorico(page: Page, tema: 'claro' | 'escuro') {
     window.history.pushState({}, '', '/?tab=oficina');
     window.dispatchEvent(new PopStateEvent('popstate'));
   });
-  await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Dados da oficina' })).toBeVisible();
   await expect(page.getByLabel(/Nome fantasia/)).toHaveValue(empresa.nome_fantasia);
 }
 
 const sobraLateral = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 const campo = (page: Page, rotulo: string | RegExp) => page.getByLabel(rotulo, { exact: typeof rotulo === 'string' });
 const SECOES = ['Identificação', 'Endereço', 'Pagamento (PIX)', 'Ponto (GPS)', 'Folha e comissões'];
-const barraMobile = (page: Page) => page.getByRole('navigation', { name: 'Navegação Rápida Mobile' });
+const barraMobile = (page: Page) => page.getByRole('navigation', { name: 'Navegação rápida mobile' });
 
 test.describe('dados da oficina', () => {
   test('título, cinco seções com h2 em ordem, um só botão primário e sem rolagem lateral', async ({ page }, info) => {
@@ -45,7 +45,7 @@ test.describe('dados da oficina', () => {
     const erros = coletarErros(page);
     await abrir(page, tema);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da oficina' })).toBeVisible();
     await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(SECOES);
     await expect(page.getByRole('button', { name: 'Salvar alterações' })).toHaveCount(1);
     expect(await sobraLateral(page)).toBeLessThanOrEqual(0);
@@ -70,7 +70,7 @@ test.describe('dados da oficina', () => {
     await expect(campo(page, /^Raio de tolerância/)).toHaveValue('150');
     await expect(page.getByText(/Pátio localizado/)).toBeVisible();
     await expect(page.getByRole('link', { name: /Ver no Google Maps/ })).toHaveAttribute('href', /-23\.55052,-46\.633308/);
-    await expect(page.getByTitle('Pátio da Oficina')).toBeVisible();
+    await expect(page.getByTitle('Pátio da oficina')).toBeVisible();
     await expect(campo(page, 'Dia de pagamento da folha')).toHaveValue('5');
     await expect(campo(page, /^Dia do vale/)).toHaveValue('20');
     await expect(campo(page, /^Comissão de mão de obra/)).toHaveValue('15');
@@ -88,7 +88,7 @@ test.describe('dados da oficina', () => {
       await r.fallback();
     });
     await page.goto('/?tab=oficina');
-    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da oficina' })).toBeVisible();
     await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(SECOES);
     await expect(page.getByRole('main').getByRole('status').filter({ hasText: 'Carregando' }).first()).toBeVisible();
     await expect(page.getByRole('main').getByRole('textbox')).toHaveCount(0);
@@ -220,7 +220,7 @@ test.describe('dados da oficina', () => {
     });
     await abrirTela(page, 'oficina');
     await expect(page.getByText(/Preencha o CEP ou o endereço/)).toBeVisible();
-    await expect(page.getByTitle('Pátio da Oficina')).toHaveCount(0);
+    await expect(page.getByTitle('Pátio da oficina')).toHaveCount(0);
     await expect(page.getByRole('link', { name: /Ver no Google Maps/ })).toHaveCount(0);
   });
 
@@ -257,7 +257,7 @@ test.describe('dados da oficina', () => {
     await page.goBack();
     await expect(aviso).toBeVisible();
     await aviso.getByRole('button', { name: 'Descartar' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da oficina' })).toHaveCount(0);
     await expect(page).not.toHaveURL(/tab=oficina/);
   });
 
@@ -265,7 +265,7 @@ test.describe('dados da oficina', () => {
     const { tema } = contextoDoProjeto(info);
     await abrirComHistorico(page, tema);
     await page.goBack();
-    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da oficina' })).toHaveCount(0);
   });
 
   test('formulário sujo: "Atualizar" e "Descartar" pedem confirmação antes de perder o que foi digitado', async ({ page }, info) => {
@@ -516,7 +516,7 @@ test.describe('trocar de tela com o formulário da oficina sujo', () => {
     const { tema, largura } = contextoDoProjeto(info);
     await abrirComHistorico(page, tema);
     await campo(page, 'Chave PIX').fill('pix-digitado');
-    await clicarNaNavegacao(page, largura, 'Ordens de Serviço', 'Ordens');
+    await clicarNaNavegacao(page, largura, 'Ordens de serviço', 'Ordens');
     const folha = folhaDescartar(page);
     await expect(folha).toBeVisible();
     await folha.getByRole('button', { name: 'Continuar editando' }).click();
@@ -524,10 +524,10 @@ test.describe('trocar de tela com o formulário da oficina sujo', () => {
     await expect(page).toHaveURL(/tab=oficina/);
     await expect(campo(page, 'Chave PIX')).toHaveValue('pix-digitado');
 
-    await clicarNaNavegacao(page, largura, 'Ordens de Serviço', 'Ordens');
+    await clicarNaNavegacao(page, largura, 'Ordens de serviço', 'Ordens');
     await folha.getByRole('button', { name: 'Descartar' }).click();
     await expect(page).toHaveURL(/tab=os/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da oficina' })).toHaveCount(0);
 
     // voltar: uma vez para a oficina (limpa), outra para o radar
     await page.goBack();
@@ -535,7 +535,7 @@ test.describe('trocar de tela com o formulário da oficina sujo', () => {
     await expect(campo(page, 'Chave PIX')).toHaveValue(configuracoesEmpresa.chave_pix);
     await page.goBack();
     await expect(page).not.toHaveURL(/tab=oficina/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da oficina' })).toHaveCount(0);
   });
 
   test('"Sair" com o formulário sujo pergunta antes; descartar sai da conta sem deixar o voltar dobrado', async ({ page }, info) => {
@@ -584,7 +584,7 @@ test.describe('trocar de tela com o formulário da oficina sujo', () => {
   test('formulário limpo: navega direto, sem perguntar', async ({ page }, info) => {
     const { tema, largura } = contextoDoProjeto(info);
     await abrirComHistorico(page, tema);
-    await clicarNaNavegacao(page, largura, 'Ordens de Serviço', 'Ordens');
+    await clicarNaNavegacao(page, largura, 'Ordens de serviço', 'Ordens');
     await expect(page).toHaveURL(/tab=os/);
     await expect(folhaDescartar(page)).toHaveCount(0);
     await page.goBack();
@@ -611,6 +611,6 @@ test.describe('trocar de tela com o formulário da oficina sujo', () => {
       return w.navigation.currentEntry.index < (w.__indiceInicial ?? Infinity);
     });
     await page.goBack();
-    await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1, name: 'Dados da oficina' })).toHaveCount(0);
   });
 });

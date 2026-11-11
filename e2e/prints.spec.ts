@@ -48,7 +48,7 @@ test('print shell (menu e barra)', async ({ page }, info) => {
   await page.screenshot({ path: join(PASTA, `shell-${tema}-${largura}.png`), animations: 'disabled' });
 
   if (largura < 1024) {
-    await page.getByRole('navigation', { name: 'Navegação Rápida Mobile' }).getByRole('button', { name: 'Mais' }).click();
+    await page.getByRole('navigation', { name: 'Navegação rápida mobile' }).getByRole('button', { name: 'Mais' }).click();
     await page.getByRole('dialog', { name: 'Mais opções' }).waitFor();
     await page.screenshot({ path: join(PASTA, `shell-${tema}-${largura}-mais.png`), animations: 'disabled' });
   }
@@ -109,7 +109,7 @@ test('print ordens paginada', async ({ page }, info) => {
   });
   await entrarComo(page, 'DONO', tema);
   await abrirTela(page, 'ordens');
-  await page.getByRole('navigation', { name: 'Paginação de Ordens de Serviço' }).waitFor();
+  await page.getByRole('navigation', { name: 'Paginação de ordens de serviço' }).waitFor();
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `ordens-paginada-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
 });
@@ -212,7 +212,7 @@ test('print clientes veiculo novo (adicionar veículo com consulta de placa)', a
   await page.getByRole('menuitem', { name: /Adicionar veículo/ }).click();
   const d = page.getByRole('dialog', { name: `Ficha de ${clientes[0].nome}` });
   await d.getByRole('textbox', { name: /^Placa/ }).fill('ZZZ9Z99');
-  await d.getByRole('button', { name: 'Buscar Placa' }).click();
+  await d.getByRole('button', { name: 'Buscar placa' }).click();
   const msg = d.getByText('Dados do veículo preenchidos pela placa!');
   await msg.waitFor();
   await msg.scrollIntoViewIfNeeded();
@@ -404,8 +404,8 @@ test('print equipe confirmações (desativar e lançar folha)', async ({ page },
   await page.screenshot({ path: join(PASTA, `equipe-confirmacao-desativar-${tema}-${largura}.png`), animations: 'disabled' });
   await page.keyboard.press('Escape');
   await page.getByRole('tab', { name: 'Folha' }).click();
-  await page.getByRole('button', { name: /Lançar no Contas a Pagar/ }).click();
-  await page.getByRole('dialog', { name: 'Lançar folha no Contas a Pagar?' }).waitFor();
+  await page.getByRole('button', { name: /Lançar em contas a pagar/ }).click();
+  await page.getByRole('dialog', { name: 'Lançar folha em contas a pagar?' }).waitFor();
   await page.mouse.move(1, 1);
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `equipe-confirmacao-folha-${tema}-${largura}.png`), animations: 'disabled' });
@@ -478,7 +478,7 @@ test('print radar vazio-periodo (sem ordens no período, com abertas mais antiga
   exigirRedeCompleta(page);
 });
 
-// Dados da Oficina: carregando (esqueleto), formulário sujo com o aviso de descarte e conta nova (sem cadastro):
+// Dados da oficina: carregando (esqueleto), formulário sujo com o aviso de descarte e conta nova (sem cadastro):
 // `oficina-<carregando|descartar|conta-nova>-<tema>-<largura>.png`.
 test('print oficina estados (carregando, descartar, conta nova)', async ({ page }, info) => {
   const { tema, largura } = contextoDoProjeto(info);

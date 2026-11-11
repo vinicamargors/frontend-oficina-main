@@ -271,7 +271,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
       const customErr = err as Error;
       setError(
         customErr.message ||
-          'Não foi possível carregar o Radar do Pátio. O servidor pode estar iniciando.'
+          'Não foi possível carregar o Radar do pátio. O servidor pode estar iniciando.'
       );
     } finally {
       if (minha === seqRadar.current) setLoading(false);
@@ -294,7 +294,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
 
   const cabecalho = (
     <PageHeader
-      titulo="Radar do Pátio"
+      titulo="Radar do pátio"
       acoes={
         <>
           <SeletorPeriodo periodo={periodo} aoEscolher={escolherPeriodo} className="basis-full md:basis-auto" />
@@ -331,7 +331,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
 
   if (!quadro) {
     return (
-      <div aria-busy="true" aria-label="Carregando Radar do Pátio">
+      <div aria-busy="true" aria-label="Carregando Radar do pátio">
         {cabecalho}
         <div data-testid="radar-conteudo" aria-busy="true" className="grid gap-4 md:grid-cols-4">
           {[1, 2, 3, 4].map((n) => (

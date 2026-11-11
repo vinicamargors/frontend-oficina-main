@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import { abrirTela, entrarComo, exigirRedeCompleta, simularBackend } from './mocks';
 import { contextoDoProjeto } from './contexto';
 
-const DESKTOP = 'Menu Principal da Oficina';
-const MOBILE = 'Navegação Rápida Mobile';
+const DESKTOP = 'Menu principal da oficina';
+const MOBILE = 'Navegação rápida mobile';
 
 test.describe('shell desktop', () => {
   test.beforeEach(({}, info) => {
@@ -27,14 +27,14 @@ test.describe('shell desktop', () => {
     }
 
     await expect(menu.locator('[aria-current="page"]')).toHaveCount(1);
-    await expect(menu.locator('[aria-current="page"]')).toContainText('Radar do Pátio');
+    await expect(menu.locator('[aria-current="page"]')).toContainText('Radar do pátio');
 
     await expect(menu.getByRole('img', { name: 'Mecanify' })).toBeVisible();
     await expect(menu.getByText('Dono', { exact: true })).toBeVisible();
     await expect(menu.getByText('DONO', { exact: true })).toHaveCount(0);
 
-    await menu.getByRole('button', { name: 'Ordens de Serviço' }).click();
-    await expect(menu.locator('[aria-current="page"]')).toContainText('Ordens de Serviço');
+    await menu.getByRole('button', { name: 'Ordens de serviço' }).click();
+    await expect(menu.locator('[aria-current="page"]')).toContainText('Ordens de serviço');
     exigirRedeCompleta(page);
   });
 
@@ -87,10 +87,10 @@ test.describe('shell desktop', () => {
     const menu = page.getByRole('complementary', { name: DESKTOP });
     const nomes = await menu.getByRole('navigation').getByRole('button').allInnerTexts();
     expect(nomes.map((n) => n.trim())).toEqual([
-      'Radar do Pátio',
-      'Ordens de Serviço',
-      'Clientes & Veículos',
-      'Estoque de Peças',
+      'Radar do pátio',
+      'Ordens de serviço',
+      'Clientes & veículos',
+      'Estoque de peças',
     ]);
     await expect(menu.getByText('Mecânico', { exact: true })).toBeVisible();
     exigirRedeCompleta(page);
@@ -133,9 +133,9 @@ test.describe('shell mobile', () => {
     await expect(page.getByRole('dialog', { name: 'Mais opções' })).toHaveAttribute('aria-modal', 'true');
     await expect(page.getByRole('dialog', { name: 'Mais opções' }).locator(':focus')).toHaveCount(1);
     const folha = page.getByRole('dialog', { name: 'Mais opções' });
-    await expect(folha.getByRole('button', { name: 'Caixa & Financeiro' })).toBeVisible();
+    await expect(folha.getByRole('button', { name: 'Caixa & financeiro' })).toBeVisible();
     await expect(folha.getByRole('button', { name: 'Equipe & RH' })).toBeVisible();
-    await expect(folha.getByRole('button', { name: 'Dados da Oficina' })).toBeVisible();
+    await expect(folha.getByRole('button', { name: 'Dados da oficina' })).toBeVisible();
     await expect(folha.getByText('Dono', { exact: true })).toBeVisible();
     await expect(folha.getByRole('button', { name: /sair/i })).not.toHaveClass(/danger/);
 

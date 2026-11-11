@@ -61,10 +61,10 @@ const ABAS: TabItem[] = [
 ];
 
 const CARGOS_DISPONIVEIS: { id: CargoUsuario; label: string; desc: string }[] = [
-  { id: 'MECANICO', label: 'Mecânico / Técnico', desc: 'Acessa pátio e lança serviços nas OS' },
-  { id: 'ATENDENTE', label: 'Atendente / Recepção', desc: 'Atende clientes e abre orçamentos' },
+  { id: 'MECANICO', label: 'Mecânico / técnico', desc: 'Acessa pátio e lança serviços nas OS' },
+  { id: 'ATENDENTE', label: 'Atendente / recepção', desc: 'Atende clientes e abre orçamentos' },
   { id: 'FINANCEIRO', label: 'Financeiro', desc: 'Acesso total a caixa, DRE e pagamentos' },
-  { id: 'DONO', label: 'Dono / Administrador', desc: 'Controle total da oficina e equipe' },
+  { id: 'DONO', label: 'Dono / administrador', desc: 'Controle total da oficina e equipe' },
 ];
 
 export function Equipe({ empresaId }: EquipeProps) {
@@ -367,7 +367,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     }
 
     if (!isGestor) {
-      setErroForm('Acesso negado: apenas o Dono ou Administrador pode criar ou editar colaboradores.');
+      setErroForm('Acesso negado: apenas o dono ou administrador pode criar ou editar colaboradores.');
       return;
     }
 
@@ -484,7 +484,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       dispararFeedback(
         `Folha de ${formatBRL(
           totalFolhaGeral
-        )} agendada com sucesso no Contas a Pagar para ${formatData(dataVencimentoFolha)}!`
+        )} agendada com sucesso em contas a pagar para ${formatData(dataVencimentoFolha)}!`
       );
     } catch {
       setErroFolha('Erro ao agendar folha no financeiro.');
@@ -1106,7 +1106,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* FOLHA: CONFIRMAR LANÇAMENTO DA FOLHA NO CONTAS A PAGAR */}
       <Folha
         aberto={confirmarFolhaAberto}
-        titulo="Lançar folha no Contas a Pagar?"
+        titulo="Lançar folha em contas a pagar?"
         aoCancelar={fecharConfirmacao(() => setConfirmarFolhaAberto(false))}
       >
         {erroFolha && alertaErro(erroFolha)}
@@ -1326,9 +1326,9 @@ export function Equipe({ empresaId }: EquipeProps) {
               className={CLASSE_CAMPO}
             >
               <option value="FERIAS">Férias</option>
-              <option value="FOLGA">Folga / Escala Revezamento</option>
-              <option value="ATESTADO">Atestado Médico / Licença</option>
-              <option value="PLANTAO">Plantão Extra</option>
+              <option value="FOLGA">Folga / escala revezamento</option>
+              <option value="ATESTADO">Atestado médico / licença</option>
+              <option value="PLANTAO">Plantão extra</option>
             </select>
           </Field>
           <div className="grid grid-cols-2 gap-4">
