@@ -1,6 +1,6 @@
 import { Edit2, History, MessageCircle, Wrench } from 'lucide-react';
 import type { Veiculo } from '../../types';
-import { Button, PlateChip } from '../../components/ui';
+import { Button, PlateChip, formatarPlaca } from '../../components/ui';
 import { MenuAcoes } from './MenuAcoes';
 import { montarLinkWhatsApp } from './auxiliares';
 
@@ -53,14 +53,14 @@ export function LinhaVeiculo({
         tamanho="sm"
         icone={Wrench}
         onClick={aoAbrirOS}
-        aria-label={`Abrir OS para ${veiculo.placa}`}
+        aria-label={`Abrir OS para ${formatarPlaca(veiculo.placa)}`}
         title="Abrir ordem de serviço"
         className="w-11 shrink-0 !px-0 lg:w-auto lg:!px-3"
       >
         <span className="hidden lg:inline">Abrir OS</span>
       </Button>
       <MenuAcoes
-        rotulo={`Mais ações do veículo ${veiculo.placa}`}
+        rotulo={`Mais ações do veículo ${formatarPlaca(veiculo.placa)}`}
         itens={[
           { rotulo: `Histórico (${qtdOS})`, icone: History, aoClicar: aoHistorico },
           { rotulo: 'Editar veículo', icone: Edit2, aoClicar: aoEditar },

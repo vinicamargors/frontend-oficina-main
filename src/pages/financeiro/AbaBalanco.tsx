@@ -34,10 +34,10 @@ export function AbaBalanco({
     <Panel espaco="nenhum" className="px-5 py-2 lg:px-6 lg:py-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-12">
         <section aria-labelledby="titulo-ativo" className="pt-3">
-          <h2 id="titulo-ativo" className="text-base font-semibold text-ink">
+          <h2 id="titulo-ativo" className="text-base font-semibold text-ink text-balance">
             Ativo circulante
           </h2>
-          <p className="text-xs text-ink-muted">Bens e direitos</p>
+          <p className="text-xs text-ink-muted text-pretty">Bens e direitos</p>
           <dl className="mt-1 divide-y divide-line">
             <Linha rotulo="Caixa e bancos" dica="OS pagas + receitas avulsas recebidas" valor={<span className="text-ink">{formatBRL(caixaTotal)}</span>} />
             <Linha rotulo="Contas a receber" dica="OS em aberto + entradas pendentes" valor={<span className="text-ink">{formatBRL(totalAReceber)}</span>} />
@@ -47,10 +47,10 @@ export function AbaBalanco({
         </section>
 
         <section aria-labelledby="titulo-passivo" className="mt-4 border-t border-line pt-5 lg:mt-0 lg:border-t-0 lg:pt-3">
-          <h2 id="titulo-passivo" className="text-base font-semibold text-ink">
+          <h2 id="titulo-passivo" className="text-base font-semibold text-ink text-balance">
             Passivo circulante
           </h2>
-          <p className="text-xs text-ink-muted">Obrigações</p>
+          <p className="text-xs text-ink-muted text-pretty">Obrigações</p>
           <dl className="mt-1 divide-y divide-line">
             <Linha
               rotulo="Contas a pagar pendentes"
@@ -64,8 +64,8 @@ export function AbaBalanco({
 
       <div className="mt-2 flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-t border-line py-4">
         <div>
-          <h2 className="text-base font-semibold text-ink">Posição patrimonial líquida</h2>
-          <p className="text-xs text-ink-muted">Ativo circulante − passivo pendente</p>
+          <h2 className="text-base font-semibold text-ink text-balance">Posição patrimonial líquida</h2>
+          <p className="text-xs text-ink-muted text-pretty">Ativo circulante − passivo pendente</p>
         </div>
         <p className={`text-2xl font-semibold tabular-nums ${posicaoLiquida < 0 ? 'text-danger' : 'text-ink'}`}>
           {lucroComSinal(posicaoLiquida)}

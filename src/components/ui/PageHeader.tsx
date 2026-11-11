@@ -10,17 +10,20 @@ export function PageHeader({
   inicio,
   complemento,
   abaixo,
+  acoesClasse = '',
 }: {
   titulo: string;
   acoes?: ReactNode;
   inicio?: ReactNode;
   complemento?: ReactNode;
   abaixo?: ReactNode;
+  /** Classes extras do contêiner das ações (ex.: ocupar a linha inteira no celular). */
+  acoesClasse?: string;
 }) {
   useEffect(() => {
     document.title = `${titulo} · Mecanify`;
   }, [titulo]);
-  const h1 = <h1 className="text-[1.375rem] font-semibold text-ink">{titulo}</h1>;
+  const h1 = <h1 className="text-[1.375rem] font-semibold text-ink text-balance">{titulo}</h1>;
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
       {inicio || complemento || abaixo ? (
@@ -35,7 +38,7 @@ export function PageHeader({
       ) : (
         h1
       )}
-      {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
+      {acoes && <div className={`flex flex-wrap items-center gap-2 ${acoesClasse}`}>{acoes}</div>}
     </div>
   );
 }

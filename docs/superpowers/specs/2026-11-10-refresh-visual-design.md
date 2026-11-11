@@ -33,7 +33,7 @@ números tabulares. Sem bordas em tudo: hierarquia por preenchimento e espaço.
 | `line-strong` | `#8F8778` | `#6B6F78` | borda de campo (≥3:1 contra `sunken` e `surface`) |
 | `ink` | `#1F1D1A` | `#F2F0EB` | texto principal |
 | `ink-muted` | `#5C564C` | `#B4B0A8` | texto secundário (≥4.5:1 em canvas/surface/muted) |
-| `ink-subtle` | `#6F685D` | `#8E8A82` | legenda, placeholder (≥4.5:1 em surface) |
+| `ink-subtle` | `#6D665B` | `#8E8A82` | legenda, placeholder (≥4.5:1 em canvas, surface e muted) |
 | `brand` | `#F2A007` | `#F5A524` | botão primário, item ativo, foco |
 | `brand-hover` | `#D98E00` | `#F7B547` | hover do primário |
 | `brand-ink` | `#8A5A00` | `#F5B544` | texto/ícone âmbar (≥4.5:1 em canvas/surface) |

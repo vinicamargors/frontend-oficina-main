@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../api/client';
+import { dataLocalISO, hojeLocalISO } from '../lib/data';
 import { useAuth } from '../context/AuthContext';
 import {
   Usuario,
@@ -38,6 +39,8 @@ import {
   calcularDistanciaMetros,
   formatBRL,
   formatData,
+  formatMesExtenso,
+  identidadeHolerite,
   rotuloCargo,
   rotuloTipoEscala,
   totalFolhaColaborador,
@@ -60,10 +63,10 @@ const ABAS: TabItem[] = [
 ];
 
 const CARGOS_DISPONIVEIS: { id: CargoUsuario; label: string; desc: string }[] = [
-  { id: 'MECANICO', label: 'Mecânico / Técnico', desc: 'Acessa pátio e lança serviços nas OS' },
-  { id: 'ATENDENTE', label: 'Atendente / Recepção', desc: 'Atende clientes e abre orçamentos' },
+  { id: 'MECANICO', label: 'Mecânico / técnico', desc: 'Acessa pátio e lança serviços nas OS' },
+  { id: 'ATENDENTE', label: 'Atendente / recepção', desc: 'Atende clientes e abre orçamentos' },
   { id: 'FINANCEIRO', label: 'Financeiro', desc: 'Acesso total a caixa, DRE e pagamentos' },
-  { id: 'DONO', label: 'Dono / Administrador', desc: 'Controle total da oficina e equipe' },
+  { id: 'DONO', label: 'Dono / administrador', desc: 'Controle total da oficina e equipe' },
 ];
 
 export function Equipe({ empresaId }: EquipeProps) {
@@ -89,11 +92,16 @@ export function Equipe({ empresaId }: EquipeProps) {
     raio: number;
   }>({ lat: -23.55052, lon: -46.633308, raio: 150 });
 
+  // Identidade da oficina impressa no holerite (vem de obterConfiguracoesOficina, já carregado abaixo)
+  const [identidadeOficina, setIdentidadeOficina] = useState(() => identidadeHolerite(null));
+
   const [carregando, setCarregando] = useState(true);
   // Primeira carga concluída: até lá as abas mostram esqueleto (nunca área em branco)
   const [carregado, setCarregado] = useState(false);
   const [sucessoMsg, setSucessoMsg] = useState<string | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+  // Erro da carga da página e erro do formulário do colaborador são independentes
+  const [erroCarga, setErroCarga] = useState<string | null>(null);
+  const [erroForm, setErroForm] = useState<string | null>(null);
 
   // Mês de referência da Folha
   const [mesFolhaRef, setMesFolhaRef] = useState(() => {
@@ -160,13 +168,11 @@ export function Equipe({ empresaId }: EquipeProps) {
   const [escalaTipo, setEscalaTipo] = useState<'FERIAS' | 'FOLGA' | 'ATESTADO' | 'PLANTAO'>(
     'FERIAS'
   );
-  const [escalaInicio, setEscalaInicio] = useState(
-    () => new Date().toISOString().slice(0, 10)
-  );
+  const [escalaInicio, setEscalaInicio] = useState(hojeLocalISO);
   const [escalaFim, setEscalaFim] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 15);
-    return d.toISOString().slice(0, 10);
+    return dataLocalISO(d);
   });
   const [escalaObs, setEscalaObs] = useState('');
   const [erroEscala, setErroEscala] = useState<string | null>(null);
@@ -183,6 +189,7 @@ export function Equipe({ empresaId }: EquipeProps) {
   const carregarTudo = useCallback(async () => {
     try {
       setCarregando(true);
+      setErroCarga(null);
       const [users, cfgOficina, escalasData, pontosData, avsData, paramsFolha] = await Promise.all([
         api.listarUsuarios(empresaId),
         api.obterConfiguracoesOficina(empresaId),
@@ -196,6 +203,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       setPontos(pontosData);
       setAvaliacoes(avsData);
       setParametrosFolha(paramsFolha);
+      setIdentidadeOficina(identidadeHolerite(cfgOficina));
 
       if (cfgOficina.latitude_gps && cfgOficina.longitude_gps) {
         setCoordsOficina({
@@ -206,7 +214,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       }
     } catch (e) {
       const err = e as Error;
-      setErro(err.message || 'Erro ao carregar equipe.');
+      setErroCarga(err.message || 'Erro ao carregar equipe.');
     } finally {
       setCarregando(false);
       setCarregado(true);
@@ -237,7 +245,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     setFormVR('');
     setFormPagaHE(parametrosFolha.paga_hora_extra_padrao);
     setFormValorHE(String(parametrosFolha.valor_hora_extra_padrao ?? 25));
-    setErro(null);
+    setErroForm(null);
     setModalColaboradorAberto(true);
   };
 
@@ -271,7 +279,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     setFormValorHE(
       u.valor_hora_extra && u.valor_hora_extra > 0 ? String(u.valor_hora_extra) : ''
     );
-    setErro(null);
+    setErroForm(null);
     setModalColaboradorAberto(true);
   };
 
@@ -301,11 +309,17 @@ export function Equipe({ empresaId }: EquipeProps) {
   const fecharModalColaborador = () => {
     setSaidaPendente(null);
     setFormInicial('');
+    setErroForm(null);
     setModalColaboradorAberto(false);
   };
-  const sairDoFormulario = () => {
-    if (colaboradorSujo) setSaidaPendente(() => fecharModalColaborador);
-    else fecharModalColaborador();
+  // Sai do formulário (e depois faz `depois`, se houver); com dados alterados, pergunta antes
+  const sairDoFormulario = (depois?: () => void) => {
+    const sair = () => {
+      fecharModalColaborador();
+      depois?.();
+    };
+    if (colaboradorSujo) setSaidaPendente(() => sair);
+    else sair();
   };
 
   const abrirHolerite = (u: Usuario) => {
@@ -352,19 +366,19 @@ export function Equipe({ empresaId }: EquipeProps) {
   // Salvar Colaborador (mensagens de validação e de erro aparecem dentro da folha, sem alert)
   const handleSalvarColaborador = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErro(null);
+    setErroForm(null);
     if (!formNome.trim() || !formEmail.trim()) {
-      setErro('Preencha nome e e-mail.');
+      setErroForm('Preencha nome e e-mail.');
       return;
     }
 
     if (!isGestor) {
-      setErro('Acesso negado: apenas o Dono ou Administrador pode criar ou editar colaboradores.');
+      setErroForm('Acesso negado: apenas o dono ou administrador pode criar ou editar colaboradores.');
       return;
     }
 
     if (formSenha.trim() && formSenha.trim().length < 6) {
-      setErro('A nova senha deve ter no mínimo 6 caracteres.');
+      setErroForm('A nova senha deve ter no mínimo 6 caracteres.');
       return;
     }
 
@@ -427,7 +441,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       fecharModalColaborador();
     } catch (e) {
       const err = e as Error;
-      setErro(`Erro ao salvar colaborador: ${err.message || 'Verifique os dados.'}`);
+      setErroForm(`Erro ao salvar colaborador: ${err.message || 'Verifique os dados.'}`);
     } finally {
       setSalvandoColaborador(false);
     }
@@ -476,7 +490,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       dispararFeedback(
         `Folha de ${formatBRL(
           totalFolhaGeral
-        )} agendada com sucesso no Contas a Pagar para ${formatData(dataVencimentoFolha)}!`
+        )} agendada com sucesso em contas a pagar para ${formatData(dataVencimentoFolha)}!`
       );
     } catch {
       setErroFolha('Erro ao agendar folha no financeiro.');
@@ -553,24 +567,34 @@ export function Equipe({ empresaId }: EquipeProps) {
 
         const dentroRaio = distancia <= coordsOficina.raio;
         const agora = new Date();
-        const dataStr = agora.toISOString().slice(0, 10);
+        const dataStr = dataLocalISO(agora);
         const horaStr = agora.toTimeString().slice(0, 5);
 
-        const novoPonto = await api.registrarPonto({
-          empresa_id: empresaId,
-          usuario_id: user?.id || 'usr-atual',
-          usuario_nome: user?.nome || 'Colaborador',
-          data: dataStr,
-          hora: horaStr,
-          tipo: 'ENTRADA',
-          latitude: userLat,
-          longitude: userLon,
-          dentro_raio: dentroRaio,
-          distancia_metros: distancia,
-        });
+        let novoPonto: RegistroPonto;
+        try {
+          novoPonto = await api.registrarPonto({
+            empresa_id: empresaId,
+            usuario_id: user?.id || 'usr-atual',
+            usuario_nome: user?.nome || 'Colaborador',
+            data: dataStr,
+            hora: horaStr,
+            tipo: 'ENTRADA',
+            latitude: userLat,
+            longitude: userLon,
+            dentro_raio: dentroRaio,
+            distancia_metros: distancia,
+          });
+        } catch (e) {
+          setPontoFeedback({
+            sucesso: false,
+            msg: `Erro ao registrar o ponto: ${(e as Error).message || 'tente novamente.'} Nada foi gravado.`,
+          });
+          return;
+        } finally {
+          setRegistrandoPonto(false);
+        }
 
         setPontos((prev) => [novoPonto, ...prev]);
-        setRegistrandoPonto(false);
 
         if (dentroRaio) {
           setPontoFeedback({
@@ -640,8 +664,8 @@ export function Equipe({ empresaId }: EquipeProps) {
         <PageHeader titulo="Equipe & RH" />
         <Panel espaco="lg" className="mx-auto flex max-w-xl flex-col items-center gap-3 text-center">
           <ShieldAlert className="h-10 w-10 text-danger" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="text-base font-semibold text-ink">Acesso restrito à gestão</h2>
-          <p className="text-sm text-ink-muted">
+          <h2 className="text-base font-semibold text-ink text-balance">Acesso restrito à gestão</h2>
+          <p className="text-sm text-ink-muted text-pretty">
             O módulo de Equipe &amp; RH contém informações salariais e de gestão da oficina. Seu perfil atual ({rotuloCargo(user?.cargo)}) não possui permissão para visualizar ou editar estes dados.
           </p>
         </Panel>
@@ -649,7 +673,6 @@ export function Equipe({ empresaId }: EquipeProps) {
     );
   }
 
-  const erroNaTela = erro && !modalColaboradorAberto;
 
   return (
     <div>
@@ -706,7 +729,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           </p>
         )}
       </div>
-      {erroNaTela && <div className="mb-4">{alertaErro(erro)}</div>}
+      {erroCarga && <div className="mb-4">{alertaErro(erroCarga)}</div>}
 
       <AbasEquipe itens={ABAS} ativo={activeTab} aoMudar={(id) => setActiveTab(id as TabEquipe)} idPainel="painel-equipe" />
 
@@ -722,8 +745,8 @@ export function Equipe({ empresaId }: EquipeProps) {
               (colaboradoresVisiveis.length === 0 ? (
                 <Panel espaco="lg" className="flex flex-col items-center gap-3 text-center">
                   <Users className="h-10 w-10 text-ink-subtle" strokeWidth={1.5} aria-hidden="true" />
-                  <h2 className="text-base font-semibold text-ink">Nenhum colaborador cadastrado</h2>
-                  <p className="max-w-md text-sm text-ink-muted">
+                  <h2 className="text-base font-semibold text-ink text-balance">Nenhum colaborador cadastrado</h2>
+                  <p className="max-w-md text-sm text-ink-muted text-pretty">
                     Cadastre a equipe para controlar cargos, salários, comissões e o ponto de cada um.
                   </p>
                 </Panel>
@@ -861,13 +884,14 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* FOLHA: CADASTRO / EDIÇÃO DE COLABORADOR */}
       <Folha
         aberto={modalColaboradorAberto}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
         titulo={colaboradorEmEdicao ? 'Editar colaborador' : 'Novo colaborador'}
-        aoCancelar={sairDoFormulario}
+        aoCancelar={() => sairDoFormulario()}
       >
         {confirmarDescarte}
-        {erro && alertaErro(erro)}
+        {erroForm && alertaErro(erroForm)}
         <form onSubmit={handleSalvarColaborador} className="space-y-6">
           <fieldset className="space-y-4">
             <legend className="mb-3 text-sm font-semibold text-ink">Dados e acesso</legend>
@@ -1012,15 +1036,16 @@ export function Equipe({ empresaId }: EquipeProps) {
                 className="sm:mr-auto"
                 onClick={() => {
                   const alvo = colaboradorEmEdicao;
-                  fecharModalColaborador();
-                  setErroFolha(null);
-                  setColaboradorParaDesativar(alvo);
+                  sairDoFormulario(() => {
+                    setErroFolha(null);
+                    setColaboradorParaDesativar(alvo);
+                  });
                 }}
               >
                 Desativar
               </Button>
             )}
-            <Button variante="secundario" onClick={sairDoFormulario} className="sm:ml-auto">
+            <Button variante="secundario" onClick={() => sairDoFormulario()} className="sm:ml-auto">
               Cancelar
             </Button>
             <Button type="submit" carregando={salvandoColaborador}>
@@ -1087,7 +1112,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       {/* FOLHA: CONFIRMAR LANÇAMENTO DA FOLHA NO CONTAS A PAGAR */}
       <Folha
         aberto={confirmarFolhaAberto}
-        titulo="Lançar folha no Contas a Pagar?"
+        titulo="Lançar folha em contas a pagar?"
         aoCancelar={fecharConfirmacao(() => setConfirmarFolhaAberto(false))}
       >
         {erroFolha && alertaErro(erroFolha)}
@@ -1168,6 +1193,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       <Folha aberto={modalHoleriteAberto && colaboradorHolerite !== null} titulo="Holerite" aoCancelar={() => setModalHoleriteAberto(false)}>
         {modalHoleriteAberto && colaboradorHolerite && (
           <>
+            <div className="area-impressao">
             {/* codemod:ignore-start */}
             {/* ÁREA DO HOLERITE IMPRIMÍVEL */}
             <div
@@ -1175,37 +1201,38 @@ export function Equipe({ empresaId }: EquipeProps) {
               className="bg-white text-black p-5 rounded-xl border-2 border-black space-y-4 font-mono text-xs select-all"
             >
               <div className="text-center border-b-2 border-black pb-2">
-                <h2 className="text-base font-semibold uppercase">MECANIFY &bull; OFICINA MECÂNICA</h2>
-                <div className="text-xs font-semibold">RECIBO DE PAGAMENTO DE SALÁRIO E COMISSÕES</div>
-                <div className="text-xs">Mês de Referência: {mesFolhaRef}</div>
+                <h2 className="text-base font-semibold uppercase [overflow-wrap:anywhere]">{identidadeOficina.nome}</h2>
+                {identidadeOficina.cnpj && <div className="text-xs">CNPJ {identidadeOficina.cnpj}</div>}
+                <div className="text-xs font-semibold">Recibo de pagamento de salário e comissões</div>
+                <div className="text-xs">Mês de referência: {formatMesExtenso(mesFolhaRef)}</div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 border-b border-black pb-2 text-xs">
-                <div>
+              <div className="grid grid-cols-1 gap-1 border-b border-black pb-2 text-xs [overflow-wrap:anywhere]">
+                <div data-campo="colaborador" className="min-w-0">
                   <strong>Colaborador:</strong> {colaboradorHolerite.nome}
                 </div>
-                <div>
-                  <strong>Cargo:</strong> {colaboradorHolerite.cargo}
+                <div data-campo="cargo" className="min-w-0">
+                  <strong>Cargo:</strong> {rotuloCargo(colaboradorHolerite.cargo)}
                 </div>
-                <div>
+                <div data-campo="email" className="min-w-0">
                   <strong>E-mail:</strong> {colaboradorHolerite.email}
                 </div>
-                <div>
-                  <strong>Data de Pagamento:</strong> Dia {parametrosFolha.dia_pagamento}
+                <div data-campo="pagamento" className="min-w-0">
+                  <strong>Data de pagamento:</strong> Dia {parametrosFolha.dia_pagamento}
                 </div>
               </div>
 
-              <table className="w-full text-left border-collapse">
+              <table className="w-full table-fixed text-left border-collapse [overflow-wrap:anywhere]">
                 <thead>
                   <tr className="border-b border-black text-xs uppercase font-semibold">
-                    <th className="py-1">Descrição</th>
-                    <th className="py-1 text-right">Proventos (R$)</th>
-                    <th className="py-1 text-right">Descontos (R$)</th>
+                    <th className="w-[46%] py-1 pr-1">Descrição</th>
+                    <th className="py-1 px-1 text-right">Proventos (R$)</th>
+                    <th className="w-[24%] py-1 pl-1 text-right">Descontos (R$)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-black/25">
                   <tr>
-                    <td className="py-1">Salário Base Mensal</td>
+                    <td className="py-1">Salário base mensal</td>
                     <td className="py-1 text-right">
                       {colaboradorHolerite.salario_base && colaboradorHolerite.salario_base > 0
                         ? formatBRL(colaboradorHolerite.salario_base)
@@ -1215,21 +1242,21 @@ export function Equipe({ empresaId }: EquipeProps) {
                   </tr>
                   <tr>
                     <td className="py-1">
-                      Comissão Mão de Obra ({colaboradorHolerite.comissao_servico_pct ?? 0}%)
+                      Comissão mão de obra ({colaboradorHolerite.comissao_servico_pct ?? 0}%)
                     </td>
                     <td className="py-1 text-right">{formatBRL(0.0)}</td>
                     <td className="py-1 text-right">—</td>
                   </tr>
                   <tr>
                     <td className="py-1">
-                      Comissão Peças ({colaboradorHolerite.comissao_peca_pct ?? 0}%)
+                      Comissão peças ({colaboradorHolerite.comissao_peca_pct ?? 0}%)
                     </td>
                     <td className="py-1 text-right">{formatBRL(0.0)}</td>
                     <td className="py-1 text-right">—</td>
                   </tr>
                   {colaboradorHolerite.vale_transporte && colaboradorHolerite.vale_transporte > 0 ? (
                     <tr>
-                      <td className="py-1">Auxílio Transporte (VT)</td>
+                      <td className="py-1">Auxílio transporte (VT)</td>
                       <td className="py-1 text-right">
                         {formatBRL(colaboradorHolerite.vale_transporte)}
                       </td>
@@ -1238,7 +1265,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                   ) : null}
                   {colaboradorHolerite.vale_refeicao && colaboradorHolerite.vale_refeicao > 0 ? (
                     <tr>
-                      <td className="py-1">Auxílio Refeição (VR)</td>
+                      <td className="py-1">Auxílio refeição (VR)</td>
                       <td className="py-1 text-right">
                         {formatBRL(colaboradorHolerite.vale_refeicao)}
                       </td>
@@ -1248,9 +1275,9 @@ export function Equipe({ empresaId }: EquipeProps) {
                 </tbody>
               </table>
 
-              <div className="border-t-2 border-black pt-2 flex items-center justify-between text-sm font-semibold">
-                <span>VALOR LÍQUIDO A RECEBER:</span>
-                <span className="text-base">
+              <div className="border-t-2 border-black pt-2 flex flex-wrap items-center justify-between gap-x-3 text-sm font-semibold">
+                <span>Valor líquido a receber:</span>
+                <span className="text-base whitespace-nowrap">
                   {colaboradorHolerite.salario_base && colaboradorHolerite.salario_base > 0
                     ? formatBRL(
                         colaboradorHolerite.salario_base +
@@ -1266,13 +1293,13 @@ export function Equipe({ empresaId }: EquipeProps) {
                 </span>
               </div>
 
-              <div className="pt-8 border-t border-dashed border-black text-center text-xs">
-                ____________________________________________________
-                <br />
-                Assinatura do Colaborador: {colaboradorHolerite.nome}
+              <div className="pt-8 border-t border-dashed border-black text-center text-xs [overflow-wrap:anywhere]">
+                <div aria-hidden="true" className="mx-auto mb-1 w-full max-w-xs border-t border-black" />
+                Assinatura do colaborador: {colaboradorHolerite.nome}
               </div>
             </div>
             {/* codemod:ignore-end */}
+            </div>
 
             <div className="flex flex-col-reverse gap-2 print:hidden sm:flex-row sm:justify-end">
               <Button variante="secundario" onClick={() => setModalHoleriteAberto(false)}>
@@ -1307,9 +1334,9 @@ export function Equipe({ empresaId }: EquipeProps) {
               className={CLASSE_CAMPO}
             >
               <option value="FERIAS">Férias</option>
-              <option value="FOLGA">Folga / Escala Revezamento</option>
-              <option value="ATESTADO">Atestado Médico / Licença</option>
-              <option value="PLANTAO">Plantão Extra</option>
+              <option value="FOLGA">Folga / escala revezamento</option>
+              <option value="ATESTADO">Atestado médico / licença</option>
+              <option value="PLANTAO">Plantão extra</option>
             </select>
           </Field>
           <div className="grid grid-cols-2 gap-4">

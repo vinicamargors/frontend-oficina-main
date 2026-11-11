@@ -115,3 +115,30 @@ export function calcularDistanciaMetros(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return Math.round(R * c);
 }
+
+// ------------------------------------------------------------ holerite (só exibição)
+
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+/** "2026-11" → "novembro de 2026" (pt-BR fixo, sem depender do idioma do navegador). Valor inválido volta como veio. */
+export const formatMesExtenso = (mesRef: string): string => {
+  const m = /^(\d{4})-(\d{2})$/.exec(mesRef || '');
+  const mes = m ? MESES[Number(m[2]) - 1] : undefined;
+  return m && mes ? `${mes} de ${m[1]}` : mesRef || '';
+};
+
+/** Máscara de CNPJ só quando o valor guardado tem exatamente 14 dígitos; caso contrário, o texto como está. */
+export const formatarCnpj = (cnpj?: string | null): string => {
+  const v = (cnpj ?? '').trim();
+  return /^\d{14}$/.test(v) ? v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : v;
+};
+
+export const NOME_PADRAO_HOLERITE = 'MECANIFY • OFICINA MECÂNICA';
+
+/** Cabeçalho do holerite: razão social, senão nome fantasia, senão o texto padrão; CNPJ só se houver. */
+export const identidadeHolerite = (
+  e?: { razao_social?: string | null; nome_fantasia?: string | null; cnpj?: string | null } | null
+): { nome: string; cnpj: string } => ({
+  nome: e?.razao_social?.trim() || e?.nome_fantasia?.trim() || NOME_PADRAO_HOLERITE,
+  cnpj: formatarCnpj(e?.cnpj),
+});

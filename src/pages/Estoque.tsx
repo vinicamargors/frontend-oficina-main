@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../api/client';
+import { hojeLocalISO } from '../lib/data';
 import { useAuth } from '../context/AuthContext';
 import { EstoqueItem, EstoqueCreateInput, EstoqueUpdateInput } from '../types';
 import {
@@ -226,6 +227,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         return;
       }
       setCategoriaParaExcluir(null);
+      setErro(null);
 
       try {
         for (const item of itensUsando) {
@@ -233,7 +235,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         }
         await carregarEstoque();
       } catch {
-        alert('Falha ao reclassificar itens da categoria.');
+        setErro('Falha ao reclassificar itens da categoria.');
         return;
       }
     }
@@ -278,7 +280,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
   const handleSalvarItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formNome.trim()) {
-      alert('Informe o nome da peça/item.');
+      setErro('Informe o nome da peça/item.');
       return;
     }
 
@@ -384,9 +386,10 @@ export function Estoque({ empresaId }: EstoqueProps) {
   // Exportação CSV compatível com Excel (UTF-8 com BOM e ponto e vírgula)
   const handleExportarCsv = () => {
     if (itensFiltrados.length === 0) {
-      alert('Não há itens para exportar no filtro atual.');
+      setErro('Não há itens para exportar no filtro atual.');
       return;
     }
+    setErro(null);
 
     const cabecalho = canSeeFinanceiro
       ? [
@@ -439,7 +442,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
     link.href = url;
     link.setAttribute(
       'download',
-      `estoque_mecanify_${new Date().toISOString().slice(0, 10)}.csv`
+      `estoque_mecanify_${hojeLocalISO()}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -547,6 +550,18 @@ export function Estoque({ empresaId }: EstoqueProps) {
     else fecharModalItem();
   };
 
+  // Folha de categorias: nome digitado e ainda não criado também pede confirmação antes de sumir
+  const fecharCategorias = () => {
+    setSaidaPendente(null);
+    setCategoriaParaExcluir(null);
+    setNovaCategoriaNome('');
+    setMostrarModalCategorias(false);
+  };
+  const sairDasCategorias = () => {
+    if (novaCategoriaNome.trim()) setSaidaPendente(() => fecharCategorias);
+    else fecharCategorias();
+  };
+
   const alertaErro = (mensagem: string) => (
     <p role="alert" className="flex items-center gap-2 rounded-xl bg-danger/15 px-4 py-3 text-sm font-medium text-danger">
       <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -587,7 +602,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
   return (
     <div>
       <PageHeader
-        titulo="Estoque de Peças"
+        titulo="Estoque de peças"
         complemento={
           carregando ? undefined : (
             <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle">{itens.length}</span>
@@ -628,7 +643,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
           </p>
         )}
       </div>
-      {erro && !modalItemAberto && !modalAjusteAberto && !itemParaExcluir && <div className="mb-4">{alertaErro(erro)}</div>}
+      {erro && !modalItemAberto && !modalAjusteAberto && !itemParaExcluir && !mostrarModalCategorias && <div className="mb-4">{alertaErro(erro)}</div>}
 
       {/* Indicadores: números grandes separados por divisores, sem cards aninhados */}
       <Panel
@@ -723,8 +738,8 @@ export function Estoque({ empresaId }: EstoqueProps) {
       ) : itensFiltrados.length === 0 ? (
         <Panel espaco="lg" className="flex flex-col items-center gap-3 text-center">
           <Package className="h-10 w-10 text-ink-subtle" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="text-base font-semibold text-ink">Nenhum item encontrado</h2>
-          <p className="max-w-md text-sm text-ink-muted">
+          <h2 className="text-base font-semibold text-ink text-balance">Nenhum item encontrado</h2>
+          <p className="max-w-md text-sm text-ink-muted text-pretty">
             {temFiltro
               ? 'Nenhuma peça corresponde aos filtros aplicados. Tente limpar a busca.'
               : 'Seu almoxarifado ainda não possui peças cadastradas. Comece cadastrando sua primeira peça agora.'}
@@ -780,6 +795,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
       {/* FOLHA 1: CADASTRO / EDIÇÃO DE PEÇA NO ESTOQUE */}
       <Folha
         aberto={modalItemAberto}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
         titulo={itemEmEdicao ? 'Editar peça' : 'Nova peça no estoque'}
@@ -794,7 +810,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               required
               value={formNome}
               onChange={(e) => setFormNome(e.target.value)}
-              placeholder="Ex: Pastilha de Freio Dianteira Onix 1.0"
+              placeholder="Ex: Pastilha de freio dianteira Onix 1.0"
               className={CLASSE_CAMPO}
             />
           </Field>
@@ -957,11 +973,10 @@ export function Estoque({ empresaId }: EstoqueProps) {
       <Folha
         aberto={mostrarModalCategorias}
         titulo="Gerenciar categorias"
-        aoCancelar={() => {
-          setCategoriaParaExcluir(null);
-          setMostrarModalCategorias(false);
-        }}
+        aoCancelar={sairDasCategorias}
       >
+        {confirmarDescarte}
+        {erro && alertaErro(erro)}
         <form onSubmit={handleAdicionarCategoria} className="flex items-end gap-2">
           <div className="flex-1">
             <Field rotulo="Nome da nova categoria">
@@ -1024,13 +1039,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         </ul>
 
         <div className="flex justify-end">
-          <Button
-            variante="secundario"
-            onClick={() => {
-              setCategoriaParaExcluir(null);
-              setMostrarModalCategorias(false);
-            }}
-          >
+          <Button variante="secundario" onClick={sairDasCategorias}>
             Fechar
           </Button>
         </div>
@@ -1044,6 +1053,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
       >
         {itemEtiqueta && (
           <>
+            <div className="area-impressao">
             {/* codemod:ignore-start */}
             {/* ÁREA DA ETIQUETA ADESIVA (PADRÃO TÉRMICO / GAVETA) */}
             <div
@@ -1113,6 +1123,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               </div>
             </div>
             {/* codemod:ignore-end */}
+            </div>
 
             <div className="flex flex-col-reverse gap-2 print:hidden sm:flex-row sm:justify-end">
               <Button variante="secundario" onClick={() => setModalEtiquetaAberto(false)}>

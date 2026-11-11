@@ -174,7 +174,6 @@ test.describe('radar: seletor de período', () => {
     // 7 dias: Em execução (8 dias) e Orçamento (9 dias) ficam de fora
     const aviso = page.getByText('2 ordens abertas mais antigas ficam fora do período');
     await expect(aviso).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Ver', exact: true })).toBeVisible();
 
     await escolher(page, '14 dias');
     await expect(contagem(page, 'Orçamento')).toHaveText('3');
@@ -182,7 +181,7 @@ test.describe('radar: seletor de período', () => {
 
     await escolher(page, '7 dias');
     await expect(aviso).toBeVisible();
-    await page.getByRole('button', { name: 'Ver', exact: true }).click();
+    await page.getByRole('region', { name: 'Ordens abertas mais antigas' }).getByRole('button').filter({ has: page.getByRole('img', { name: /^Placa / }) }).first().click();
     await expect(page).toHaveURL(/tab=os/);
     exigirRedeCompleta(page);
   });

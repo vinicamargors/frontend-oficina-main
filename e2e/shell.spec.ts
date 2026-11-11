@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import { abrirTela, entrarComo, exigirRedeCompleta, simularBackend } from './mocks';
 import { contextoDoProjeto } from './contexto';
 
-const DESKTOP = 'Menu Principal da Oficina';
-const MOBILE = 'Navegação Rápida Mobile';
+const DESKTOP = 'Menu principal da oficina';
+const MOBILE = 'Navegação rápida mobile';
 
 test.describe('shell desktop', () => {
   test.beforeEach(({}, info) => {
@@ -27,14 +27,14 @@ test.describe('shell desktop', () => {
     }
 
     await expect(menu.locator('[aria-current="page"]')).toHaveCount(1);
-    await expect(menu.locator('[aria-current="page"]')).toContainText('Radar do Pátio');
+    await expect(menu.locator('[aria-current="page"]')).toContainText('Radar do pátio');
 
     await expect(menu.getByRole('img', { name: 'Mecanify' })).toBeVisible();
     await expect(menu.getByText('Dono', { exact: true })).toBeVisible();
     await expect(menu.getByText('DONO', { exact: true })).toHaveCount(0);
 
-    await menu.getByRole('button', { name: 'Ordens de Serviço' }).click();
-    await expect(menu.locator('[aria-current="page"]')).toContainText('Ordens de Serviço');
+    await menu.getByRole('button', { name: 'Ordens de serviço' }).click();
+    await expect(menu.locator('[aria-current="page"]')).toContainText('Ordens de serviço');
     exigirRedeCompleta(page);
   });
 
@@ -87,10 +87,10 @@ test.describe('shell desktop', () => {
     const menu = page.getByRole('complementary', { name: DESKTOP });
     const nomes = await menu.getByRole('navigation').getByRole('button').allInnerTexts();
     expect(nomes.map((n) => n.trim())).toEqual([
-      'Radar do Pátio',
-      'Ordens de Serviço',
-      'Clientes & Veículos',
-      'Estoque de Peças',
+      'Radar do pátio',
+      'Ordens de serviço',
+      'Clientes & veículos',
+      'Estoque de peças',
     ]);
     await expect(menu.getByText('Mecânico', { exact: true })).toBeVisible();
     exigirRedeCompleta(page);
@@ -133,9 +133,9 @@ test.describe('shell mobile', () => {
     await expect(page.getByRole('dialog', { name: 'Mais opções' })).toHaveAttribute('aria-modal', 'true');
     await expect(page.getByRole('dialog', { name: 'Mais opções' }).locator(':focus')).toHaveCount(1);
     const folha = page.getByRole('dialog', { name: 'Mais opções' });
-    await expect(folha.getByRole('button', { name: 'Caixa & Financeiro' })).toBeVisible();
+    await expect(folha.getByRole('button', { name: 'Caixa & financeiro' })).toBeVisible();
     await expect(folha.getByRole('button', { name: 'Equipe & RH' })).toBeVisible();
-    await expect(folha.getByRole('button', { name: 'Dados da Oficina' })).toBeVisible();
+    await expect(folha.getByRole('button', { name: 'Dados da oficina' })).toBeVisible();
     await expect(folha.getByText('Dono', { exact: true })).toBeVisible();
     await expect(folha.getByRole('button', { name: /sair/i })).not.toHaveClass(/danger/);
 
@@ -159,4 +159,49 @@ test.describe('shell mobile', () => {
     await expect(barra.getByRole('button', { name: /Caixa|Equipe|Oficina/ })).toHaveCount(0);
     exigirRedeCompleta(page);
   });
+
+  test('barra inferior sem fio de borda; publica --barra-inferior-h e a folha "Mais" acompanha a altura real', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'radar');
+    const barra = page.getByRole('navigation', { name: MOBILE });
+    expect(await barra.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('0px');
+
+    const lerVar = () =>
+      page.evaluate(() => {
+        const raiz = document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]');
+        return raiz ? parseFloat(raiz.style.getPropertyValue('--barra-inferior-h')) : null;
+      });
+    const altura = (await barra.boundingBox())!.height;
+    expect(await lerVar()).toBeCloseTo(altura, 0);
+
+    await barra.getByRole('button', { name: 'Mais' }).click();
+    const folha = page.getByRole('dialog', { name: 'Mais opções' });
+    await expect(folha).toBeVisible();
+    // a barra cresce com o dialogo aberto (ex.: área segura mudou): folha e variável acompanham sem reabrir
+    await barra.evaluate((el) => {
+      el.style.paddingBottom = '40px';
+    });
+    const nova = (await barra.boundingBox())!.height;
+    expect(nova).toBeGreaterThan(altura + 20);
+    await expect.poll(lerVar).toBeCloseTo(nova, 0);
+    await expect
+      .poll(async () => {
+        const f = (await folha.boundingBox())!;
+        return Math.round(844 - (f.y + f.height));
+      })
+      .toBe(Math.round(nova));
+  });
+});
+
+test('seletor de oficina do master usa cantos rounded-lg', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'master', tema);
+  await abrirTela(page, 'radar');
+  if (largura < 1024) await page.getByRole('navigation', { name: MOBILE }).getByRole('button', { name: 'Mais' }).click();
+  const seletor = page.getByLabel('Oficina (Master)').locator('visible=true').first();
+  await expect(seletor).toBeVisible();
+  expect(await seletor.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('8px');
 });

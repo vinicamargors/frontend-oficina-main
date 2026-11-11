@@ -44,7 +44,7 @@ export function AbaFolha({
             </Field>
           </div>
           <Button variante="secundario" icone={CheckCircle2} onClick={aoLancar}>
-            Lançar no Contas a Pagar
+            Lançar em contas a pagar
           </Button>
         </div>
       </Panel>

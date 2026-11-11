@@ -1,8 +1,9 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from '@playwright/test';
-import { TELAS, abrirTela, clientes, entrarComo, exigirRedeCompleta, ordens, simularBackend, type Cenario } from './mocks';
+import { EMPRESA_ID, TELAS, abrirTela, clientes, entrarComo, exigirRedeCompleta, ordens, simularBackend, type Cenario } from './mocks';
 import { contextoDoProjeto } from './contexto';
+import { formatarPlaca } from '../src/components/ui/PlateChip';
 
 /**
  * Prints de referência: `prints/<tela>-<tema>-<largura>-<cenario>.png`.
@@ -24,6 +25,8 @@ for (const cenario of CENARIOS) {
       if (tela !== 'login' && tela !== 'avaliacao') await entrarComo(page, 'DONO', tema);
       await abrirTela(page, tela);
       exigirRedeCompleta(page);
+      // a barra de salvar é `sticky`: numa captura de página inteira ela apareceria no meio; aqui ela vai para o fim
+      if (tela === 'oficina') await page.addStyleTag({ content: '.sticky { position: static !important; }' });
 
       await page.screenshot({
         path: join(PASTA, `${tela}-${tema}-${largura}-${cenario}.png`),
@@ -46,7 +49,7 @@ test('print shell (menu e barra)', async ({ page }, info) => {
   await page.screenshot({ path: join(PASTA, `shell-${tema}-${largura}.png`), animations: 'disabled' });
 
   if (largura < 1024) {
-    await page.getByRole('navigation', { name: 'Navegação Rápida Mobile' }).getByRole('button', { name: 'Mais' }).click();
+    await page.getByRole('navigation', { name: 'Navegação rápida mobile' }).getByRole('button', { name: 'Mais' }).click();
     await page.getByRole('dialog', { name: 'Mais opções' }).waitFor();
     await page.screenshot({ path: join(PASTA, `shell-${tema}-${largura}-mais.png`), animations: 'disabled' });
   }
@@ -107,7 +110,7 @@ test('print ordens paginada', async ({ page }, info) => {
   });
   await entrarComo(page, 'DONO', tema);
   await abrirTela(page, 'ordens');
-  await page.getByRole('navigation', { name: 'Paginação de Ordens de Serviço' }).waitFor();
+  await page.getByRole('navigation', { name: 'Paginação de ordens de serviço' }).waitFor();
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `ordens-paginada-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
 });
@@ -182,7 +185,7 @@ test('print clientes veiculo editar (Editar veículo aberto)', async ({ page }, 
   const { tema, largura } = contextoDoProjeto(info);
   mkdirSync(PASTA, { recursive: true });
   const veics = await abrirVeiculosDoJoao(page, tema);
-  await veics.getByRole('button', { name: 'Editar veículo ABC1234' }).click();
+  await veics.getByRole('button', { name: 'Editar veículo ABC-1234' }).click();
   await page.getByRole('dialog', { name: /Editar Veículo/ }).waitFor();
   await page.mouse.move(1, 1);
   exigirRedeCompleta(page);
@@ -193,8 +196,8 @@ test('print clientes historico (histórico da placa com várias OS)', async ({ p
   const { tema, largura } = contextoDoProjeto(info);
   mkdirSync(PASTA, { recursive: true });
   const veics = await abrirVeiculosDoJoao(page, tema);
-  await veics.getByRole('button', { name: 'Histórico do veículo ABC1234' }).click();
-  await page.getByRole('dialog', { name: 'Histórico do Veículo ABC1234' }).waitFor();
+  await veics.getByRole('button', { name: 'Histórico do veículo ABC-1234' }).click();
+  await page.getByRole('dialog', { name: 'Histórico do Veículo ABC-1234' }).waitFor();
   await page.mouse.move(1, 1);
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `clientes-historico-${tema}-${largura}.png`), animations: 'disabled' });
@@ -210,7 +213,7 @@ test('print clientes veiculo novo (adicionar veículo com consulta de placa)', a
   await page.getByRole('menuitem', { name: /Adicionar veículo/ }).click();
   const d = page.getByRole('dialog', { name: `Ficha de ${clientes[0].nome}` });
   await d.getByRole('textbox', { name: /^Placa/ }).fill('ZZZ9Z99');
-  await d.getByRole('button', { name: 'Buscar Placa' }).click();
+  await d.getByRole('button', { name: 'Buscar placa' }).click();
   const msg = d.getByText('Dados do veículo preenchidos pela placa!');
   await msg.waitFor();
   await msg.scrollIntoViewIfNeeded();
@@ -402,8 +405,8 @@ test('print equipe confirmações (desativar e lançar folha)', async ({ page },
   await page.screenshot({ path: join(PASTA, `equipe-confirmacao-desativar-${tema}-${largura}.png`), animations: 'disabled' });
   await page.keyboard.press('Escape');
   await page.getByRole('tab', { name: 'Folha' }).click();
-  await page.getByRole('button', { name: /Lançar no Contas a Pagar/ }).click();
-  await page.getByRole('dialog', { name: 'Lançar folha no Contas a Pagar?' }).waitFor();
+  await page.getByRole('button', { name: /Lançar em contas a pagar/ }).click();
+  await page.getByRole('dialog', { name: 'Lançar folha em contas a pagar?' }).waitFor();
   await page.mouse.move(1, 1);
   exigirRedeCompleta(page);
   await page.screenshot({ path: join(PASTA, `equipe-confirmacao-folha-${tema}-${largura}.png`), animations: 'disabled' });
@@ -473,5 +476,142 @@ test('print radar vazio-periodo (sem ordens no período, com abertas mais antiga
   await entrarComo(page, 'DONO', tema);
   await abrirTela(page, 'radar');
   await page.screenshot({ path: join(PASTA, `radar-vazio-periodo-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+  exigirRedeCompleta(page);
+});
+
+// Dados da oficina: carregando (esqueleto), formulário sujo com o aviso de descarte e conta nova (sem cadastro):
+// `oficina-<carregando|descartar|conta-nova>-<tema>-<largura>.png`.
+test('print oficina estados (carregando, descartar, conta nova)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  const tirar = (nome: string, cheia = false) =>
+    page.screenshot({ path: join(PASTA, `oficina-${nome}-${tema}-${largura}.png`), fullPage: cheia, animations: 'disabled' });
+
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  let atrasar = true;
+  await page.route('**/api/v1/empresas/*/configuracoes', async (r) => {
+    if (atrasar && r.request().method() === 'GET') await new Promise((ok) => setTimeout(ok, 2500));
+    await r.fallback();
+  });
+  await page.goto('/?tab=oficina');
+  await page.getByRole('heading', { level: 2, name: 'Folha e comissões' }).waitFor();
+  await tirar('carregando', true);
+  atrasar = false;
+
+  await page.getByLabel('Chave PIX').waitFor();
+  await page.getByLabel('Chave PIX').fill('nova-chave@oficina.example.com');
+  await page.getByRole('button', { name: 'Descartar alterações' }).click();
+  await page.getByRole('alert').filter({ hasText: 'Descartar alterações?' }).waitFor();
+  await page.mouse.move(1, 1);
+  await tirar('descartar');
+  exigirRedeCompleta(page);
+});
+
+test('print oficina conta-nova (sem cadastro, sem pátio)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  const json = (corpo: unknown) => ({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(corpo) });
+  await page.route('**/api/v1/empresas/*/configuracoes', async (r) => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    await r.fulfill(json({ latitude_gps: null, longitude_gps: null, raio_gps_metros: 100 }));
+  });
+  await page.route('**/api/v1/empresas/?*', (r) => r.fulfill(json([{ id: EMPRESA_ID, nome_fantasia: 'Oficina Nova', ativo: true }])));
+  await abrirTela(page, 'oficina');
+  exigirRedeCompleta(page);
+  await page.addStyleTag({ content: '.sticky { position: static !important; }' });
+  await page.screenshot({ path: join(PASTA, `oficina-conta-nova-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+});
+
+// Avaliação pública: nota escolhida, enviada e com erro: `avaliacao-<nota|enviada|erro>-<tema>-<largura>.png`.
+test('print avaliacao estados (nota escolhida, enviada, erro)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+  const tirar = (nome: string) =>
+    page.screenshot({ path: join(PASTA, `avaliacao-${nome}-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+
+  await simularBackend(page, 'cheio');
+  let falhar = true;
+  await page.route('**/api/v1/equipe/avaliar', async (r) => {
+    if (falhar) {
+      return r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'x' }) });
+    }
+    await r.fallback();
+  });
+  await abrirTela(page, 'avaliacao');
+  await page.getByRole('radio', { name: '3 estrelas' }).click();
+  await page.getByLabel('Seu nome').fill('Maria Souza');
+  await page.getByLabel('Modelo do veículo').fill('Fiat Argo 1.3');
+  await page.getByLabel(/Comentário/).fill('Atendimento rápido e o carro ficou como novo.');
+  await page.mouse.move(1, 1);
+  await tirar('nota');
+
+  await page.getByRole('button', { name: 'Enviar avaliação' }).click();
+  await page.getByRole('alert').waitFor();
+  await tirar('erro');
+
+  falhar = false;
+  await page.getByRole('button', { name: 'Tentar novamente' }).click();
+  await page.getByRole('heading', { level: 1, name: 'Obrigado pela sua avaliação' }).waitFor();
+  await tirar('enviada');
+});
+
+// Aviso das ordens abertas mais antigas com a lista aberta (período "só hoje": 7 ordens, 5 na lista): `radar-antigas-<tema>-<largura>.png`.
+test('print radar antigas (lista das ordens fora do período)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'radar');
+  const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+  await page.getByRole('button', { name: /^Últimos / }).click();
+  await page.getByRole('menuitemradio', { name: 'Personalizado' }).click();
+  await page.getByLabel('De', { exact: true }).fill(hoje);
+  await page.getByLabel('Até', { exact: true }).fill(hoje);
+  await page.getByRole('button', { name: 'Aplicar' }).click();
+  await page.getByText('7 ordens abertas mais antigas ficam fora do período').waitFor();
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  await page.screenshot({ path: join(PASTA, `radar-antigas-${tema}-${largura}.png`), fullPage: true, animations: 'disabled' });
+  exigirRedeCompleta(page);
+});
+
+// Mover card de etapa: `radar-arrastando-<tema>-1440.png` (arrasto no meio, colunas realçadas; só desktop),
+// `radar-menu-mover-<tema>-<largura>.png` (menu "…" aberto) e `radar-mover-sheet-<tema>-<largura>.png` (confirmação).
+test('print radar mover (arrasto, menu e confirmação)', async ({ page }, info) => {
+  const { tema, largura } = contextoDoProjeto(info);
+  mkdirSync(PASTA, { recursive: true });
+
+  await simularBackend(page, 'cheio');
+  await entrarComo(page, 'DONO', tema);
+  await abrirTela(page, 'radar');
+  const os = ordens[0]; // orçamento mais novo
+  const placa = formatarPlaca(os.veiculos!.placa!);
+
+  if (largura >= 1024) {
+    // O dragAndDrop do Playwright é atômico: aqui o arrasto começa (dragstart) e para sobre "Em execução" sem soltar
+    await page.evaluate((id) => {
+      const quadro = document.querySelector('[data-testid="quadro-patio"]')!;
+      const dt = new DataTransfer();
+      quadro.querySelector(`[data-os-id="${id}"]`)!.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      const alvo = quadro.querySelector('[data-etapa="EXECUCAO"]')!;
+      alvo.dispatchEvent(new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      alvo.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
+    }, os.id);
+    await page.locator('[data-etapa="EXECUCAO"][data-alvo="sobre"]').waitFor();
+    await page.screenshot({ path: join(PASTA, `radar-arrastando-${tema}-${largura}.png`), animations: 'disabled' });
+    await page.locator(`[data-testid="quadro-patio"] [data-os-id="${os.id}"]`).dispatchEvent('dragend');
+    await page.locator('[data-alvo]').first().waitFor({ state: 'detached' });
+  }
+
+  const area = page.getByTestId(largura >= 1024 ? 'quadro-patio' : 'patio-lista');
+  await area.getByRole('button', { name: `Ações da ordem ${placa}` }).click();
+  await page.getByRole('menu').waitFor();
+  await page.screenshot({ path: join(PASTA, `radar-menu-mover-${tema}-${largura}.png`), animations: 'disabled' });
+  await page.getByRole('menuitem', { name: 'Mover para Em execução' }).click();
+  await page.getByRole('dialog', { name: `Mover ${placa} para Em execução?` }).waitFor();
+  await page.screenshot({ path: join(PASTA, `radar-mover-sheet-${tema}-${largura}.png`), animations: 'disabled' });
   exigirRedeCompleta(page);
 });

@@ -94,13 +94,13 @@ export function Login() {
 
     const titles: Record<AuthMode, string> = {
       login: "Entrar — Mecanify",
-      cadastro: "Criar Conta da Oficina — Mecanify",
-      recuperar: "Recuperar Senha — Mecanify",
-      "nova-senha": "Definir Nova Senha — Mecanify",
+      cadastro: "Criar conta da oficina — Mecanify",
+      recuperar: "Recuperar senha — Mecanify",
+      "nova-senha": "Definir nova senha — Mecanify",
     };
     document.title = titles[mode];
     return () => {
-      document.title = "Mecanify — Gestão de Oficina"; // ao sair do login, volta o título do app
+      document.title = "Mecanify — Gestão de oficina"; // ao sair do login, volta o título do app
     };
   }, [mode]);
 
@@ -200,7 +200,7 @@ export function Login() {
       if (!nome.trim()) {
         setErroCampo({
           campo: "nome",
-          msg: "Informe seu nome para identificação nas Ordens de Serviço.",
+          msg: "Informe seu nome para identificação nas ordens de serviço.",
         });
         nomeInputRef.current?.focus();
         return;
@@ -371,7 +371,7 @@ export function Login() {
 
       <main
         id="conteudo-principal"
-        className="flex min-h-dvh flex-col px-4 pb-8 pt-3 sm:px-8 lg:min-h-0 lg:justify-center lg:px-12"
+        className="relative flex min-h-dvh flex-col px-4 pb-8 pt-3 sm:px-8 lg:min-h-0 lg:justify-center lg:px-12"
       >
         <div className="mx-auto flex w-full max-w-md items-center justify-between pb-4 lg:hidden">
           <Logo tamanho={32} legenda />
@@ -389,10 +389,10 @@ export function Login() {
                 aria-hidden="true"
               />
               <div className="space-y-2">
-                <h1 className="text-2xl font-semibold leading-tight">
+                <h1 className="text-2xl font-semibold leading-tight text-balance">
                   Confirme seu e-mail para ativar sua oficina
                 </h1>
-                <p className="text-base text-ink-muted">
+                <p className="text-base text-ink-muted text-pretty">
                   Enviamos um link de ativação para:
                 </p>
                 <p className="break-all rounded-xl bg-muted px-4 py-3 font-mono text-base font-semibold">
@@ -401,10 +401,10 @@ export function Login() {
               </div>
               <ol className="list-decimal list-inside space-y-1.5 text-sm text-ink-muted">
                 <li>Abra o aplicativo de e-mail no celular ou computador.</li>
-                <li>Procure o e-mail do Mecanify (olhe também no Spam).</li>
+                <li>Procure o e-mail do Mecanify (olhe também no spam).</li>
                 <li>
                   Toque em{" "}
-                  <strong className="text-ink">Confirmar Meu E-mail</strong>.
+                  <strong className="text-ink">Confirmar meu e-mail</strong>.
                 </li>
               </ol>
               {resendSuccess && avisoSucesso(resendSuccess)}
@@ -438,10 +438,10 @@ export function Login() {
                 aria-hidden="true"
               />
               <div className="space-y-2">
-                <h1 className="text-2xl font-semibold leading-tight">
+                <h1 className="text-2xl font-semibold leading-tight text-balance">
                   Link de recuperação enviado
                 </h1>
-                <p className="text-base text-ink-muted">
+                <p className="text-base text-ink-muted text-pretty">
                   Enviamos um e-mail para criar sua nova senha em:
                 </p>
                 <p className="break-all rounded-xl bg-muted px-4 py-3 font-mono text-base font-semibold">
@@ -451,7 +451,7 @@ export function Login() {
               <ol className="list-decimal list-inside space-y-1.5 text-sm text-ink-muted">
                 <li>
                   Abra seu e-mail e toque em{" "}
-                  <strong className="text-ink">Redefinir Minha Senha</strong>.
+                  <strong className="text-ink">Redefinir minha senha</strong>.
                 </li>
                 <li>Você volta para cá para digitar a senha nova.</li>
               </ol>
@@ -501,7 +501,7 @@ export function Login() {
                   variante="fantasma"
                   tamanho="sm"
                   icone={ArrowLeft}
-                  className="self-start"
+                  className="-ml-3 self-start"
                   onClick={() => switchMode("login")}
                 >
                   Voltar para o login
@@ -509,7 +509,7 @@ export function Login() {
               )}
 
               <div className="space-y-1">
-                <h1 className="text-2xl font-semibold leading-tight tracking-tight">
+                <h1 className="text-2xl font-semibold leading-tight tracking-tight text-balance">
                   {tituloModo[mode]}
                 </h1>
                 {mode !== "login" && (
@@ -546,7 +546,7 @@ export function Login() {
               >
                 {mode === "cadastro" && (
                   <>
-                    <Field rotulo="Nome da oficina" erro={erroDe("oficina")}>
+                    <Field rotulo="Nome da oficina" erro={erroDe("oficina")} anunciar>
                       <input
                         ref={oficinaInputRef}
                         name="organization"
@@ -559,7 +559,7 @@ export function Login() {
                         className={classeInput}
                       />
                     </Field>
-                    <Field rotulo="Seu nome" erro={erroDe("nome")}>
+                    <Field rotulo="Seu nome" erro={erroDe("nome")} anunciar>
                       <input
                         ref={nomeInputRef}
                         name="name"
@@ -588,7 +588,7 @@ export function Login() {
                 )}
 
                 {mode !== "nova-senha" && (
-                  <Field rotulo="E-mail" erro={erroDe("email")}>
+                  <Field rotulo="E-mail" erro={erroDe("email")} anunciar>
                     <input
                       ref={emailInputRef}
                       name="email"
@@ -607,54 +607,56 @@ export function Login() {
                 )}
 
                 {mode !== "recuperar" && (
-                  <div className="relative">
-                    <Field
-                      rotulo={mode === "nova-senha" ? "Nova senha" : "Senha"}
-                      dica={
-                        mode !== "login" ? "Mínimo de 6 caracteres." : undefined
-                      }
-                      erro={erroDe("senha")}
-                    >
-                      <input
-                        ref={senhaInputRef}
-                        name="password"
-                        type={mostrarSenha ? "text" : "password"}
-                        autoComplete={
-                          mode === "login" ? "current-password" : "new-password"
+                  <Field
+                    rotulo={mode === "nova-senha" ? "Nova senha" : "Senha"}
+                    dica={
+                      mode !== "login" ? "Mínimo de 6 caracteres." : undefined
+                    }
+                    erro={erroDe("senha")}
+                    anunciar
+                    adorno={
+                      <button
+                        type="button"
+                        onClick={() => setMostrarSenha((v) => !v)}
+                        aria-label={
+                          mostrarSenha ? "Ocultar senha" : "Mostrar senha"
                         }
-                        required
-                        minLength={6}
-                        value={senha}
-                        onChange={(e) => setSenha(e.target.value)}
-                        placeholder={
-                          mode === "nova-senha"
-                            ? "Digite a nova senha"
-                            : "Digite sua senha"
-                        }
-                        className={`${classeInput} pr-12`}
-                      />
-                    </Field>
-                    <button
-                      type="button"
-                      onClick={() => setMostrarSenha((v) => !v)}
-                      aria-label={
-                        mostrarSenha ? "Ocultar senha" : "Mostrar senha"
+                        className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      >
+                        {mostrarSenha ? (
+                          <EyeOff className="h-5 w-5" aria-hidden="true" />
+                        ) : (
+                          <Eye className="h-5 w-5" aria-hidden="true" />
+                        )}
+                      </button>
+                    }
+                  >
+                    <input
+                      ref={senhaInputRef}
+                      name="password"
+                      type={mostrarSenha ? "text" : "password"}
+                      autoComplete={
+                        mode === "login" ? "current-password" : "new-password"
                       }
-                      className="absolute right-0 top-[26px] flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                    >
-                      {mostrarSenha ? (
-                        <EyeOff className="h-5 w-5" aria-hidden="true" />
-                      ) : (
-                        <Eye className="h-5 w-5" aria-hidden="true" />
-                      )}
-                    </button>
-                  </div>
+                      required
+                      minLength={6}
+                      value={senha}
+                      onChange={(e) => setSenha(e.target.value)}
+                      placeholder={
+                        mode === "nova-senha"
+                          ? "Digite a nova senha"
+                          : "Digite sua senha"
+                      }
+                      className={`${classeInput} pr-12`}
+                    />
+                  </Field>
                 )}
 
                 {mode === "nova-senha" && (
                   <Field
                     rotulo="Repita a nova senha"
                     erro={erroDe("confirmar")}
+                    anunciar
                   >
                     <input
                       ref={confirmarSenhaInputRef}

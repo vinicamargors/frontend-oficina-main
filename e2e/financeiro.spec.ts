@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { abrirTela, entrarComo, exigirRedeCompleta, listaTransacoes, simularBackend, transacoes, type Cenario } from './mocks';
-import { coletarErros, contextoDoProjeto } from './contexto';
+import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
 const ultimaEscrita = (page: Page) =>
@@ -47,7 +47,7 @@ test.describe('cabeçalho, período e resumo', () => {
     const erros = coletarErros(page);
     await abrir(page, tema);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Caixa & Financeiro' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Caixa & financeiro' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Novo lançamento' })).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Exportar CSV' })).toBeVisible();
 
@@ -329,7 +329,7 @@ test.describe('contas a pagar e receber', () => {
     expect(await sobraLateral(page)).toBeLessThanOrEqual(0);
   });
 
-  test('dar baixa exige confirmação; cancelar não grava; confirmar liquida com a forma do lançamento', async ({ page }, info) => {
+  test('dar baixa exige confirmação; cancelar não grava; confirmar liquida com a forma escolhida', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     await irParaContas(page);
@@ -351,6 +351,7 @@ test.describe('contas a pagar e receber', () => {
     await menuDe(page, PENDENTE_RECEITA.descricao);
     await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
     await expect(d).toContainText(`+ ${brl(PENDENTE_RECEITA.valor)}`);
+    await d.getByRole('radio', { name: 'PIX' }).check();
     await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     const e = (await ultimaEscrita(page))!;
@@ -359,6 +360,65 @@ test.describe('contas a pagar e receber', () => {
     expect(e.corpo).toMatchObject({ forma_pagamento: 'PIX' });
     await expect(d).toHaveCount(0);
     await expect(page.getByRole('status').filter({ hasText: 'RECEBIDO' })).toBeVisible();
+  });
+
+  test('baixa sem forma no lançamento: nada marcado e confirmar bloqueado até escolher; cancelar não grava', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    // as mesmas 6 formas do formulário de lançamento, incluindo TED
+    await expect(d.locator('label:has(input[type=radio])')).toHaveText([
+      'PIX',
+      'Cartão de Crédito',
+      'Cartão de Débito',
+      'Dinheiro',
+      'Boleto / Faturado',
+      'TED / Transferência',
+    ]);
+    await expect(d.getByRole('radio', { checked: true })).toHaveCount(0);
+    await expect(d.getByRole('button', { name: 'Confirmar recebimento' })).toBeDisabled();
+    await d.getByRole('radio', { name: 'Dinheiro' }).check();
+    await expect(d.getByRole('button', { name: 'Confirmar recebimento' })).toBeEnabled();
+    await d.getByRole('button', { name: 'Cancelar' }).click();
+    expect(await ultimaEscrita(page)).toBeUndefined();
+    // reabrir: a escolha anterior não volta
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    await expect(d.getByRole('radio', { checked: true })).toHaveCount(0);
+  });
+
+  test('baixa por TED / Transferência envia essa forma', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'TED / Transferência' }).check();
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ forma_pagamento: 'TED / Transferência' });
+  });
+
+  test('baixa com forma já guardada: ela aparece marcada, pode ser trocada e a escolhida é enviada', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const seguro = transacoes.find((t) => t.descricao.startsWith('Seguro do estab'))!;
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, seguro.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como pago' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await expect(d.getByRole('radio', { name: 'Boleto / Faturado' })).toBeChecked();
+    await expect(d.getByRole('button', { name: 'Confirmar pagamento' })).toBeEnabled();
+    await d.getByRole('radio', { name: 'Dinheiro' }).check();
+    await d.getByRole('button', { name: 'Confirmar pagamento' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    const e = (await ultimaEscrita(page))!;
+    expect(e.caminho).toContain(`/${seguro.id}/liquidar`);
+    expect(e.corpo).toMatchObject({ forma_pagamento: 'Dinheiro' });
   });
 
   test('desktop: botão de baixa na linha também passa pela confirmação', async ({ page }, info) => {
@@ -389,6 +449,137 @@ test.describe('contas a pagar e receber', () => {
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     expect((await ultimaEscrita(page))!.metodo).toBe('DELETE');
     await expect(lista(page).getByRole('listitem')).toHaveCount(transacoes.length - 1);
+  });
+});
+
+test.describe('falha da API nas confirmações', () => {
+  const falha500 = { status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'Servidor fora do ar' }) };
+
+  test('baixa que falha: a folha continua aberta com o erro dentro dela e dá para tentar de novo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let falhar = true;
+    await page.route('**/api/v1/transacoes-financeiras/*/*/liquidar', (r) => (falhar ? r.fulfill(falha500) : r.fallback()));
+    const dialogos: string[] = [];
+    page.on('dialog', (dl) => {
+      dialogos.push(dl.message());
+      void dl.dismiss();
+    });
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'PIX' }).check();
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect(d.getByRole('alert')).toBeVisible();
+    await expect(d).toBeVisible();
+    expect(dialogos).toEqual([]);
+    // dinheiro: a baixa que falhou não pode aparecer como recebida
+    await expect(linha(page, PENDENTE_RECEITA.descricao)).toContainText('Pendente');
+    await expect(linha(page, PENDENTE_RECEITA.descricao)).not.toContainText('Recebido');
+    falhar = false;
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect(d).toHaveCount(0);
+    await expect(page.getByRole('status').filter({ hasText: 'RECEBIDO' })).toBeVisible();
+  });
+
+  test('exclusão que falha: a folha continua aberta com o erro dentro dela e dá para tentar de novo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let falhar = true;
+    await page.route(`**/api/v1/transacoes-financeiras/*/${DESPESA_PAGA.id}`, (r) =>
+      falhar && r.request().method() === 'DELETE' ? r.fulfill(falha500) : r.fallback()
+    );
+    const dialogos: string[] = [];
+    page.on('dialog', (dl) => {
+      dialogos.push(dl.message());
+      void dl.dismiss();
+    });
+    await irParaContas(page);
+    await menuDe(page, DESPESA_PAGA.descricao);
+    await page.getByRole('menuitem', { name: 'Excluir lançamento' }).click();
+    const d = page.getByRole('dialog', { name: 'Excluir lançamento?' });
+    await d.getByRole('button', { name: 'Excluir lançamento' }).click();
+    await expect(d.getByRole('alert')).toBeVisible();
+    await expect(d).toBeVisible();
+    expect(dialogos).toEqual([]);
+    await expect(lista(page).getByRole('listitem')).toHaveCount(transacoes.length);
+    falhar = false;
+    await d.getByRole('button', { name: 'Excluir lançamento' }).click();
+    await expect(d).toHaveCount(0);
+    await expect(lista(page).getByRole('listitem')).toHaveCount(transacoes.length - 1);
+    // reabrir outra exclusão não mostra o erro antigo
+    await menuDe(page, RECEITA_PAGA.descricao);
+    await page.getByRole('menuitem', { name: 'Excluir lançamento' }).click();
+    await expect(d.getByRole('alert')).toHaveCount(0);
+  });
+});
+
+// 10/11/2026 às 22:00 em São Paulo = 01:00Z do dia 11: em UTC "hoje" já virou amanhã.
+const NOITE_SP = new Date('2026-11-11T01:00:00Z');
+const HOJE_SP = '2026-11-10';
+
+test.describe('datas no calendário local (22h em São Paulo)', () => {
+  test('dar baixa às 22h grava a data de hoje, não a de amanhã', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(NOITE_SP);
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'PIX' }).check();
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    const e = (await ultimaEscrita(page))!;
+    expect(e.caminho).toContain(`/${PENDENTE_RECEITA.id}/liquidar`);
+    expect(e.corpo).toEqual({ data_liquidacao: HOJE_SP, forma_pagamento: 'PIX' });
+  });
+
+  test('novo lançamento abre com o foco no primeiro campo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: 'Novo lançamento' }).click();
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Novo lançamento' }), 'Descrição *');
+  });
+
+  test('novo lançamento às 22h: vencimento padrão é hoje; "já foi paga" sem vencimento liquida hoje', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(NOITE_SP);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: 'Novo lançamento' }).click();
+    const d = page.getByRole('dialog', { name: 'Novo lançamento' });
+    await expect(d.getByLabel('Vencimento *')).toHaveValue(HOJE_SP);
+
+    await d.getByLabel('Descrição *').fill('Taxa');
+    await d.getByLabel('Valor (R$) *').fill('35');
+    await d.getByLabel('Vencimento *').evaluate((el) => el.removeAttribute('required'));
+    await d.getByLabel('Vencimento *').fill('');
+    await d.getByRole('checkbox', { name: /Já foi (paga|recebida)/ }).check();
+    await d.getByRole('button', { name: 'Salvar lançamento' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ status: 'LIQUIDADO', data_liquidacao: HOJE_SP });
+  });
+});
+
+test.describe('período personalizado inválido', () => {
+  test('data final antes da inicial: limites nos campos e aviso no próprio seletor', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('combobox', { name: 'Período' }).selectOption('CUSTOM');
+    const de = page.getByLabel('De', { exact: true });
+    const ate = page.getByLabel('Até', { exact: true });
+    await de.fill('2026-03-10');
+    await ate.fill('2026-03-20');
+    await expect(de).toHaveAttribute('max', '2026-03-20');
+    await expect(ate).toHaveAttribute('min', '2026-03-10');
+    const grupo = page.getByRole('group', { name: 'Período do relatório' });
+    await expect(grupo.getByRole('alert')).toHaveCount(0);
+    await ate.fill('2026-03-01');
+    await expect(grupo.getByRole('alert')).toHaveText('A data final não pode ser anterior à inicial.');
+    await expect(ate).toHaveAttribute('aria-invalid', 'true');
+    await ate.fill('2026-03-15');
+    await expect(grupo.getByRole('alert')).toHaveCount(0);
   });
 });
 
@@ -472,6 +663,145 @@ test.describe('formulário de lançamento', () => {
     await d.getByRole('button', { name: 'Descartar' }).click();
     await expect(d).toHaveCount(0);
     expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('Esc duas vezes no formulário alterado: a interface fica coerente e nada é gravado', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await irParaContas(page);
+    await menuDe(page, DESPESA_PAGA.descricao);
+    await page.getByRole('menuitem', { name: 'Editar lançamento' }).click();
+    const d = page.getByRole('dialog', { name: 'Editar lançamento' });
+    await d.getByLabel('Descrição *').fill('Outro nome');
+    // o 2º Esc seguido o Chrome não deixa interceptar e fecha o <dialog> à força
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    // a folha continua aberta, com o aviso de descarte e o texto digitado
+    await expect(d).toBeVisible();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await expect(d.getByLabel('Descrição *')).toHaveValue('Outro nome');
+    expect(await ultimaEscrita(page)).toBeUndefined();
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    await expect(d).toHaveCount(0);
+    expect(await ultimaEscrita(page)).toBeUndefined();
+    // e "Novo lançamento" continua abrindo
+    await page.getByRole('button', { name: 'Novo lançamento' }).click();
+    await expect(page.getByRole('dialog', { name: 'Novo lançamento' })).toBeVisible();
+  });
+
+  for (const caso of ['baixa', 'exclusão'] as const) {
+    test(`${caso} fechada à força (gesto voltar) com gravação que falha: a folha volta com o erro e fecha normalmente`, async ({ page }, info) => {
+      const { tema } = contextoDoProjeto(info);
+      await abrir(page, tema);
+      let liberar: () => void = () => {};
+      const espera = new Promise<void>((r) => (liberar = r));
+      await page.route(/transacoes-financeiras\//, async (route) => {
+        const m = route.request().method();
+        if (m === 'GET' || m === 'OPTIONS') return route.fallback();
+        await espera;
+        return route.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{"detail":"falha"}' });
+      });
+      await irParaContas(page);
+      const alvo = caso === 'baixa' ? PENDENTE_RECEITA : PENDENTE_DESPESA;
+      const titulo = caso === 'baixa' ? 'Dar baixa no lançamento?' : 'Excluir lançamento?';
+      const abrirFolha = async () => {
+        await menuDe(page, alvo.descricao);
+        await page.getByRole('menuitem', { name: caso === 'baixa' ? 'Marcar como recebido' : 'Excluir lançamento' }).click();
+      };
+      await abrirFolha();
+      const d = page.getByRole('dialog', { name: titulo });
+      if (caso === 'baixa') {
+        await d.getByRole('radio', { name: 'PIX' }).check();
+        await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+      } else {
+        await d.getByRole('button', { name: 'Excluir lançamento' }).click();
+      }
+      // gravação em andamento (botão ocupado); então o gesto "voltar" do Android fecha o <dialog> sem tecla nenhuma
+      await expect(d.locator('button[aria-busy="true"]')).toHaveCount(1);
+      await page.evaluate(() => document.querySelector('dialog[open]')?.close());
+      await expect(d).toHaveCount(0);
+      liberar();
+      await expect(d).toBeVisible();
+      await expect(d.getByRole('alert')).toContainText('Nada foi');
+      await d.getByRole('button', { name: 'Cancelar' }).click();
+      await expect(d).toHaveCount(0);
+      // reabre normalmente e o Esc fecha
+      await abrirFolha();
+      await expect(d).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(d).toHaveCount(0);
+    });
+  }
+
+  test('baixa fechada à força com gravação que dá certo: nada fica aberto', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let liberar: () => void = () => {};
+    const espera = new Promise<void>((r) => (liberar = r));
+    await page.route(/\/liquidar/, async (route) => {
+      if (route.request().method() !== 'OPTIONS') await espera;
+      return route.fallback();
+    });
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'PIX' }).check();
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await expect(d.locator('button[aria-busy="true"]')).toHaveCount(1);
+    await page.evaluate(() => document.querySelector('dialog[open]')?.close());
+    liberar();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    await page.waitForTimeout(300);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Novo lançamento' }).click();
+    await expect(page.getByRole('dialog', { name: 'Novo lançamento' })).toBeVisible();
+  });
+
+  test('baixa em andamento: Esc não fecha a folha no meio da gravação', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let liberar: () => void = () => {};
+    const espera = new Promise<void>((r) => (liberar = r));
+    await page.route(/\/liquidar|transacoes-financeiras\/[^/]+\/[^/]+$/, async (route) => {
+      if (route.request().method() !== 'GET') await espera;
+      return route.fallback();
+    });
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_RECEITA.descricao);
+    await page.getByRole('menuitem', { name: 'Marcar como recebido' }).click();
+    const d = page.getByRole('dialog', { name: 'Dar baixa no lançamento?' });
+    await d.getByRole('radio', { name: 'PIX' }).check();
+    await d.getByRole('button', { name: 'Confirmar recebimento' }).click();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    await expect(d).toBeVisible();
+    liberar();
+    await expect(d).toHaveCount(0);
+  });
+
+  test('exclusão em andamento: Esc não fecha a folha no meio da gravação', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    let liberar: () => void = () => {};
+    const espera = new Promise<void>((r) => (liberar = r));
+    await page.route(/transacoes-financeiras\//, async (route) => {
+      if (route.request().method() === 'DELETE') await espera;
+      return route.fallback();
+    });
+    await irParaContas(page);
+    await menuDe(page, PENDENTE_DESPESA.descricao);
+    await page.getByRole('menuitem', { name: 'Excluir lançamento' }).click();
+    const d = page.getByRole('dialog', { name: 'Excluir lançamento?' });
+    await d.getByRole('button', { name: 'Excluir lançamento' }).click();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    await expect(d).toBeVisible();
+    liberar();
+    await expect(d).toHaveCount(0);
   });
 
   test('salvar edição envia PUT com o mesmo tipo', async ({ page }, info) => {

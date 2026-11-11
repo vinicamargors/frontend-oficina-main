@@ -24,6 +24,15 @@ const folha = (page: Page) => page.getByRole('dialog', { name: 'Confirmar pagame
 const folhaEtapa = (page: Page) => page.getByRole('dialog', { name: /^Mover para / });
 
 test.describe('bancada: confirmação do Pago', () => {
+  test('folha de pagamento: o foco inicial é o título e nenhuma forma vem marcada', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrirBancada(page, tema);
+    await etapas(page).getByRole('button', { name: 'Pago / entregue', exact: true }).click();
+    const dialogo = folha(page);
+    await expect(dialogo.getByRole('heading', { name: 'Confirmar pagamento' })).toBeFocused();
+    await expect(dialogo.getByRole('radio', { checked: true })).toHaveCount(0);
+  });
+
   test('clicar em Pago abre a folha com o total; confirmar envia a forma escolhida', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     const erros = coletarErros(page);
@@ -159,18 +168,47 @@ test.describe('bancada: confirmação do Pago', () => {
     await expect(imprimir).toBeVisible();
     for (const alvo of [whats, imprimir]) expect((await alvo.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 
-    const nav = (await page.getByRole('navigation', { name: 'Navegação Rápida Mobile' }).boundingBox())!;
+    const nav = (await page.getByRole('navigation', { name: 'Navegação rápida mobile' }).boundingBox())!;
     const caixa = (await barra.boundingBox())!;
     expect(caixa.y + caixa.height).toBeLessThanOrEqual(nav.y + 1);
     expect(caixa.y + caixa.height).toBeGreaterThanOrEqual(nav.y - 2);
 
+    // a posição vem da variável --barra-inferior-h publicada pelo shell (não de um número fixo)
+    const original = await page.evaluate(() => {
+      const raiz = document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!;
+      const valor = raiz.style.getPropertyValue('--barra-inferior-h');
+      raiz.style.setProperty('--barra-inferior-h', '140px');
+      return valor;
+    });
+    const alterada = (await barra.boundingBox())!;
+    expect(Math.round(844 - (alterada.y + alterada.height))).toBe(140);
+    await page.evaluate((v) => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.setProperty('--barra-inferior-h', v), original);
+
     // o fim da página não fica escondido atrás da barra
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const ultimo = page.getByLabel('Relato do Problema / Diagnóstico');
+    const ultimo = page.getByLabel('Relato do problema / diagnóstico');
     const c = (await ultimo.boundingBox())!;
     expect(c.y + c.height).toBeLessThanOrEqual(caixa.y);
     const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(sobra).toBeLessThanOrEqual(0);
+  });
+});
+
+test.describe('datas no calendário local (22h em São Paulo)', () => {
+  test('período rápido às 22h: "Hoje" e "Últimos 7 dias" terminam hoje, não amanhã', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(new Date('2026-11-11T01:00:00Z')); // 10/11 22:00 local
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'ordens');
+    const filtros = page.getByRole('button', { name: /^Filtros/ });
+    if ((await filtros.getAttribute('aria-expanded')) !== 'true') await filtros.click();
+    await page.getByRole('button', { name: 'Hoje', exact: true }).click();
+    await expect(page.getByLabel('Data inicial')).toHaveValue('2026-11-10');
+    await expect(page.getByLabel('Data final')).toHaveValue('2026-11-10');
+    await page.getByRole('button', { name: 'Últimos 7 dias', exact: true }).click();
+    await expect(page.getByLabel('Data inicial')).toHaveValue('2026-11-03');
+    await expect(page.getByLabel('Data final')).toHaveValue('2026-11-10');
   });
 });
 
@@ -184,7 +222,7 @@ test.describe('lista de ordens de serviço', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
 
-    await expect(page.getByRole('heading', { level: 1, name: /Ordens de Serviço/ })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /ordens de serviço/i })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Nova ordem de serviço' })).toHaveCount(1);
 
     const chips = page.getByRole('group', { name: 'Filtrar por etapa' }).getByRole('button');
@@ -226,7 +264,7 @@ test.describe('lista de ordens de serviço', () => {
     await expect(aprovar.first()).toBeVisible();
     // OS pagas não têm próxima etapa
     const pagas = ordens.filter((o) => o.status === 'PAGO').length;
-    const avancar = lista(page).getByRole('button', { name: /→ Execução|Concluir Serviço|Receber \/ Dar Baixa/ });
+    const avancar = lista(page).getByRole('button', { name: /→ Execução|Concluir serviço|Receber \/ dar baixa/ });
     await expect(avancar).toHaveCount(ordens.length - pagas);
 
     const whats = lista(page).getByRole('link', { name: /WhatsApp/ }).first();
@@ -249,7 +287,7 @@ test.describe('lista de ordens de serviço', () => {
     await abrirTela(page, 'ordens');
 
     await expect(lista(page).getByRole('listitem')).toHaveCount(ordens.length);
-    await expect(lista(page).getByRole('button', { name: /→ Execução|Concluir Serviço|Receber \/ Dar Baixa/ })).toHaveCount(0);
+    await expect(lista(page).getByRole('button', { name: /→ Execução|Concluir serviço|Receber \/ dar baixa/ })).toHaveCount(0);
     const whats = lista(page).getByRole('link', { name: /WhatsApp/ }).first();
     const w = (await whats.boundingBox())!;
     expect(w.height).toBeGreaterThanOrEqual(44);
@@ -262,7 +300,7 @@ test.describe('lista de ordens de serviço', () => {
     expect(await ultimaEscrita(page)).toBeUndefined();
   });
 
-  test('"Receber / Dar Baixa" na lista também passa pela folha de pagamento', async ({ page }, info) => {
+  test('"Receber / dar baixa" na lista também passa pela folha de pagamento', async ({ page }, info) => {
     const { tema, largura } = contextoDoProjeto(info);
     test.skip(largura < 1024, 'o avanço pela lista é só no desktop');
     await simularBackend(page, 'cheio');
@@ -270,7 +308,7 @@ test.describe('lista de ordens de serviço', () => {
     await abrirTela(page, 'ordens');
 
     // a primeira finalizada da lista (mais recente) tem total 1.740,00
-    await lista(page).getByRole('button', { name: 'Receber / Dar Baixa' }).first().click();
+    await lista(page).getByRole('button', { name: 'Receber / dar baixa' }).first().click();
     await expect(folha(page)).toBeVisible();
     await expect(folha(page)).toContainText(/R\$\s1\.740,00/);
     await expect(folha(page).getByRole('button', { name: 'Confirmar pagamento' })).toBeDisabled();
@@ -306,7 +344,7 @@ test.describe('busca da lista: debounce e respostas fora de ordem', () => {
     page.on('request', (r) => {
       if (r.method() === 'GET' && ehLeituraOS(r.url())) leituras.push(r.url());
     });
-    await page.getByRole('searchbox', { name: /Buscar Ordem de Serviço/ }).pressSequentially('QWE4R', { delay: 40 });
+    await page.getByRole('searchbox', { name: /Buscar ordem de serviço/ }).pressSequentially('QWE4R', { delay: 40 });
     await expect(lista(page).getByRole('listitem')).toHaveCount(2);
     await page.waitForTimeout(800);
     // 1 lista + 6 contagens, não 5 × 7
@@ -325,7 +363,7 @@ test.describe('busca da lista: debounce e respostas fora de ordem', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
 
-    const campo = page.getByRole('searchbox', { name: /Buscar Ordem de Serviço/ });
+    const campo = page.getByRole('searchbox', { name: /Buscar ordem de serviço/ });
     await campo.pressSequentially('Q');
     await page.waitForTimeout(450); // dispara a busca "Q" (lenta)
     await campo.pressSequentially('WE');
@@ -402,6 +440,48 @@ test.describe('celular: troca de etapa na bancada pede confirmação', () => {
   });
 });
 
+test.describe('bancada: etapa atual e confirmações pendentes', () => {
+  test('tocar na etapa que já está ativa não abre confirmação nem grava', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrirBancada(page, tema);
+    const atual = etapas(page).locator('[aria-current="step"]');
+    await expect(atual).toHaveAccessibleName('Em execução');
+    await atual.click();
+    await page.waitForTimeout(300);
+    await expect(folhaEtapa(page)).toHaveCount(0);
+    await expect(folha(page)).toHaveCount(0);
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('trocar de OS com "Mover para…" ou "Confirmar pagamento" aberto: a confirmação não reaparece na outra OS', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await abrirBancada(page, tema);
+    const outra = ordens.find((o) => o.id !== OS_BANCADA_ID)!;
+    const irPara = async (osId: string) => {
+      await page.evaluate((id) => {
+        window.history.pushState({}, '', `/?tab=os&osId=${id}`);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }, osId);
+      await expect(page.getByText(`OS #${osId.slice(0, 8).toUpperCase()}`)).toBeVisible();
+    };
+
+    let destino = outra.id;
+    if (largura < 1024) {
+      await etapas(page).getByRole('button', { name: 'Finalizado', exact: true }).click();
+      await expect(page.getByRole('dialog', { name: 'Mover para Finalizado?' })).toBeVisible();
+      await irPara(outra.id);
+      await expect(folhaEtapa(page)).toHaveCount(0);
+      destino = OS_BANCADA_ID;
+    }
+
+    await etapas(page).getByRole('button', { name: 'Pago / entregue', exact: true }).click();
+    await expect(folha(page)).toBeVisible();
+    await irPara(destino);
+    await expect(folha(page)).toHaveCount(0);
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+});
+
 test('celular: chips de etapa numa linha só, com rolagem só dentro da faixa', async ({ page }, info) => {
   const { tema, largura } = contextoDoProjeto(info);
   test.skip(largura >= 1024, 'só celular');
@@ -460,7 +540,7 @@ test.describe('paginação da lista', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
 
-    const nav = page.getByRole('navigation', { name: 'Paginação de Ordens de Serviço' });
+    const nav = page.getByRole('navigation', { name: 'Paginação de ordens de serviço' });
     await expect(nav).toBeVisible();
     await expect(nav).toContainText(/Mostrando 1–12 de 120/);
     const anterior = nav.getByRole('button', { name: 'Página anterior' });
@@ -482,6 +562,6 @@ test.describe('paginação da lista', () => {
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'ordens');
     await expect(page.getByRole('list', { name: 'Ordens de serviço' }).getByRole('listitem')).toHaveCount(ordens.length);
-    await expect(page.getByRole('navigation', { name: 'Paginação de Ordens de Serviço' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Paginação de ordens de serviço' })).toHaveCount(0);
   });
 });

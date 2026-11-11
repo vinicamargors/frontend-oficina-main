@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { hojeLocalISO } from '../lib/data';
 import {
   Cliente,
   ClienteCreateInput,
@@ -295,7 +296,7 @@ export const api = {
     request<TransacaoFinanceira>(`/transacoes-financeiras/${empresaId}/${id}/liquidar`, {
       method: 'PATCH',
       body: JSON.stringify({
-        data_liquidacao: new Date().toISOString().slice(0, 10),
+        data_liquidacao: hojeLocalISO(),
         forma_pagamento: formaPagamento,
       }),
     }),

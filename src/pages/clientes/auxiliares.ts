@@ -11,7 +11,9 @@ export function formatarMoeda(valor: number): string {
 
 export function formatarDataCurta(iso?: string | null): string {
   if (!iso) return '—';
-  const d = new Date(iso);
+  // Data pura (AAAA-MM-DD) é interpretada como UTC pelo Date e recuaria um dia em BRT: monta como data local
+  const pura = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const d = pura ? new Date(Number(pura[1]), Number(pura[2]) - 1, Number(pura[3])) : new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',

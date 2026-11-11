@@ -56,6 +56,20 @@ describe('Field', () => {
     const id = input.getAttribute('aria-describedby')!;
     expect(document.getElementById(id)?.textContent).toBe('Placa inválida');
   });
+  it('anunciar: erro vira role=alert; sem a opção, não', () => {
+    const { rerender } = render(
+      <Field rotulo="Placa" erro="Placa inválida">
+        <input />
+      </Field>,
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    rerender(
+      <Field rotulo="Placa" erro="Placa inválida" anunciar>
+        <input />
+      </Field>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Placa inválida');
+  });
 });
 
 describe('PlateChip', () => {
@@ -79,6 +93,11 @@ describe('Button', () => {
 });
 
 describe('PageHeader', () => {
+  it('h1 usa text-balance para não deixar palavra sozinha na última linha', () => {
+    render(<PageHeader titulo="Estoque" />);
+    expect(screen.getByRole('heading', { level: 1 }).className).toContain('text-balance');
+  });
+
   it('define document.title', () => {
     render(<PageHeader titulo="Estoque" />);
     expect(document.title).toBe('Estoque · Mecanify');

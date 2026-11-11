@@ -30,6 +30,24 @@ test.describe('radar do pátio', () => {
     exigirRedeCompleta(page);
   });
 
+  test('falha ao carregar: frase amigável na tela, sem repetir a mensagem técnica do servidor', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await page.route('**/api/v1/dashboards/*', (r) =>
+      r.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify({ detail: 'psycopg2.OperationalError: connection refused' }),
+      }),
+    );
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'radar');
+    await expect(page.getByText('Não foi possível carregar o Radar. Tente novamente.')).toBeVisible();
+    await expect(page.getByText(/psycopg2|connection refused/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
+  });
+
   test('coluna com contagem mas sem cards entre os 10 mais recentes não diz "Nenhum veículo"', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await simularBackend(page, 'cheio');

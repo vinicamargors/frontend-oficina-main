@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { EMPRESA_ID, abrirTela, avaliacoes, entrarComo, escalas, exigirRedeCompleta, simularBackend, usuarios, type Cenario } from './mocks';
-import { coletarErros, contextoDoProjeto } from './contexto';
+import { EMPRESA_ID, abrirTela, avaliacoes, empresa, entrarComo, escalas, exigirRedeCompleta, simularBackend, usuarios, type Cenario } from './mocks';
+import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
 const ultimaEscrita = (page: Page) =>
@@ -26,6 +26,25 @@ const RAFAEL = usuarios[2]; // atendente
 const TOTAL_FOLHA = ATIVOS.reduce((s, u) => s + (u.salario_base ?? 0) + (u.vale_transporte ?? 0) + (u.vale_refeicao ?? 0), 0);
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, ' ');
 const ENUM_CRU = /\b(DONO|MECANICO|ATENDENTE|FINANCEIRO|FERIAS|FOLGA|ENTRADA)\b/;
+
+async function abrirHolerite(page: Page, nome = TIAGO.nome) {
+  await page.getByRole('button', { name: `Ver holerite de ${nome}` }).click();
+  await page.getByRole('dialog', { name: 'Holerite' }).locator('#holerite-impressao').waitFor();
+  // pelo id: em `print` só o bloco fica visível e a folha (dialog) sai da árvore de acessibilidade
+  return page.locator('#holerite-impressao');
+}
+
+/** Sobrescreve a empresa devolvida em `/empresas/?empresa_id=` (null = lista vazia). */
+async function empresaDoHolerite(page: Page, dados: { razao_social: string; nome_fantasia: string; cnpj: string } | null) {
+  await page.route(/\/api\/v1\/empresas\/\?empresa_id=/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify(dados ? [{ ...empresa, ...dados }] : []),
+    })
+  );
+}
 
 test.describe('colaboradores', () => {
   test('cabeçalho, abas, todos os colaboradores numa lista e sem rolagem lateral', async ({ page }, info) => {
@@ -123,12 +142,19 @@ test.describe('colaboradores', () => {
     await page.getByRole('button', { name: /Convidar/ }).click();
     const d = page.getByRole('dialog', { name: 'Convidar por WhatsApp' });
     await expect(d.getByLabel('Nome do colaborador')).toBeVisible();
-    await expect(d.getByLabel('Cargo').locator('option')).toHaveText(['Mecânico / Técnico', 'Atendente / Recepção', 'Financeiro', 'Dono / Administrador']);
+    await expect(d.getByLabel('Cargo').locator('option')).toHaveText(['Mecânico / técnico', 'Atendente / recepção', 'Financeiro', 'Dono / administrador']);
     await expect(d.getByRole('button', { name: /Enviar convite no WhatsApp/ })).toBeVisible();
   });
 });
 
 test.describe('formulário do colaborador', () => {
+  test('abre com o foco no primeiro campo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /Novo colaborador/ }).click();
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Novo colaborador' }), /Nome completo/);
+  });
+
   test('novo: salva todos os campos de RH digitados', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
@@ -190,7 +216,9 @@ test.describe('formulário do colaborador', () => {
     await expect(d).toHaveCount(0);
 
     await page.getByRole('button', { name: /Novo colaborador/ }).click();
-    await d.getByLabel(/Nome completo/).fill('Alguém');
+    // digitar de verdade (teclas) dá ativação de usuário, como no celular; sem ela o Chrome não deixa o Esc ser
+    // interceptado se passarem mais de 5 s (fill() não gera teclas e falhava sob carga)
+    await d.getByLabel(/Nome completo/).pressSequentially('Alguém');
     await page.keyboard.press('Escape');
     await expect(d).toBeVisible();
     await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
@@ -232,19 +260,19 @@ test.describe('folha e holerite', () => {
     expect(await page.getByRole('main').innerText()).not.toMatch(ENUM_CRU);
   });
 
-  test('lançar a folha no Contas a Pagar exige confirmação com valor e vencimento', async ({ page }, info) => {
+  test('lançar a folha em contas a pagar exige confirmação com valor e vencimento', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     await irParaAba(page, 'Folha');
     await page.getByLabel('Mês de referência').fill('2026-11');
-    await page.getByRole('button', { name: /Lançar no Contas a Pagar/ }).click();
-    const d = page.getByRole('dialog', { name: 'Lançar folha no Contas a Pagar?' });
+    await page.getByRole('button', { name: /Lançar em contas a pagar/ }).click();
+    const d = page.getByRole('dialog', { name: 'Lançar folha em contas a pagar?' });
     await expect(d).toContainText(brl(TOTAL_FOLHA));
     await expect(d).toContainText('05/12/2026');
     await d.getByRole('button', { name: 'Cancelar' }).click();
     expect(await ultimaEscrita(page)).toBeUndefined();
 
-    await page.getByRole('button', { name: /Lançar no Contas a Pagar/ }).click();
+    await page.getByRole('button', { name: /Lançar em contas a pagar/ }).click();
     await d.getByRole('button', { name: /Lançar folha de/ }).click();
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     const e = (await ultimaEscrita(page))!;
@@ -260,24 +288,106 @@ test.describe('folha e holerite', () => {
     await expect(page.getByRole('status').filter({ hasText: 'agendada' })).toBeVisible();
   });
 
-  test('holerite impresso fica intacto: bloco branco com tinta preta em qualquer tema', async ({ page }, info) => {
+  test('holerite: bloco branco com tinta preta, mesmos valores, cargo legível, mês por extenso e empresa', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     await irParaAba(page, 'Folha');
-    await page.getByRole('button', { name: `Ver holerite de ${TIAGO.nome}` }).click();
-    const d = page.getByRole('dialog', { name: 'Holerite' });
-    const h = d.locator('#holerite-impressao');
+    await page.getByLabel('Mês de referência').fill('2026-11');
+    const h = await abrirHolerite(page);
     await expect(h).toHaveAttribute('class', 'bg-white text-black p-5 rounded-xl border-2 border-black space-y-4 font-mono text-xs select-all');
-    await expect(h).toContainText('RECIBO DE PAGAMENTO DE SALÁRIO E COMISSÕES');
+    // identidade da oficina (fixture: razão social e CNPJ já formatado)
+    await expect(h.getByRole('heading')).toHaveText('Oficina Modelo Mecanify Ltda');
+    await expect(h).toContainText('CNPJ 12.345.678/0001-90');
+    await expect(h).not.toContainText('MECANIFY • OFICINA MECÂNICA');
+    await expect(h).toContainText('Recibo de pagamento de salário e comissões');
+    await expect(h).toContainText('Mês de referência: novembro de 2026');
+    await expect(h).not.toContainText('2026-11');
+    await expect(h).toContainText('Cargo: Mecânico');
+    expect(await h.innerText()).not.toMatch(/MECANICO|undefined|null/);
     await expect(h).toContainText(TIAGO.nome);
-    await expect(h).toContainText('Auxílio Transporte (VT)');
-    await expect(h).toContainText(/R\$\s4\.020,00/);
+    await expect(h).toContainText('Data de pagamento: Dia 5');
+    // valores idênticos aos de antes
+    await expect(h).toContainText('Auxílio transporte (VT)');
+    await expect(h).toContainText(/R\$\s3\.200,00/);
+    await expect(h).toContainText(/R\$\s220,00/);
+    await expect(h).toContainText(/R\$\s600,00/);
+    await expect(h).toContainText(/Valor líquido a receber:\s*R\$\s4\.020,00/);
+    await expect(h).toContainText('Assinatura do colaborador: Tiago Ferreira');
     const cores = await h.evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).color]);
     expect(cores).toEqual(['rgb(255, 255, 255)', 'rgb(0, 0, 0)']);
+    const d = page.getByRole('dialog', { name: 'Holerite' });
     await expect(d.getByRole('button', { name: /Imprimir holerite/ })).toBeVisible();
+
+    // impressão: continua preto no branco
+    await page.emulateMedia({ media: 'print' });
+    const coresImpressao = await h.evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).color]);
+    expect(coresImpressao).toEqual(['rgb(255, 255, 255)', 'rgb(0, 0, 0)']);
+    await page.emulateMedia({ media: 'screen' });
     await d.getByRole('button', { name: 'Fechar' }).click();
     await expect(d).toHaveCount(0);
   });
+
+  test('holerite: sem razão social usa o nome fantasia e CNPJ só com dígitos ganha máscara', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await empresaDoHolerite(page, { razao_social: '', nome_fantasia: 'Auto Center Silva', cnpj: '12345678000190' });
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'equipe');
+    await irParaAba(page, 'Folha');
+    const h = await abrirHolerite(page);
+    await expect(h.getByRole('heading')).toHaveText('Auto Center Silva');
+    await expect(h).toContainText('CNPJ 12.345.678/0001-90');
+  });
+
+  test('holerite: sem dados da empresa mostra o nome padrão e nenhuma linha de CNPJ', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await empresaDoHolerite(page, null);
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'equipe');
+    await irParaAba(page, 'Folha');
+    const h = await abrirHolerite(page);
+    await expect(h.getByRole('heading')).not.toHaveText('');
+    await expect(h).not.toContainText('CNPJ');
+    expect(await h.innerText()).not.toMatch(/undefined|null/);
+  });
+
+  for (const largura of [360, 390]) {
+    test(`holerite em ${largura}px: nada se sobrepõe nem vaza (tela e impressão)`, async ({ page }, info) => {
+      const { tema } = contextoDoProjeto(info);
+      await page.setViewportSize({ width: largura, height: 800 });
+      await abrir(page, tema);
+      await irParaAba(page, 'Folha');
+      const h = await abrirHolerite(page);
+      for (const midia of ['screen', 'print'] as const) {
+        await page.emulateMedia({ media: midia });
+        const problemas = await h.evaluate((bloco) => {
+          const caixa = bloco.getBoundingClientRect();
+          const erros: string[] = [];
+          if (bloco.scrollWidth > bloco.clientWidth + 1) erros.push(`bloco rola: ${bloco.scrollWidth} > ${bloco.clientWidth}`);
+          for (const el of Array.from(bloco.querySelectorAll<HTMLElement>('*'))) {
+            const r = el.getBoundingClientRect();
+            if (r.width === 0) continue;
+            if (r.right > caixa.right + 1 || r.left < caixa.left - 1) erros.push(`vaza: ${el.tagName} "${el.textContent?.slice(0, 30)}"`);
+          }
+          // campos do cabeçalho do colaborador não se sobrepõem
+          const campos = Array.from(bloco.querySelectorAll<HTMLElement>('[data-campo]')).map((e) => [e.dataset.campo, e.getBoundingClientRect()] as const);
+          for (let i = 0; i < campos.length; i++)
+            for (let j = i + 1; j < campos.length; j++) {
+              const [na, a] = campos[i];
+              const [nb, b] = campos[j];
+              const cruza = a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+              if (cruza) erros.push(`sobreposição: ${na} × ${nb}`);
+            }
+          if (campos.length < 4) erros.push('campos do colaborador não marcados');
+          return erros;
+        });
+        expect(problemas, midia).toEqual([]);
+      }
+      await page.emulateMedia({ media: 'screen' });
+      expect(await sobraLateral(page)).toBeLessThanOrEqual(0);
+    });
+  }
 });
 
 test.describe('escalas', () => {
@@ -318,6 +428,35 @@ test.describe('escalas', () => {
     expect(e.metodo).toBe('POST');
     expect(e.corpo).toMatchObject({ usuario_id: TIAGO.id, usuario_nome: TIAGO.nome, tipo: 'FOLGA' });
     await expect(d).toHaveCount(0);
+  });
+});
+
+// 10/11/2026 às 22:00 em São Paulo = 01:00Z do dia 11: em UTC "hoje" já virou amanhã.
+const NOITE_SP = new Date('2026-11-11T01:00:00Z');
+
+test.describe('datas no calendário local (22h em São Paulo)', () => {
+  test('ponto batido às 22h grava a data e a hora locais', async ({ page, context }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await context.grantPermissions(['geolocation']);
+    await context.setGeolocation({ latitude: -23.55052, longitude: -46.633308 });
+    await page.clock.setFixedTime(NOITE_SP);
+    await abrir(page, tema);
+    await irParaAba(page, 'Ponto');
+    await page.getByRole('button', { name: 'Bater ponto agora' }).click();
+    await page.getByRole('dialog', { name: 'Registrar ponto agora?' }).getByRole('button', { name: 'Registrar ponto' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ data: '2026-11-10', hora: '22:00', tipo: 'ENTRADA' });
+  });
+
+  test('agendar período às 22h: começa hoje e termina em 15 dias, no calendário local', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(NOITE_SP);
+    await abrir(page, tema);
+    await irParaAba(page, 'Escalas');
+    await page.getByRole('button', { name: /Agendar férias ou folga/ }).click();
+    const d = page.getByRole('dialog', { name: 'Agendar férias ou folga' });
+    await expect(d.getByLabel('Data início *')).toHaveValue('2026-11-10');
+    await expect(d.getByLabel('Data fim *')).toHaveValue('2026-11-25');
   });
 });
 
@@ -469,5 +608,120 @@ test.describe('estados', () => {
     await expect(page).toHaveURL(/tab=patio/);
     await expect(lista(page)).toHaveCount(0);
     await expect(page.getByText(/R\$\s3\.200,00/)).toHaveCount(0);
+  });
+});
+
+// ------------------------------------------------------------------ polimento: erros, ponto, avaliações e hora extra
+const falha500 = { status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'Servidor fora do ar' }) };
+const jsonOk = (corpo: unknown) => ({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(corpo) });
+
+test.describe('polimento da equipe', () => {
+  test('ponto: falha ao gravar mostra o erro e o botão volta a "Bater ponto agora"', async ({ page, context }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await context.grantPermissions(['geolocation']);
+    await context.setGeolocation({ latitude: -23.55052, longitude: -46.633308 });
+    await abrir(page, tema);
+    await page.route('**/api/v1/equipe/pontos/*', (r) => (r.request().method() === 'POST' ? r.fulfill(falha500) : r.fallback()));
+    await irParaAba(page, 'Ponto');
+    await page.getByRole('button', { name: 'Bater ponto agora' }).click();
+    await page.getByRole('dialog', { name: 'Registrar ponto agora?' }).getByRole('button', { name: 'Registrar ponto' }).click();
+    await expect(page.getByRole('main').getByRole('status').filter({ hasText: /Erro ao registrar o ponto/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Bater ponto agora' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Verificando GPS…' })).toHaveCount(0);
+    await expect(page.getByRole('list', { name: 'Últimos registros de ponto' }).getByRole('listitem')).toHaveCount(2);
+  });
+
+  test('erro de carga continua na tela depois de abrir e fechar o formulário', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await page.route(`**/api/v1/usuarios/${EMPRESA_ID}`, (r) => (r.request().method() === 'GET' ? r.fulfill(falha500) : r.fallback()));
+    await abrirTela(page, 'equipe');
+    const alertaPagina = page.getByRole('main').getByRole('alert').filter({ hasText: 'Servidor fora do ar' });
+    await expect(alertaPagina).toBeVisible();
+    await page.getByRole('button', { name: /Novo colaborador/ }).click();
+    const d = page.getByRole('dialog', { name: 'Novo colaborador' });
+    await expect(d.getByRole('alert')).toHaveCount(0); // o erro da página não entra no formulário
+    await page.keyboard.press('Escape');
+    await expect(d).toHaveCount(0);
+    await expect(alertaPagina).toBeVisible();
+  });
+
+  test('erro ao salvar fica só no formulário e não sobra na página depois de fechar', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.route(`**/api/v1/usuarios/${EMPRESA_ID}`, (r) => (r.request().method() === 'POST' ? r.fulfill(falha500) : r.fallback()));
+    await page.getByRole('button', { name: /Novo colaborador/ }).click();
+    const d = page.getByRole('dialog', { name: 'Novo colaborador' });
+    await d.getByLabel(/Nome completo/).fill('Bruno Lima');
+    await d.getByLabel(/E-mail/).fill('bruno@oficinamodelo.example.com');
+    await d.getByRole('button', { name: 'Salvar colaborador' }).click();
+    await expect(d.getByRole('alert')).toContainText('Erro ao salvar colaborador');
+    await d.getByRole('button', { name: 'Cancelar' }).click();
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    await expect(d).toHaveCount(0);
+    await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
+  });
+
+  test('"Desativar" com o formulário alterado pergunta "Descartar alterações?" antes', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await menuDe(page, RAFAEL.nome);
+    await page.getByRole('menuitem', { name: /Editar colaborador/ }).click();
+    const d = page.getByRole('dialog', { name: 'Editar colaborador' });
+    await d.getByLabel(/Nome completo/).fill('Rafael Nunes Alterado');
+    await d.getByRole('button', { name: 'Desativar' }).click();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await expect(page.getByRole('dialog', { name: 'Desativar colaborador?' })).toHaveCount(0);
+    await d.getByRole('button', { name: 'Continuar editando' }).click();
+    await expect(d.getByLabel(/Nome completo/)).toHaveValue('Rafael Nunes Alterado');
+
+    await d.getByRole('button', { name: 'Desativar' }).click();
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    const conf = page.getByRole('dialog', { name: 'Desativar colaborador?' });
+    await expect(conf).toBeVisible();
+    await expect(conf).toContainText(RAFAEL.nome);
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('avaliação: decide pela média (sem total mostra só a média; sem média é "Sem avaliações")', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    const lista = usuarios.map((u) =>
+      u.id === TIAGO.id ? { ...u, estrelas_media: 4.2, total_avaliacoes: undefined } : u.id === RAFAEL.id ? { ...u, estrelas_media: null, total_avaliacoes: 3 } : u
+    );
+    await page.route(`**/api/v1/usuarios/${EMPRESA_ID}`, (r) => (r.request().method() === 'GET' ? r.fulfill(jsonOk(lista)) : r.fallback()));
+    await abrirTela(page, 'equipe');
+    const t = linha(page, TIAGO.nome);
+    await expect(t).toContainText('4,2');
+    await expect(t).not.toContainText('Sem avaliações');
+    await expect(t).not.toContainText('aval.');
+    await expect(linha(page, RAFAEL.nome)).toContainText('Sem avaliações');
+  });
+
+  test('editar sem mexer na hora extra envia paga_hora_extra e valor_hora_extra como vieram', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    const lista = usuarios.map((u) => (u.id === RAFAEL.id ? { ...u, paga_hora_extra: false, valor_hora_extra: 40 } : u));
+    await page.route(`**/api/v1/usuarios/${EMPRESA_ID}`, (r) => (r.request().method() === 'GET' ? r.fulfill(jsonOk(lista)) : r.fallback()));
+    await abrirTela(page, 'equipe');
+
+    for (const [alvo, esperado] of [
+      [TIAGO, { paga_hora_extra: true, valor_hora_extra: 25 }],
+      [RAFAEL, { paga_hora_extra: false, valor_hora_extra: 40 }],
+    ] as const) {
+      await menuDe(page, alvo.nome);
+      await page.getByRole('menuitem', { name: /Editar colaborador/ }).click();
+      const d = page.getByRole('dialog', { name: 'Editar colaborador' });
+      await d.getByLabel(/Telefone/).fill('(11) 97777-0000');
+      await d.getByRole('button', { name: 'Salvar colaborador' }).click();
+      await expect(d).toHaveCount(0);
+      const e = (await ultimaEscrita(page))!;
+      expect(e.metodo).toBe('PUT');
+      expect(e.caminho).toBe(`/usuarios/${EMPRESA_ID}/${alvo.id}`);
+      expect(e.corpo).toMatchObject(esperado);
+    }
   });
 });

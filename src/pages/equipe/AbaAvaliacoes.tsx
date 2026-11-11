@@ -61,8 +61,8 @@ export function AbaAvaliacoes({ avaliacoes }: { avaliacoes: AvaliacaoOS[] }) {
       {avaliacoes.length === 0 ? (
         <Panel espaco="lg" className="flex flex-col items-center gap-3 text-center">
           <Star className="h-10 w-10 text-ink-subtle" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="text-base font-semibold text-ink">Nenhuma avaliação recebida ainda</h2>
-          <p className="max-w-md text-sm text-ink-muted">
+          <h2 className="text-base font-semibold text-ink text-balance">Nenhuma avaliação recebida ainda</h2>
+          <p className="max-w-md text-sm text-ink-muted text-pretty">
             Assim que os clientes abrirem o link do WhatsApp após a retirada do veículo, as notas e elogios aparecem aqui.
           </p>
         </Panel>

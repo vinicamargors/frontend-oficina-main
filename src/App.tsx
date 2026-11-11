@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
 import { DashboardOperacional } from './pages/DashboardOperacional';
@@ -12,6 +12,7 @@ import { AvaliacaoPublicaOS } from './pages/AvaliacaoPublicaOS';
 import { api } from './api/client';
 import { Empresa, StatusOS } from './types';
 import { Button, Logo, ThemeToggle } from './components/ui';
+import { Folha } from './components/Folha';
 import {
   Ellipsis,
   LayoutDashboard,
@@ -62,15 +63,22 @@ function AppShell() {
   });
 
   const [maisAberto, setMaisAberto] = useState(false);
-  const barraRef = useRef<HTMLElement>(null);
+  const [barra, setBarra] = useState<HTMLElement | null>(null);
   const folhaRef = useRef<HTMLDivElement>(null);
   const maisBtnRef = useRef<HTMLButtonElement>(null);
   const [alturaBarra, setAlturaBarra] = useState(0);
 
-  // Mede a barra inferior (varia com a área segura do aparelho) para encaixar a folha "Mais" logo acima dela.
+  // Mede a barra inferior (varia com a área segura do aparelho e ao girar/redimensionar): a folha "Mais" e as barras de ação das
+  // telas se encaixam logo acima dela pela variável --barra-inferior-h (0 no desktop, onde a barra some).
   useLayoutEffect(() => {
-    if (maisAberto && barraRef.current) setAlturaBarra(barraRef.current.offsetHeight);
-  }, [maisAberto]);
+    if (!barra) return;
+    const medir = () => setAlturaBarra(barra.offsetHeight);
+    medir();
+    if (typeof ResizeObserver === 'undefined') return;
+    const obs = new ResizeObserver(medir);
+    obs.observe(barra, { box: 'border-box' });
+    return () => obs.disconnect();
+  }, [barra]);
 
   // Foco entra na folha ao abrir e volta para o botão "Mais" ao fechar.
   useEffect(() => {
@@ -132,7 +140,18 @@ function AppShell() {
     }
   }, [isAuthenticated, user, selectedEmpresaId, activeTab, canSeeConfig, canSeeFinanceiro]);
 
-  const handleNavigateTab = (tab: string, status?: StatusOS, osId?: string) => {
+  // Dados da Oficina com alterações não salvas: trocar de tela ou de oficina pergunta antes de descartar
+  const oficinaSuja = useRef(false);
+  const aoMudarSujoOficina = useCallback((sujo: boolean) => {
+    oficinaSuja.current = sujo;
+  }, []);
+  const [saidaPendente, setSaidaPendente] = useState<(() => void) | null>(null);
+  const protegerSaida = (acao: () => void) => {
+    if (oficinaSuja.current) setSaidaPendente(() => acao);
+    else acao();
+  };
+
+  const handleNavigateTab = (tab: string, status?: StatusOS, osId?: string, substituir = false) => {
     let nextTab = (tab as NavTab) || 'patio';
 
     // Impede navegação indevida por perfil
@@ -160,7 +179,9 @@ function AppShell() {
     } else {
       url.searchParams.delete('osId');
     }
-    window.history.pushState({}, '', url.toString());
+    // `substituir`: a tela que sai deixou uma entrada extra no histórico (formulário sujo); a nova tela fica no lugar dela
+    if (substituir) window.history.replaceState({}, '', url.toString());
+    else window.history.pushState({}, '', url.toString());
   };
 
   useEffect(() => {
@@ -173,6 +194,14 @@ function AppShell() {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  // Saiu da conta descartando a Oficina suja: já desmontada (sem o "voltar" dela), tira a entrada extra do histórico
+  const desfazerEntradaExtraAoSair = useRef(false);
+  useEffect(() => {
+    if (isAuthenticated || !desfazerEntradaExtraAoSair.current) return;
+    desfazerEntradaExtraAoSair.current = false;
+    window.history.go(-1);
+  }, [isAuthenticated]);
 
   const searchParams = new URLSearchParams(window.location.search);
   const modoPublico = searchParams.get('modo');
@@ -212,35 +241,35 @@ function AppShell() {
   }[] = [
     {
       id: 'patio',
-      label: 'Radar do Pátio',
+      label: 'Radar do pátio',
       shortLabel: 'Pátio',
       icon: LayoutDashboard,
       visible: true,
     },
     {
       id: 'os',
-      label: 'Ordens de Serviço',
+      label: 'Ordens de serviço',
       shortLabel: 'Ordens',
       icon: ClipboardList,
       visible: true,
     },
     {
       id: 'clientes',
-      label: 'Clientes & Veículos',
+      label: 'Clientes & veículos',
       shortLabel: 'Clientes',
       icon: Users,
       visible: true,
     },
     {
       id: 'estoque',
-      label: 'Estoque de Peças',
+      label: 'Estoque de peças',
       shortLabel: 'Estoque',
       icon: Package,
       visible: true,
     },
     {
       id: 'financeiro',
-      label: 'Caixa & Financeiro',
+      label: 'Caixa & financeiro',
       shortLabel: 'Caixa',
       icon: DollarSign,
       visible: canSeeFinanceiro,
@@ -254,7 +283,7 @@ function AppShell() {
     },
     {
       id: 'oficina',
-      label: 'Dados da Oficina',
+      label: 'Dados da oficina',
       shortLabel: 'Oficina',
       icon: Building2,
       visible: canSeeConfig,
@@ -270,7 +299,19 @@ function AppShell() {
 
   const irPara = (id: NavTab) => {
     setMaisAberto(false);
-    handleNavigateTab(id);
+    if (oficinaSuja.current && id === activeTab) return;
+    // Descartar com o formulário sujo: a entrada extra que a Oficina deixou no histórico vira a da nova tela
+    protegerSaida(() => handleNavigateTab(id, undefined, undefined, oficinaSuja.current));
+  };
+
+  const sair = () => {
+    setMaisAberto(false);
+    protegerSaida(() => {
+      desfazerEntradaExtraAoSair.current = oficinaSuja.current;
+      logout().catch(() => {
+        desfazerEntradaExtraAoSair.current = false;
+      });
+    });
   };
 
   const seletorMaster = (idSeletor: string) =>
@@ -284,10 +325,13 @@ function AppShell() {
           id={idSeletor}
           value={effectiveEmpresaId}
           onChange={(e) => {
-            setSelectedEmpresaId(e.target.value);
-            localStorage.setItem('autotec_tenant_id', e.target.value);
+            const id = e.target.value;
+            protegerSaida(() => {
+              setSelectedEmpresaId(id);
+              localStorage.setItem('autotec_tenant_id', id);
+            });
           }}
-          className="w-full h-10 min-h-11 md:min-h-10 px-3 rounded-md bg-surface border border-line-strong text-ink text-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="w-full h-10 min-h-11 md:min-h-10 px-3 rounded-lg bg-surface border border-line-strong text-ink text-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           {empresas.map((emp) => (
             <option key={emp.id} value={emp.id}>
@@ -299,17 +343,20 @@ function AppShell() {
     ) : null;
 
   return (
-    <div className="min-h-dvh w-full bg-canvas text-ink flex flex-col lg:flex-row print:bg-white print:text-black">
+    <div
+      className="min-h-dvh w-full bg-canvas text-ink flex flex-col lg:flex-row print:bg-white print:text-black"
+      style={{ '--barra-inferior-h': `${alturaBarra}px` } as CSSProperties}
+    >
       {/* MENU LATERAL (DESKTOP) */}
       <aside
-        aria-label="Menu Principal da Oficina"
+        aria-label="Menu principal da oficina"
         className="print:hidden hidden lg:flex w-60 shrink-0 bg-canvas flex-col justify-between px-3 py-6 sticky top-0 h-dvh"
       >
         <div className="space-y-8 min-h-0 overflow-y-auto">
           <div className="px-3 space-y-1.5">
             <Logo tamanho={28} />
             <span className="text-xs text-ink-muted truncate block">
-              {empresaAtual?.nome_fantasia || 'Painel Operacional'}
+              {empresaAtual?.nome_fantasia || 'Painel operacional'}
             </span>
           </div>
 
@@ -348,7 +395,7 @@ function AppShell() {
             </div>
             <ThemeToggle />
           </div>
-          <Button variante="fantasma" icone={LogOut} onClick={logout} className="w-full !justify-start">
+          <Button variante="fantasma" icone={LogOut} onClick={sair} className="w-full !justify-start">
             Sair
           </Button>
         </div>
@@ -364,8 +411,8 @@ function AppShell() {
         <main id="conteudo-principal" className="flex-1 w-full p-4 md:p-8 print:p-0">
           {!effectiveEmpresaId ? (
             <div className="bg-surface rounded-2xl p-8 space-y-2">
-              <h2 className="text-xl font-semibold text-ink">Selecione uma oficina para ver o pátio</h2>
-              <p className="text-sm text-ink-muted">
+              <h2 className="text-xl font-semibold text-ink text-balance">Selecione uma oficina para ver o pátio</h2>
+              <p className="text-sm text-ink-muted text-pretty">
                 Sua conta Master está autenticada. Escolha uma oficina no seletor para carregar os dados.
               </p>
             </div>
@@ -388,7 +435,7 @@ function AppShell() {
           ) : activeTab === 'equipe' && canSeeConfig ? (
             <Equipe empresaId={effectiveEmpresaId} />
           ) : activeTab === 'oficina' && canSeeConfig ? (
-            <Oficina empresaId={effectiveEmpresaId} />
+            <Oficina empresaId={effectiveEmpresaId} onSujoChange={aoMudarSujoOficina} />
           ) : (
             <DashboardOperacional empresaId={effectiveEmpresaId} onNavigateTab={handleNavigateTab} />
           )}
@@ -443,7 +490,7 @@ function AppShell() {
                 <div className="text-xs text-ink-muted truncate">{cargoLegivel}</div>
               </div>
               <ThemeToggle />
-              <Button variante="fantasma" icone={LogOut} onClick={logout}>
+              <Button variante="fantasma" icone={LogOut} onClick={sair}>
                 Sair
               </Button>
             </div>
@@ -451,11 +498,30 @@ function AppShell() {
         </div>
       )}
 
+      <Folha aberto={saidaPendente !== null} titulo="Descartar alterações?" aoCancelar={() => setSaidaPendente(null)}>
+        <p className="text-sm text-ink-muted">O que você digitou nos dados da oficina será perdido.</p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variante="secundario" onClick={() => setSaidaPendente(null)}>
+            Continuar editando
+          </Button>
+          <Button
+            variante="perigo"
+            onClick={() => {
+              const sair = saidaPendente;
+              setSaidaPendente(null);
+              sair?.();
+            }}
+          >
+            Descartar
+          </Button>
+        </div>
+      </Folha>
+
       {/* BARRA INFERIOR (MOBILE) */}
       <nav
-        ref={barraRef}
-        aria-label="Navegação Rápida Mobile"
-        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-line/60 px-1 pt-1 flex items-stretch"
+        ref={setBarra}
+        aria-label="Navegação rápida mobile"
+        className="print:hidden lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface px-1 pt-1 flex items-stretch"
         style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
       >
         {[

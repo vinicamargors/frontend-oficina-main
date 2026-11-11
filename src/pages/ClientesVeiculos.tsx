@@ -20,6 +20,7 @@ import {
   PageHeader,
   Panel,
   PlateChip,
+  formatarPlaca,
   Skeleton,
   StatusBadge,
   STATUS_OS,
@@ -296,7 +297,7 @@ export function ClientesVeiculos({
   const handleSalvarFichaCliente = async (e: FormEvent) => {
     e.preventDefault();
     if (!cliNome.trim() || !cliTelefone.trim()) {
-      setErro('Informe o Nome e o WhatsApp/Telefone do cliente.');
+      setErro('Informe o nome e o WhatsApp/telefone do cliente.');
       return;
     }
 
@@ -306,7 +307,7 @@ export function ClientesVeiculos({
     );
     for (const r of rascunhosValidos) {
       if (!r.placa.trim() || !r.modelo.trim()) {
-        setErro('Para cada veículo adicionado, informe ao menos a Placa e o Modelo.');
+        setErro('Para cada veículo adicionado, informe ao menos a placa e o modelo.');
         return;
       }
     }
@@ -404,7 +405,7 @@ export function ClientesVeiculos({
     e.preventDefault();
     if (!veiculoEmEdicao) return;
     if (!editVeiPlaca.trim() || !editVeiModelo.trim()) {
-      setErro('Placa e Modelo são obrigatórios.');
+      setErro('Placa e modelo são obrigatórios.');
       return;
     }
 
@@ -436,7 +437,7 @@ export function ClientesVeiculos({
   const abrirHistoricoVeiculo = (veiculo: Veiculo, cliente?: Cliente) => {
     const ordens = osPorVeiculo[veiculo.id] || [];
     setHistoricoModal({
-      titulo: `Histórico do Veículo ${veiculo.placa}`,
+      titulo: `Histórico do Veículo ${formatarPlaca(veiculo.placa)}`,
       subtitulo: `${veiculo.modelo}${veiculo.marca ? ` • ${veiculo.marca}` : ''} — Cliente: ${
         cliente?.nome || veiculo.clientes?.nome || 'Não identificado'
       }`,
@@ -493,7 +494,7 @@ export function ClientesVeiculos({
       onNavigateTab('os', undefined, resultado.id);
     } catch (err: unknown) {
       setErro(
-        err instanceof Error ? err.message : 'Falha ao abrir Ordem de Serviço.'
+        err instanceof Error ? err.message : 'Falha ao abrir ordem de serviço.'
       );
     } finally {
       setCriandoOsRapida(false);
@@ -504,7 +505,7 @@ export function ClientesVeiculos({
     cliTelefone !== (clienteEmEdicao?.telefone || '') ||
     cliCpfCnpj !== (clienteEmEdicao?.cpf_cnpj || '') ||
     cliEndereco !== (clienteEmEdicao?.endereco || '') ||
-    novosVeiculosRascunho.some((r) => r.placa || r.modelo || r.marca || r.cor || r.ano || r.km_atual);
+    novosVeiculosRascunho.some((r) => r.placa || r.modelo || r.marca || r.cor || r.ano || r.km_atual || r.chassi);
   const veiculoSujo =
     veiculoEmEdicao !== null &&
     (editVeiPlaca !== (veiculoEmEdicao.placa || '') ||
@@ -576,7 +577,7 @@ export function ClientesVeiculos({
 
   const botaoPlaca = (buscando: boolean | undefined, aoClicar: () => void) => (
     <Button variante="secundario" icone={Sparkles} disabled={buscando} onClick={aoClicar} className="shrink-0">
-      {buscando ? 'Buscando…' : 'Buscar Placa'}
+      {buscando ? 'Buscando…' : 'Buscar placa'}
     </Button>
   );
 
@@ -587,7 +588,7 @@ export function ClientesVeiculos({
   return (
     <div>
       <PageHeader
-        titulo="Clientes & Veículos"
+        titulo="Clientes & veículos"
         complemento={
           loading ? undefined : (
             <span className="text-[1.375rem] font-semibold tabular-nums text-ink-subtle">{clientes.length}</span>
@@ -667,7 +668,7 @@ export function ClientesVeiculos({
           </Panel>
         ) : vazio ? (
           <Panel espaco="lg" className="space-y-2">
-            <h2 className="text-lg font-semibold text-ink">
+            <h2 className="text-lg font-semibold text-ink text-balance">
               {semBusca
                 ? viewMode === 'clientes'
                   ? 'Nenhum cliente cadastrado'
@@ -676,7 +677,7 @@ export function ClientesVeiculos({
                   ? 'Nenhum cliente encontrado'
                   : 'Nenhum veículo encontrado'}
             </h2>
-            <p className="text-sm text-ink-muted">
+            <p className="text-sm text-ink-muted text-pretty">
               {semBusca
                 ? 'Use “Novo cliente” para cadastrar o primeiro cliente com seus veículos.'
                 : 'Confira a grafia ou busque por outra placa, nome ou telefone.'}
@@ -783,6 +784,7 @@ export function ClientesVeiculos({
       {/* FOLHA 1: FICHA DO CLIENTE + MÚLTIPLOS VEÍCULOS (CRIAR OU EDITAR) */}
       <Folha
         aberto={fichaAberta}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
         titulo={clienteEmEdicao ? `Ficha de ${clienteEmEdicao.nome}` : 'Novo cliente e veículos'}
@@ -797,7 +799,7 @@ export function ClientesVeiculos({
           <fieldset className="space-y-4">
             <legend className="mb-3 text-base font-semibold text-ink">Dados do cliente</legend>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field rotulo="Nome Completo *">
+              <Field rotulo="Nome completo *">
                 <input
                   id="cli-nome"
                   name="nome"
@@ -810,7 +812,7 @@ export function ClientesVeiculos({
                   className={CLASSE_CAMPO}
                 />
               </Field>
-              <Field rotulo="WhatsApp / Telefone *">
+              <Field rotulo="WhatsApp / telefone *">
                 <input
                   id="cli-telefone"
                   name="telefone"
@@ -846,7 +848,7 @@ export function ClientesVeiculos({
                   autoComplete="street-address"
                   value={cliEndereco}
                   onChange={(e) => setCliEndereco(e.target.value)}
-                  placeholder="Rua, Número, Bairro, Cidade"
+                  placeholder="Rua, número, bairro, cidade"
                   className={CLASSE_CAMPO}
                 />
               </Field>
@@ -961,7 +963,7 @@ export function ClientesVeiculos({
                         </Field>
                       </div>
                       <div className="col-span-6 sm:col-span-2">
-                        <Field rotulo="Marca / Montadora">
+                        <Field rotulo="Marca / montadora">
                           <input
                             id={`marca-${rasc.tempId}`}
                             name={`marca_${idx}`}
@@ -1002,7 +1004,7 @@ export function ClientesVeiculos({
                         </Field>
                       </div>
                       <div className="col-span-6 sm:col-span-3">
-                        <Field rotulo="KM Atual">
+                        <Field rotulo="KM atual">
                           <input
                             id={`km-${rasc.tempId}`}
                             name={`km_${idx}`}
@@ -1036,9 +1038,10 @@ export function ClientesVeiculos({
       {/* FOLHA 2: EDITAR VEÍCULO EXISTENTE */}
       <Folha
         aberto={veiculoEmEdicao !== null}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
-        titulo={veiculoEmEdicao ? `Editar Veículo — ${veiculoEmEdicao.placa}` : ''}
+        titulo={veiculoEmEdicao ? `Editar Veículo — ${formatarPlaca(veiculoEmEdicao.placa)}` : ''}
         aoCancelar={() => sairDaFolha(veiculoSujo, fecharEdicaoVeiculo)}
       >
         <p className="-mt-3 text-sm text-ink-muted">Atualize placa, modelo, cor, ano ou quilometragem do veículo.</p>
@@ -1124,7 +1127,7 @@ export function ClientesVeiculos({
               </Field>
             </div>
             <div className="col-span-6 sm:col-span-3">
-              <Field rotulo="KM Atual">
+              <Field rotulo="KM atual">
                 <input
                   id="edit-vei-km"
                   name="km_atual"
@@ -1158,7 +1161,7 @@ export function ClientesVeiculos({
               Cancelar
             </Button>
             <Button type="submit" carregando={salvandoVeiculoEdit}>
-              {salvandoVeiculoEdit ? 'Salvando…' : 'Salvar Alterações'}
+              {salvandoVeiculoEdit ? 'Salvando…' : 'Salvar alterações'}
             </Button>
           </div>
         </form>
@@ -1176,7 +1179,7 @@ export function ClientesVeiculos({
             <p className="-mt-3 text-sm text-ink-muted">{historicoModal.subtitulo}</p>
             {historicoModal.ordens.length === 0 ? (
               <p className="py-6 text-center text-sm text-ink-subtle">
-                Nenhuma Ordem de Serviço registrada para este filtro ainda.
+                Nenhuma ordem de serviço registrada para este filtro ainda.
               </p>
             ) : (
               <ul aria-label="Ordens de serviço" className="divide-y divide-line">
@@ -1222,7 +1225,7 @@ export function ClientesVeiculos({
                     iniciarNovaOsParaVeiculo(v, c);
                   }}
                 >
-                  Abrir nova OS para {historicoModal.veiculo.placa}
+                  Abrir nova OS para {formatarPlaca(historicoModal.veiculo.placa)}
                 </Button>
               )}
             </div>
@@ -1233,8 +1236,9 @@ export function ClientesVeiculos({
       {/* FOLHA 4: ABRIR NOVA OS RÁPIDA DIRETO DO VEÍCULO */}
       <Folha
         aberto={novaOsRapida !== null}
+        focoInicial="primeiro-campo"
         fecharNoFundo={false}
-        titulo="Abrir Ordem de Serviço"
+        titulo="Abrir ordem de serviço"
         aoCancelar={() => sairDaFolha(osSuja, fecharOsRapida)}
       >
         {novaOsRapida && (
@@ -1249,7 +1253,7 @@ export function ClientesVeiculos({
             {confirmarDescarte}
             {erro && alertaErro(erro)}
             <form onSubmit={handleConfirmarNovaOsRapida} className="space-y-4">
-              <Field rotulo="KM Atual na Entrada">
+              <Field rotulo="KM atual na entrada">
                 <input
                   id="os-rapida-km"
                   name="km_atual"
@@ -1261,7 +1265,7 @@ export function ClientesVeiculos({
                   className={CLASSE_CAMPO}
                 />
               </Field>
-              <Field rotulo="Mecânico Responsável">
+              <Field rotulo="Mecânico responsável">
                 <select
                   id="os-rapida-mecanico"
                   name="mecanico_responsavel_id"
@@ -1277,7 +1281,7 @@ export function ClientesVeiculos({
                   ))}
                 </select>
               </Field>
-              <Field rotulo="Defeito Relatado / Serviço Solicitado">
+              <Field rotulo="Defeito relatado / serviço solicitado">
                 <textarea
                   id="os-rapida-defeito"
                   name="descricao_problema"
@@ -1293,7 +1297,7 @@ export function ClientesVeiculos({
                   Cancelar
                 </Button>
                 <Button type="submit" carregando={criandoOsRapida}>
-                  {criandoOsRapida ? 'Abrindo Bancada…' : 'Abrir Bancada da OS'}
+                  {criandoOsRapida ? 'Abrindo bancada…' : 'Abrir bancada da OS'}
                 </Button>
               </div>
             </form>

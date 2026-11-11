@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../api/client';
+import { hojeLocalISO } from '../lib/data';
 import { useAuth } from '../context/AuthContext';
 import {
   TransacaoFinanceira,
@@ -72,6 +73,8 @@ const FORMAS_PAGAMENTO = [
   'Boleto / Faturado',
   'TED / Transferência',
 ];
+// A baixa oferece as mesmas formas do lançamento (inclui TED, que a lista da OS não tem)
+const FORMAS_BAIXA = FORMAS_PAGAMENTO;
 
 // Aba Contas leva em texto quantas despesas estão pendentes/atrasadas (antes: ponto vermelho só de cor)
 const montarAbas = (despesasEmAberto: number): TabItem[] => [
@@ -99,14 +102,9 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   const [periodoAtalho, setPeriodoAtalho] = useState<
     'HOJE' | '7D' | '30D' | 'MES_ATUAL' | 'MES_ANTERIOR' | 'ANO_ATUAL' | 'CUSTOM'
   >('30D');
-  const [dataInicio, setDataInicio] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return d.toISOString().slice(0, 10);
-  });
-  const [dataFim, setDataFim] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  // Mesmo intervalo do atalho "Últimos 30 dias", no calendário local
+  const [dataInicio, setDataInicio] = useState<string>(() => intervaloDoAtalho('30D').inicio);
+  const [dataFim, setDataFim] = useState<string>(() => intervaloDoAtalho('30D').fim);
 
   // Dados do Financeiro & Transações
   const [carregando, setCarregando] = useState(true);
@@ -137,9 +135,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   const [formDescricao, setFormDescricao] = useState('');
   const [formCategoria, setFormCategoria] = useState('ALUGUEL');
   const [formValor, setFormValor] = useState('');
-  const [formVencimento, setFormVencimento] = useState(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  const [formVencimento, setFormVencimento] = useState(hojeLocalISO);
   const [formForma, setFormForma] = useState('PIX');
   const [formObservacoes, setFormObservacoes] = useState('');
   const [formJaPago, setFormJaPago] = useState(false);
@@ -147,10 +143,14 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   // Modal Confirmação Exclusão
   const [itemParaExcluir, setItemParaExcluir] = useState<TransacaoFinanceira | null>(null);
   const [excluindo, setExcluindo] = useState(false);
+  const [erroExclusao, setErroExclusao] = useState<string | null>(null);
 
   // Confirmação de Baixa (nenhuma baixa com um toque só)
   const [itemParaBaixa, setItemParaBaixa] = useState<TransacaoFinanceira | null>(null);
   const [baixando, setBaixando] = useState(false);
+  const [erroBaixa, setErroBaixa] = useState<string | null>(null);
+  // Forma escolhida na folha: parte do que o lançamento já guarda; sem nada guardado, fica vazia até alguém escolher.
+  const [formaBaixa, setFormaBaixa] = useState<string | null>(null);
 
   // Formulário: erro de validação na própria folha e confirmação de descarte com dados digitados
   const [formErro, setFormErro] = useState<string | null>(null);
@@ -313,7 +313,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       descricao: '',
       categoria: tipo === 'DESPESA' ? 'ALUGUEL' : 'APORTE',
       valor: '',
-      vencimento: new Date().toISOString().slice(0, 10),
+      vencimento: hojeLocalISO(),
       forma: 'PIX',
       observacoes: '',
       jaPago: false,
@@ -403,7 +403,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
     try {
       setSalvandoTransacao(true);
-      const hoje = new Date().toISOString().slice(0, 10);
+      const hoje = hojeLocalISO();
       const statusFinal: StatusTransacao = formJaPago ? 'LIQUIDADO' : 'PENDENTE';
 
       if (transacaoEmEdicao) {
@@ -454,13 +454,13 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     }
   };
 
-  // Dar Baixa / Liquidar
-  const handleLiquidar = async (t: TransacaoFinanceira) => {
+  // Dar Baixa / Liquidar (true = gravou; o erro fica na folha de confirmação)
+  const handleLiquidar = async (t: TransacaoFinanceira, forma: string): Promise<boolean> => {
     try {
       const atualizada = await api.liquidarTransacaoFinanceira(
         empresaId,
         t.id,
-        t.forma_pagamento || 'PIX'
+        forma
       );
       setTransacoes((prev) =>
         prev.map((item) => (item.id === atualizada.id ? atualizada : item))
@@ -468,8 +468,10 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       dispararFeedback(
         `"${t.descricao}" marcado como ${t.tipo === 'DESPESA' ? 'PAGO' : 'RECEBIDO'} com sucesso!`
       );
+      return true;
     } catch {
-      alert('Erro ao dar baixa no lançamento.');
+      setErroBaixa('Erro ao dar baixa no lançamento. Nada foi alterado; tente de novo.');
+      return false;
     }
   };
 
@@ -478,12 +480,13 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     if (!itemParaExcluir) return;
     try {
       setExcluindo(true);
+      setErroExclusao(null);
       await api.deletarTransacaoFinanceira(empresaId, itemParaExcluir.id);
       setTransacoes((prev) => prev.filter((i) => i.id !== itemParaExcluir.id));
       dispararFeedback(`"${itemParaExcluir.descricao}" removido.`);
       setItemParaExcluir(null);
     } catch {
-      alert('Erro ao excluir transação.');
+      setErroExclusao('Erro ao excluir transação. Nada foi apagado; tente de novo.');
     } finally {
       setExcluindo(false);
     }
@@ -638,11 +641,12 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
 
   // Dar baixa só depois da confirmação na folha (mesma chamada de antes)
   const confirmarBaixa = async () => {
-    if (!itemParaBaixa) return;
+    if (!itemParaBaixa || !formaBaixa) return;
     setBaixando(true);
-    await handleLiquidar(itemParaBaixa);
+    setErroBaixa(null);
+    const ok = await handleLiquidar(itemParaBaixa, formaBaixa);
     setBaixando(false);
-    setItemParaBaixa(null);
+    if (ok) setItemParaBaixa(null);
   };
 
   const exportarAbaAtual = () => {
@@ -664,11 +668,11 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   if (!canSeeFinanceiro) {
     return (
       <div>
-        <PageHeader titulo="Caixa & Financeiro" />
+        <PageHeader titulo="Caixa & financeiro" />
         <Panel espaco="lg" className="mx-auto flex max-w-xl flex-col items-center gap-3 text-center">
           <ShieldAlert className="h-10 w-10 text-danger" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="text-base font-semibold text-ink">Acesso restrito ao módulo financeiro</h2>
-          <p className="text-sm text-ink-muted">
+          <h2 className="text-base font-semibold text-ink text-balance">Acesso restrito ao módulo financeiro</h2>
+          <p className="text-sm text-ink-muted text-pretty">
             Este painel contém informações estratégicas, DRE, margens e dados contábeis da oficina.
             Seu perfil ({user?.cargo}) não possui permissão para visualizar estes números.
           </p>
@@ -691,7 +695,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
   return (
     <div>
       <PageHeader
-        titulo="Caixa & Financeiro"
+        titulo="Caixa & financeiro"
         abaixo={
           <span className="hidden sm:inline">
             Caixa, contas a pagar e receber, DRE e indicadores da oficina.
@@ -814,9 +818,16 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               setFiltroStatusTransacao('TODAS');
             }}
             aoNovo={() => abrirModalCadastroTransacao('DESPESA')}
-            aoDarBaixa={setItemParaBaixa}
+            aoDarBaixa={(t) => {
+              setErroBaixa(null);
+              setFormaBaixa(t.forma_pagamento || null);
+              setItemParaBaixa(t);
+            }}
             aoEditar={abrirModalEdicaoTransacao}
-            aoExcluir={setItemParaExcluir}
+            aoExcluir={(t) => {
+              setErroExclusao(null);
+              setItemParaExcluir(t);
+            }}
           />
         )}
 
@@ -826,6 +837,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       {/* FOLHA: CADASTRO / EDIÇÃO DE LANÇAMENTO (DESPESA OU RECEITA AVULSA) */}
       <Folha
         aberto={modalTransacaoAberto}
+        focoInicial="primeiro-campo"
         tamanho="lg"
         fecharNoFundo={false}
         titulo={transacaoEmEdicao ? 'Editar lançamento' : 'Novo lançamento'}
@@ -989,6 +1001,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       <Folha
         aberto={itemParaBaixa !== null}
         titulo="Dar baixa no lançamento?"
+        bloquearFechar={baixando}
         aoCancelar={() => !baixando && setItemParaBaixa(null)}
       >
         {itemParaBaixa && (
@@ -999,7 +1012,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                 {valorComSinal(itemParaBaixa.valor, itemParaBaixa.tipo)}
               </p>
               <p className="mt-1 text-sm tabular-nums text-ink-muted">
-                Vencimento {formatData(itemParaBaixa.data_vencimento)} &bull; {itemParaBaixa.forma_pagamento || 'PIX'}
+                Vencimento {formatData(itemParaBaixa.data_vencimento)}
               </p>
               <p className="mt-3 text-sm text-ink-muted">
                 {baixaDespesa
@@ -1007,11 +1020,36 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
                   : 'O lançamento será marcado como recebido hoje e entra no caixa.'}
               </p>
             </div>
+            <fieldset className="space-y-2" disabled={baixando}>
+              <legend className="mb-2 text-sm font-medium text-ink">Forma de pagamento</legend>
+              {(formaBaixa && !FORMAS_BAIXA.includes(formaBaixa) ? [formaBaixa, ...FORMAS_BAIXA] : FORMAS_BAIXA).map((fp) => {
+                const marcada = formaBaixa === fp;
+                return (
+                  <label
+                    key={fp}
+                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-4 text-sm font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand ${
+                      marcada ? 'bg-brand/15 text-ink' : 'bg-muted text-ink hover:bg-line'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="forma-baixa"
+                      value={fp}
+                      checked={marcada}
+                      onChange={() => setFormaBaixa(fp)}
+                      className="h-5 w-5 shrink-0 accent-brand focus-visible:outline-none"
+                    />
+                    {fp}
+                  </label>
+                );
+              })}
+            </fieldset>
+            {erroBaixa && alertaErro(erroBaixa)}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button variante="secundario" disabled={baixando} onClick={() => setItemParaBaixa(null)}>
                 Cancelar
               </Button>
-              <Button icone={CheckCircle2} carregando={baixando} onClick={confirmarBaixa}>
+              <Button icone={CheckCircle2} carregando={baixando} disabled={!formaBaixa} onClick={confirmarBaixa}>
                 {baixaDespesa ? 'Confirmar pagamento' : 'Confirmar recebimento'}
               </Button>
             </div>
@@ -1023,6 +1061,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
       <Folha
         aberto={itemParaExcluir !== null}
         titulo="Excluir lançamento?"
+        bloquearFechar={excluindo}
         aoCancelar={() => !excluindo && setItemParaExcluir(null)}
       >
         {itemParaExcluir && (
@@ -1034,6 +1073,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
               </p>
               <p className="mt-3 text-sm text-ink-muted">Esta ação não poderá ser desfeita.</p>
             </div>
+            {erroExclusao && alertaErro(erroExclusao)}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button variante="secundario" disabled={excluindo} onClick={() => setItemParaExcluir(null)}>
                 Cancelar

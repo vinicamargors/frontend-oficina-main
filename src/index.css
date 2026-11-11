@@ -160,3 +160,57 @@ progress.loading-spinner:indeterminate {
   }
 }
 
+
+/*
+ * Impressão isolada: com um bloco `.area-impressao` na página (holerite, etiqueta, folha A4 da OS), o papel leva
+ * só esse bloco — nunca a tela por trás (ex.: a lista da equipe com os salários). Só vale em `@media print`;
+ * na tela nada muda. Sem `.area-impressao`, a impressão da página segue como sempre.
+ * Depende de `:has()` (Chrome/Edge 105+, Safari 15.4+, Firefox 121+); num navegador sem `:has()` as regras são
+ * ignoradas e a impressão volta ao comportamento antigo (a página inteira).
+ */
+@media print {
+  html:has(.area-impressao),
+  body:has(.area-impressao) {
+    background: #fff !important;
+  }
+  body:has(.area-impressao) * {
+    visibility: hidden !important;
+  }
+  body:has(.area-impressao) .area-impressao,
+  body:has(.area-impressao) .area-impressao * {
+    visibility: visible !important;
+  }
+
+  /* Bloco dentro de uma folha (<dialog> aberto): a página por trás não ocupa papel (sem folhas em branco) e a
+     folha vai para o topo da página, sem fundo, sombra nem título; a largura do bloco é a mesma da tela. */
+  html:has(dialog[open] .area-impressao),
+  body:has(dialog[open] .area-impressao) {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  body:has(dialog[open] .area-impressao) #root {
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  dialog[open]:has(.area-impressao) {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    margin: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  dialog[open]:has(.area-impressao)::backdrop {
+    background: transparent !important;
+  }
+  dialog[open]:has(.area-impressao) > div {
+    padding: 0 !important;
+  }
+  dialog[open]:has(.area-impressao) > div > :not(.area-impressao) {
+    display: none !important;
+  }
+}

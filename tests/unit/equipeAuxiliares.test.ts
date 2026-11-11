@@ -71,3 +71,31 @@ describe('regras da folha (inalteradas)', () => {
     expect(d).toBeLessThanOrEqual(101);
   });
 });
+
+describe('holerite (exibição)', () => {
+  it('mês de referência por extenso em pt-BR, independente do idioma do navegador', async () => {
+    const { formatMesExtenso } = await import('../../src/pages/equipe/auxiliares');
+    expect(formatMesExtenso('2026-11')).toBe('novembro de 2026');
+    expect(formatMesExtenso('2027-01')).toBe('janeiro de 2027');
+    expect(formatMesExtenso('2026-03')).toBe('março de 2026');
+    expect(formatMesExtenso('')).toBe('');
+    expect(formatMesExtenso('2026-13')).toBe('2026-13');
+  });
+  it('CNPJ: máscara só quando são 14 dígitos; outros valores ficam como estão', async () => {
+    const { formatarCnpj } = await import('../../src/pages/equipe/auxiliares');
+    expect(formatarCnpj('12345678000190')).toBe('12.345.678/0001-90');
+    expect(formatarCnpj('12.345.678/0001-90')).toBe('12.345.678/0001-90');
+    expect(formatarCnpj(' 123 ')).toBe('123');
+    expect(formatarCnpj(null)).toBe('');
+    expect(formatarCnpj(undefined)).toBe('');
+  });
+  it('identidade do holerite: razão social, depois nome fantasia, depois o texto padrão', async () => {
+    const { identidadeHolerite } = await import('../../src/pages/equipe/auxiliares');
+    expect(identidadeHolerite({ razao_social: 'Oficina Ltda', nome_fantasia: 'Oficina', cnpj: '12345678000190' })).toEqual({
+      nome: 'Oficina Ltda',
+      cnpj: '12.345.678/0001-90',
+    });
+    expect(identidadeHolerite({ razao_social: '  ', nome_fantasia: 'Auto Center', cnpj: '' })).toEqual({ nome: 'Auto Center', cnpj: '' });
+    expect(identidadeHolerite(null)).toEqual({ nome: 'MECANIFY • OFICINA MECÂNICA', cnpj: '' });
+  });
+});

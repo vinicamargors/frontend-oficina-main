@@ -6,9 +6,9 @@ import { textoDias } from '../../src/pages/radar/diasNaEtapa';
 describe('proximaEtapa', () => {
   it('segue o fluxo com os rótulos das ações', () => {
     expect(proximaEtapa('ORCAMENTO')).toEqual({ status: 'EXECUCAO', rotulo: 'Aprovar → Execução' });
-    expect(proximaEtapa('AGUARDANDO_PECA')).toEqual({ status: 'EXECUCAO', rotulo: 'Peça Chegou → Execução' });
-    expect(proximaEtapa('EXECUCAO')).toEqual({ status: 'FINALIZADO', rotulo: 'Concluir Serviço' });
-    expect(proximaEtapa('FINALIZADO')).toEqual({ status: 'PAGO', rotulo: 'Receber / Dar Baixa' });
+    expect(proximaEtapa('AGUARDANDO_PECA')).toEqual({ status: 'EXECUCAO', rotulo: 'Peça chegou → Execução' });
+    expect(proximaEtapa('EXECUCAO')).toEqual({ status: 'FINALIZADO', rotulo: 'Concluir serviço' });
+    expect(proximaEtapa('FINALIZADO')).toEqual({ status: 'PAGO', rotulo: 'Receber / dar baixa' });
   });
   it('Pago não tem próxima etapa', () => {
     expect(proximaEtapa('PAGO')).toBeNull();

@@ -7,7 +7,7 @@ function Bloco({ titulo, contagem, children }: { titulo: string; contagem?: stri
   return (
     <Panel as="section" aria-label={titulo} espaco="nenhum" className="px-5 pb-2 pt-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-base font-semibold text-ink">{titulo}</h2>
+        <h2 className="text-base font-semibold text-ink text-balance">{titulo}</h2>
         {contagem && <span className="text-xs tabular-nums text-ink-muted">{contagem}</span>}
       </div>
       {children}

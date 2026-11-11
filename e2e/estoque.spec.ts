@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { abrirTela, entrarComo, estoque, exigirRedeCompleta, simularBackend, type Cenario } from './mocks';
-import { coletarErros, contextoDoProjeto } from './contexto';
+import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
 const ultimaEscrita = (page: Page) =>
@@ -29,7 +29,7 @@ test.describe('lista de peças', () => {
     const erros = coletarErros(page);
     await abrir(page, tema);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Estoque de Peças' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Estoque de peças' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 1 }).locator('xpath=..')).toContainText(String(estoque.length));
     await expect(page.getByRole('button', { name: /Nova peça/ })).toHaveCount(1);
     await expect(page.getByRole('searchbox', { name: /Buscar peça/ })).toBeVisible();
@@ -163,7 +163,7 @@ test.describe('ações da peça', () => {
     await abrir(page, tema);
     await menuDe(page, ITEM.nome);
     const menu = (await page.getByRole('menu').boundingBox())!;
-    const nav = (await page.getByRole('navigation', { name: 'Navegação Rápida Mobile' }).boundingBox())!;
+    const nav = (await page.getByRole('navigation', { name: 'Navegação rápida mobile' }).boundingBox())!;
     expect(menu.y + menu.height).toBeLessThanOrEqual(nav.y);
     expect(menu.y).toBeGreaterThanOrEqual(0);
   });
@@ -246,9 +246,27 @@ test.describe('ações da peça', () => {
     ]);
     expect(download.suggestedFilename()).toMatch(/^estoque_mecanify_\d{4}-\d{2}-\d{2}\.csv$/);
   });
+
+  test('exportar CSV às 22h em São Paulo leva a data local no nome', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await page.clock.setFixedTime(new Date('2026-11-11T01:00:00Z')); // 10/11 22:00 local
+    await abrir(page, tema);
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Exportar CSV' }).click(),
+    ]);
+    expect(download.suggestedFilename()).toBe('estoque_mecanify_2026-11-10.csv');
+  });
 });
 
 test.describe('formulário da peça', () => {
+  test('abre com o foco no primeiro campo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /Nova peça/ }).click();
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Nova peça no estoque' }), /Nome da peça/);
+  });
+
   test('nova peça: salva com os valores digitados', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
@@ -265,6 +283,37 @@ test.describe('formulário da peça', () => {
     expect(e.metodo).toBe('POST');
     expect(e.corpo).toMatchObject({ nome: 'Correia poly-V', codigo: 'CV-1', quantidade: 4, custo: 30, venda: 55.5 });
     await expect(d).toHaveCount(0);
+  });
+
+  test('nome em branco: aviso dentro da folha, sem diálogo nativo e sem gravar', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const nativos: string[] = [];
+    page.on('dialog', (dl) => {
+      nativos.push(dl.message());
+      void dl.dismiss();
+    });
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /Nova peça/ }).click();
+    const d = page.getByRole('dialog', { name: 'Nova peça no estoque' });
+    await d.getByLabel(/Nome da peça/).fill('   ');
+    await d.getByRole('button', { name: 'Salvar peça' }).click();
+    await expect(d.getByRole('alert')).toContainText('Informe o nome da peça/item.');
+    expect(nativos).toEqual([]);
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('exportar sem itens no filtro: aviso na página, sem diálogo nativo e sem arquivo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const nativos: string[] = [];
+    page.on('dialog', (dl) => {
+      nativos.push(dl.message());
+      void dl.dismiss();
+    });
+    await abrir(page, tema);
+    await page.getByRole('searchbox', { name: /Buscar peça/ }).fill('zzzz-nada-assim');
+    await page.getByRole('button', { name: 'Exportar CSV' }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Não há itens para exportar no filtro atual.' })).toBeVisible();
+    expect(nativos).toEqual([]);
   });
 
   test('editar abre preenchido; Esc com dados alterados pede "Descartar alterações?"', async ({ page }, info) => {
@@ -311,6 +360,53 @@ test.describe('categorias', () => {
     await d.getByRole('button', { name: 'Manter categoria' }).click();
     await expect(d.getByRole('alert')).toHaveCount(0);
     expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
+  test('reclassificar que falha: aviso dentro da folha, sem diálogo nativo', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const nativos: string[] = [];
+    page.on('dialog', (dl) => {
+      nativos.push(dl.message());
+      void dl.dismiss();
+    });
+    await abrir(page, tema);
+    await page.route('**/api/v1/estoque/*/*', (r) =>
+      r.request().method() === 'GET'
+        ? r.fallback()
+        : r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'x' }) }),
+    );
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    const d = page.getByRole('dialog', { name: 'Gerenciar categorias' });
+    await d.getByRole('button', { name: 'Excluir categoria Fluidos' }).click();
+    await d.getByRole('button', { name: 'Reclassificar e excluir' }).click();
+    await expect(d.getByRole('alert')).toContainText('Falha ao reclassificar itens da categoria.');
+    expect(nativos).toEqual([]);
+  });
+});
+
+test.describe('categorias: nome digitado e não criado', () => {
+  test('Esc com nome digitado pergunta "Descartar alterações?"; vazio fecha direto', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    const d = page.getByRole('dialog', { name: 'Gerenciar categorias' });
+    await page.keyboard.press('Escape');
+    await expect(d).toHaveCount(0);
+
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    await d.getByLabel(/Nome da nova categoria/).fill('Suspensão');
+    await page.keyboard.press('Escape');
+    await expect(d).toBeVisible();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await d.getByRole('button', { name: 'Continuar editando' }).click();
+    await expect(d.getByLabel(/Nome da nova categoria/)).toHaveValue('Suspensão');
+
+    await d.getByRole('button', { name: 'Fechar' }).click();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
+    await d.getByRole('button', { name: 'Descartar' }).click();
+    await expect(d).toHaveCount(0);
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    await expect(d.getByLabel(/Nome da nova categoria/)).toHaveValue('');
   });
 });
 

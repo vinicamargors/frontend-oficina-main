@@ -1,4 +1,5 @@
 import type { StatusTransacao, TipoTransacao } from '../../types';
+import { dataLocalISO } from '../../lib/data';
 
 export type AtalhoPeriodo = 'HOJE' | '7D' | '30D' | 'MES_ATUAL' | 'MES_ANTERIOR' | 'ANO_ATUAL';
 
@@ -38,9 +39,12 @@ export const valorComSinal = (valor: number, tipo: TipoTransacao) =>
 /** Resultado (lucro/posição): sem sinal quando positivo; "−" explícito quando negativo. */
 export const lucroComSinal = (valor: number) => (valor < 0 ? `− ${formatBRL(-valor)}` : formatBRL(valor));
 
-/** Mesmo cálculo de `aplicarAtalhoPeriodo` original (datas via toISOString). */
+/**
+ * Intervalo `AAAA-MM-DD` de cada predefinição, no calendário LOCAL (`dataLocalISO`). O original usava
+ * toISOString (UTC): depois das 21h em São Paulo "hoje" virava amanhã.
+ */
 export function intervaloDoAtalho(atalho: AtalhoPeriodo, hoje: Date = new Date()): { inicio: string; fim: string } {
-  const formatYMD = (d: Date) => d.toISOString().slice(0, 10);
+  const formatYMD = dataLocalISO;
   if (atalho === 'HOJE') {
     const hStr = formatYMD(hoje);
     return { inicio: hStr, fim: hStr };

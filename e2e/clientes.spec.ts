@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { API_URL, abrirTela, clientes, entrarComo, exigirRedeCompleta, simularBackend, veiculos, type Cenario } from './mocks';
-import { coletarErros, contextoDoProjeto } from './contexto';
+import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> };
 
@@ -44,7 +44,7 @@ test.describe('lista de clientes', () => {
     const erros = coletarErros(page);
     await abrir(page, tema);
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Clientes & Veículos' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Clientes & veículos' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 1 }).locator('xpath=..')).toContainText(String(clientes.length));
     await expect(page.getByText(`${veiculos.length} veículos cadastrados`)).toBeVisible();
     await expect(page.getByRole('button', { name: /Novo cliente/ })).toHaveCount(1);
@@ -121,6 +121,62 @@ test.describe('ações do cliente (menu)', () => {
     await expect(page.getByRole('menu')).toHaveCount(0);
   });
 
+  test('Tab fecha o menu e o foco segue adiante; escolher um item devolve o foco ao gatilho', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    const gatilho = linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` });
+    await gatilho.click();
+    await expect(page.getByRole('menuitem').first()).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    expect(await page.evaluate(() => document.activeElement === document.body || document.activeElement?.getAttribute('role') === 'menuitem')).toBe(false);
+
+    await gatilho.click();
+    await page.getByRole('menuitem', { name: /Editar ficha/ }).click();
+    const d = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
+    await expect(d).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(d).toBeHidden();
+    await expect(gatilho).toBeFocused();
+  });
+
+  test('o menu reavalia o espaço (variável --barra-inferior-h) ao rolar/redimensionar com ele aberto', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    const gatilho = linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` });
+    await gatilho.click();
+    const menu = page.getByRole('menu');
+    const acimaDoGatilho = async () => {
+      const m = (await menu.boundingBox())!;
+      const g = (await gatilho.boundingBox())!;
+      return m.y + m.height <= g.y + 1;
+    };
+    const definirReserva = (v: string | null) =>
+      page.evaluate((valor) => {
+        const raiz = document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!;
+        if (valor === null) raiz.style.removeProperty('--barra-inferior-h');
+        else raiz.style.setProperty('--barra-inferior-h', valor);
+      }, v);
+    expect(await acimaDoGatilho()).toBe(false);
+    await definirReserva('900px'); // reserva real maior que o espaço abaixo
+    await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
+    await expect.poll(acimaDoGatilho).toBe(true);
+    await definirReserva('0px');
+    await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+    await expect.poll(acimaDoGatilho).toBe(false);
+  });
+
+  test('as folhas de formulário focam o primeiro campo ao abrir', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` }).click();
+    await page.getByRole('menuitem', { name: /Editar ficha/ }).click();
+    const ficha = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
+    await exigirFocoNoPrimeiroCampo(ficha, /Nome completo/);
+    await page.keyboard.press('Escape');
+    await expect(ficha).toBeHidden();
+  });
+
   test('editar ficha envia PUT com os dados novos', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     const escritas = gravarEscritas(page);
@@ -129,8 +185,8 @@ test.describe('ações do cliente (menu)', () => {
     await page.getByRole('menuitem', { name: /Editar ficha/ }).click();
     const d = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
     await expect(d).toBeVisible();
-    await expect(d.getByLabel(/Nome Completo/)).toHaveValue(JOAO.nome);
-    await d.getByLabel(/Nome Completo/).fill('João P. da Silva');
+    await expect(d.getByLabel(/Nome completo/)).toHaveValue(JOAO.nome);
+    await d.getByLabel(/Nome completo/).fill('João P. da Silva');
     await d.getByRole('button', { name: /Salvar ficha/i }).click();
     await expect(d).toBeHidden();
     await expect(page.getByRole('status').filter({ hasText: 'João P. da Silva' })).toBeVisible();
@@ -145,10 +201,10 @@ test.describe('ações do cliente (menu)', () => {
     await abrir(page, tema);
     await page.getByRole('button', { name: /Novo cliente/ }).click();
     const d = page.getByRole('dialog', { name: /Novo cliente/ });
-    await d.getByLabel(/Nome Completo/).fill('Só Nome');
+    await d.getByLabel(/Nome completo/).fill('Só Nome');
     await d.getByLabel(/WhatsApp/).fill('   ');
     await d.getByRole('button', { name: /Salvar ficha/i }).click();
-    await expect(d.getByRole('alert')).toContainText('Informe o Nome e o WhatsApp/Telefone do cliente.');
+    await expect(d.getByRole('alert')).toContainText('Informe o nome e o WhatsApp/telefone do cliente.');
   });
 
   test('adicionar veículo abre a ficha já com um veículo em branco', async ({ page }, info) => {
@@ -187,22 +243,34 @@ test.describe('veículos do cliente', () => {
     return l.getByRole('list', { name: `Veículos de ${JOAO.nome}` });
   }
 
+  test('folhas de veículo e de OS rápida focam o primeiro campo ao abrir', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    const veics = await expandir(page);
+    await veics.getByRole('button', { name: 'Editar veículo ABC-1234' }).click();
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: /Editar Veículo — / }), page.locator('#edit-vei-placa'));
+    await page.keyboard.press('Escape');
+
+    await veics.getByRole('button', { name: 'Abrir OS para ABC-1234' }).click();
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Abrir ordem de serviço' }), /KM atual na entrada/);
+  });
+
   test('editar veículo: abre com os dados, consulta a placa e salva com PUT', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     const escritas = gravarEscritas(page);
     await abrir(page, tema);
     const veics = await expandir(page);
-    await veics.getByRole('button', { name: 'Editar veículo ABC1234' }).click();
-    const d = page.getByRole('dialog', { name: /Editar Veículo — ABC1234/ });
+    await veics.getByRole('button', { name: 'Editar veículo ABC-1234' }).click();
+    const d = page.getByRole('dialog', { name: /Editar Veículo — ABC-1234/ });
     await expect(d.getByLabel(/^Modelo/)).toHaveValue('Gol 1.0');
 
     await d.getByLabel(/^Modelo/).fill('');
-    await d.getByRole('button', { name: 'Buscar Placa' }).click();
+    await d.getByRole('button', { name: 'Buscar placa' }).click();
     await expect(d.getByLabel(/^Modelo/)).toHaveValue('Gol 1.0'); // vem da consulta de placa simulada
     await expect(d).toContainText('Dados preenchidos pela consulta de placa!');
 
-    await d.getByLabel(/^KM Atual/).fill('90000');
-    await d.getByRole('button', { name: 'Salvar Alterações' }).click();
+    await d.getByLabel(/^KM atual/).fill('90000');
+    await d.getByRole('button', { name: 'Salvar alterações' }).click();
     await expect(d).toBeHidden();
     const put = escritas.find((e) => e.metodo === 'PUT' && e.caminho.startsWith('/veiculos/'));
     expect(put?.corpo).toMatchObject({ placa: 'ABC1234', km_atual: 90000 });
@@ -212,11 +280,11 @@ test.describe('veículos do cliente', () => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     const veics = await expandir(page);
-    await veics.getByRole('button', { name: 'Histórico do veículo ABC1234' }).click();
-    const d = page.getByRole('dialog', { name: 'Histórico do Veículo ABC1234' });
+    await veics.getByRole('button', { name: 'Histórico do veículo ABC-1234' }).click();
+    const d = page.getByRole('dialog', { name: 'Histórico do Veículo ABC-1234' });
     await expect(d).toBeVisible();
     await expect(d.getByRole('button', { name: 'Abrir OS' }).first()).toBeVisible();
-    await expect(d.getByRole('button', { name: /Abrir nova OS para ABC1234/i })).toBeVisible();
+    await expect(d.getByRole('button', { name: /Abrir nova OS para ABC-1234/i })).toBeVisible();
   });
 
   test('+ OS abre a folha rápida e cria a OS para o veículo', async ({ page }, info) => {
@@ -224,12 +292,12 @@ test.describe('veículos do cliente', () => {
     const escritas = gravarEscritas(page);
     await abrir(page, tema);
     const veics = await expandir(page);
-    await veics.getByRole('button', { name: 'Abrir OS para ABC1234' }).click();
-    const d = page.getByRole('dialog', { name: 'Abrir Ordem de Serviço' });
+    await veics.getByRole('button', { name: 'Abrir OS para ABC-1234' }).click();
+    const d = page.getByRole('dialog', { name: 'Abrir ordem de serviço' });
     await expect(d).toContainText('ABC-1234');
-    await d.getByLabel(/Defeito Relatado/).fill('Barulho no motor');
+    await d.getByLabel(/Defeito relatado/i).fill('Barulho no motor');
     expect(escritas.filter((e) => e.metodo === 'POST')).toHaveLength(0); // nada escrito antes de confirmar
-    await d.getByRole('button', { name: /Abrir Bancada da OS/ }).click();
+    await d.getByRole('button', { name: /Abrir bancada da OS/ }).click();
     await expect.poll(() => escritas.find((e) => e.metodo === 'POST' && e.caminho.startsWith('/os'))).toBeTruthy();
     const post = escritas.find((e) => e.metodo === 'POST' && e.caminho.startsWith('/os'))!;
     expect(post.corpo).toMatchObject({ veiculo_id: veiculosDoJoao[0].id, cliente_id: JOAO.id, descricao_problema: 'Barulho no motor' });
@@ -244,11 +312,11 @@ test.describe('novo cliente com veículos', () => {
     await page.getByRole('button', { name: /Novo cliente/ }).click();
     const d = page.getByRole('dialog', { name: /Novo cliente/ });
     await expect(d).toBeVisible();
-    await d.getByLabel(/Nome Completo/).fill('Cliente Teste');
+    await d.getByLabel(/Nome completo/).fill('Cliente Teste');
     await d.getByLabel(/WhatsApp/).fill('(11) 91234-5678');
 
     await d.getByRole('textbox', { name: /^Placa/ }).first().fill('ABC1D23');
-    await d.getByRole('button', { name: 'Buscar Placa' }).first().click();
+    await d.getByRole('button', { name: 'Buscar placa' }).first().click();
     await expect(d.getByLabel(/^Modelo/).first()).toHaveValue('Gol 1.0');
     await expect(d).toContainText('Dados do veículo preenchidos pela placa!');
 
@@ -272,7 +340,7 @@ test.describe('novo cliente com veículos', () => {
     await abrir(page, tema);
     await page.getByRole('button', { name: /Novo cliente/ }).click();
     const d = page.getByRole('dialog', { name: /Novo cliente/ });
-    await d.getByLabel(/Nome Completo/).fill('Descartado');
+    await d.getByLabel(/Nome completo/).fill('Descartado');
     await d.getByRole('button', { name: 'Cancelar' }).click();
     await d.getByRole('button', { name: 'Descartar' }).click(); // há dados digitados: confirma o descarte
     await expect(d).toBeHidden();
@@ -287,20 +355,38 @@ test.describe('sair das folhas de formulário', () => {
     await abrir(page, tema);
     await page.getByRole('button', { name: /Novo cliente/ }).click();
     const d = page.getByRole('dialog', { name: /Novo cliente/ });
-    await d.getByLabel(/Nome Completo/).fill('Digitado');
+    await d.getByLabel(/Nome completo/).fill('Digitado');
 
     await page.keyboard.press('Escape');
     await expect(d).toBeVisible();
     await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
     await d.getByRole('button', { name: 'Continuar editando' }).click();
     await expect(d.getByRole('alert')).toHaveCount(0);
-    await expect(d.getByLabel(/Nome Completo/)).toHaveValue('Digitado');
+    await expect(d.getByLabel(/Nome completo/)).toHaveValue('Digitado');
 
     await d.getByRole('button', { name: 'Cancelar' }).click();
     await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
     await d.getByRole('button', { name: 'Descartar' }).click();
     await expect(d).toBeHidden();
     expect(escritas).toEqual([]);
+  });
+
+  test('veículo em rascunho só com o chassi (vindo da busca da placa) também conta como dado digitado', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` }).click();
+    await page.getByRole('menuitem', { name: /Adicionar veículo/ }).click();
+    const d = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
+    await d.getByRole('textbox', { name: /^Placa/ }).fill('ZZZ9Z99');
+    await d.getByRole('button', { name: 'Buscar placa' }).click();
+    await expect(d.getByLabel(/^Modelo/)).toHaveValue('Gol 1.0');
+    // apaga tudo o que aparece; o chassi preenchido pela busca continua no rascunho
+    for (const campo of [d.getByRole('textbox', { name: /^Placa/ }), d.getByLabel(/^Modelo/), d.getByLabel(/^Marca/), d.getByLabel(/^Cor/), d.getByLabel(/^Ano/)]) {
+      await campo.fill('');
+    }
+    await page.keyboard.press('Escape');
+    await expect(d).toBeVisible();
+    await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
   });
 
   test('formulário intacto fecha com Esc sem perguntar', async ({ page }, info) => {
@@ -324,7 +410,7 @@ test.describe('sair das folhas de formulário', () => {
     await d.getByRole('button', { name: 'Editar carro' }).first().click();
     await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
     await d.getByRole('button', { name: 'Descartar' }).click();
-    const v = page.getByRole('dialog', { name: /Editar Veículo — ABC1234/ });
+    const v = page.getByRole('dialog', { name: /Editar Veículo — ABC-1234/ });
     await expect(v).toBeVisible();
     await page.keyboard.press('Escape'); // nada mudou no veículo
     await expect(v).toBeHidden();
@@ -403,7 +489,7 @@ test('enquanto carrega, o cabeçalho não mostra contagem zerada', async ({ page
   });
   await entrarComo(page, 'DONO', tema);
   await page.goto('/?tab=clientes');
-  const h1 = page.getByRole('heading', { level: 1, name: 'Clientes & Veículos' });
+  const h1 = page.getByRole('heading', { level: 1, name: 'Clientes & veículos' });
   await expect(h1).toBeVisible();
   await expect(h1.locator('xpath=..')).not.toContainText('0');
   await expect(page.getByText(/veículos cadastrados/)).toHaveCount(0);
