@@ -174,10 +174,15 @@ test.describe('bancada: confirmação do Pago', () => {
     expect(caixa.y + caixa.height).toBeGreaterThanOrEqual(nav.y - 2);
 
     // a posição vem da variável --barra-inferior-h publicada pelo shell (não de um número fixo)
-    await page.evaluate(() => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.setProperty('--barra-inferior-h', '140px'));
+    const original = await page.evaluate(() => {
+      const raiz = document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!;
+      const valor = raiz.style.getPropertyValue('--barra-inferior-h');
+      raiz.style.setProperty('--barra-inferior-h', '140px');
+      return valor;
+    });
     const alterada = (await barra.boundingBox())!;
     expect(Math.round(844 - (alterada.y + alterada.height))).toBe(140);
-    await page.evaluate(() => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.removeProperty('--barra-inferior-h'));
+    await page.evaluate((v) => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.setProperty('--barra-inferior-h', v), original);
 
     // o fim da página não fica escondido atrás da barra
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));

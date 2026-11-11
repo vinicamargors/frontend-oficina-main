@@ -37,7 +37,7 @@ import {
   X,
   SlidersHorizontal,
 } from 'lucide-react';
-import { Badge, Button, Field, PageHeader, Panel, PlateChip, Skeleton, StatusBadge, STATUS_OS, Tabs, CLASSE_CAMPO, classesBotao } from '../components/ui';
+import { Badge, Button, Field, PageHeader, Panel, PlateChip, formatarPlaca, Skeleton, StatusBadge, STATUS_OS, Tabs, CLASSE_CAMPO, classesBotao } from '../components/ui';
 import { ConfirmarPagamento } from '../components/ConfirmarPagamento';
 import { ConfirmarEtapa } from '../components/ConfirmarEtapa';
 import { FORMAS_PAGAMENTO } from './ordens/formasPagamento';
@@ -1425,7 +1425,7 @@ export function OrdensServico({
                               translate="no"
                               className="px-3 py-1 rounded-lg bg-sunken border border-brand font-mono text-lg font-semibold text-brand-ink uppercase tracking-wider"
                             >
-                              {v.placa}
+                              {formatarPlaca(v.placa)}
                             </span>
                             <div className="min-w-0">
                               <div className="text-base font-semibold text-ink truncate">

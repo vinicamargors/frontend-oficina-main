@@ -477,7 +477,7 @@ test.describe('datas no calendário local (22h em São Paulo)', () => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     await page.getByRole('button', { name: 'Novo lançamento' }).click();
-    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Novo lançamento' }));
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Novo lançamento' }), 'Descrição *');
   });
 
   test('novo lançamento às 22h: vencimento padrão é hoje; "já foi paga" sem vencimento liquida hoje', async ({ page }, info) => {

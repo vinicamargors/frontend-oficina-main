@@ -37,7 +37,7 @@ export function Folha({
       d.showModal();
       const campo =
         focoInicial === 'primeiro-campo'
-          ? d.querySelector<HTMLElement>('input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])')
+          ? d.querySelector<HTMLElement>('input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]):not([disabled]), select:not([disabled]), textarea:not([disabled])')
           : null;
       (campo ?? tituloRef.current)?.focus();
     } else if (!aberto && d.open) {

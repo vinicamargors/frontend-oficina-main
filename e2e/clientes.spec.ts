@@ -172,10 +172,9 @@ test.describe('ações do cliente (menu)', () => {
     await linha(page, JOAO.nome).getByRole('button', { name: `Mais ações de ${JOAO.nome}` }).click();
     await page.getByRole('menuitem', { name: /Editar ficha/ }).click();
     const ficha = page.getByRole('dialog', { name: `Ficha de ${JOAO.nome}` });
-    await exigirFocoNoPrimeiroCampo(ficha);
+    await exigirFocoNoPrimeiroCampo(ficha, /Nome Completo/);
     await page.keyboard.press('Escape');
     await expect(ficha).toBeHidden();
-
   });
 
   test('editar ficha envia PUT com os dados novos', async ({ page }, info) => {
@@ -249,11 +248,11 @@ test.describe('veículos do cliente', () => {
     await abrir(page, tema);
     const veics = await expandir(page);
     await veics.getByRole('button', { name: 'Editar veículo ABC-1234' }).click();
-    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: /Editar Veículo — / }));
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: /Editar Veículo — / }), page.locator('#edit-vei-placa'));
     await page.keyboard.press('Escape');
 
     await veics.getByRole('button', { name: 'Abrir OS para ABC-1234' }).click();
-    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Abrir Ordem de Serviço' }));
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Abrir Ordem de Serviço' }), /KM Atual na Entrada/);
   });
 
   test('editar veículo: abre com os dados, consulta a placa e salva com PUT', async ({ page }, info) => {

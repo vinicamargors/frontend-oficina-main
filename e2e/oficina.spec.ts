@@ -333,9 +333,14 @@ test.describe('dados da oficina', () => {
     expect(b2.y + b2.height).toBeLessThanOrEqual(nav.y);
     // a barra de salvar também usa --barra-inferior-h
     const barraSalvar = salvar.locator('xpath=ancestor::div[contains(@class,"sticky")][1]');
-    await page.evaluate(() => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.setProperty('--barra-inferior-h', '140px'));
+    const original = await page.evaluate(() => {
+      const raiz = document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!;
+      const valor = raiz.style.getPropertyValue('--barra-inferior-h');
+      raiz.style.setProperty('--barra-inferior-h', '140px');
+      return valor;
+    });
     expect(await barraSalvar.evaluate((el) => getComputedStyle(el).bottom)).toBe('140px');
-    await page.evaluate(() => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.removeProperty('--barra-inferior-h'));
+    await page.evaluate((v) => document.querySelector<HTMLElement>('[style*="--barra-inferior-h"]')!.style.setProperty('--barra-inferior-h', v), original);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const b3 = (await salvar.boundingBox())!;
     expect(b3.y + b3.height).toBeLessThanOrEqual(nav.y);
@@ -590,6 +595,9 @@ test.describe('trocar de tela com o formulário da oficina sujo', () => {
     const { tema } = contextoDoProjeto(info);
     await abrirComHistorico(page, tema);
     await campo(page, 'Chave PIX').fill('pix-novo');
+    await page.evaluate(() => {
+      (window as unknown as { __indiceInicial?: number }).__indiceInicial = (window as unknown as { navigation: { currentEntry: { index: number } } }).navigation.currentEntry.index;
+    });
     await page.goBack();
     const aviso = page.getByRole('alert').filter({ hasText: 'Descartar alterações?' });
     await expect(aviso).toBeVisible();
@@ -597,6 +605,11 @@ test.describe('trocar de tela com o formulário da oficina sujo', () => {
     await campo(page, 'Chave PIX').fill(configuracoesEmpresa.chave_pix);
     await expect(aviso).toHaveCount(0);
     await expect(page.getByText('Alterações não salvas')).toHaveCount(0);
+    // a limpeza do histórico (travessia) precisa terminar antes do voltar seguinte: espera o índice da entrada atual cair um
+    await page.waitForFunction(() => {
+      const w = window as unknown as { __indiceInicial?: number; navigation: { currentEntry: { index: number } } };
+      return w.navigation.currentEntry.index < (w.__indiceInicial ?? Infinity);
+    });
     await page.goBack();
     await expect(page.getByRole('heading', { level: 1, name: 'Dados da Oficina' })).toHaveCount(0);
   });

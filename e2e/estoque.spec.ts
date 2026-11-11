@@ -264,7 +264,7 @@ test.describe('formulário da peça', () => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     await page.getByRole('button', { name: /Nova peça/ }).click();
-    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Nova peça no estoque' }));
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Nova peça no estoque' }), /Nome da peça/);
   });
 
   test('nova peça: salva com os valores digitados', async ({ page }, info) => {

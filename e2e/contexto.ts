@@ -21,8 +21,8 @@ export function coletarErros(page: Page): string[] {
   return erros;
 }
 
-/** Folha de formulário: o foco inicial vai ao primeiro campo editável (não ao título). */
-export async function exigirFocoNoPrimeiroCampo(folha: Locator): Promise<void> {
-  const primeiro = folha.locator('input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])').first();
-  await expect(primeiro).toBeFocused();
+/** Folha de formulário: o foco inicial vai ao campo esperado (rótulo ou locator), não ao título nem a um controle escondido. */
+export async function exigirFocoNoPrimeiroCampo(folha: Locator, esperado: string | RegExp | Locator): Promise<void> {
+  const alvo = typeof esperado === 'string' || esperado instanceof RegExp ? folha.getByLabel(esperado) : esperado;
+  await expect(alvo).toBeFocused();
 }

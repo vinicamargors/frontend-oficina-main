@@ -133,7 +133,7 @@ test.describe('formulário do colaborador', () => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     await page.getByRole('button', { name: /Novo colaborador/ }).click();
-    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Novo colaborador' }));
+    await exigirFocoNoPrimeiroCampo(page.getByRole('dialog', { name: 'Novo colaborador' }), /Nome completo/);
   });
 
   test('novo: salva todos os campos de RH digitados', async ({ page }, info) => {
