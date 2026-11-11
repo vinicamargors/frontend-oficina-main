@@ -20,6 +20,8 @@ import {
   Trash2,
   ShieldAlert,
 } from 'lucide-react';
+import { useTourDaPagina } from '../tour/useTourDaPagina';
+import { TOUR_FINANCEIRO } from '../tour/passos/financeiro';
 import { Button, CLASSE_CAMPO, Field, PageHeader, Panel, Tabs, type TabItem } from '../components/ui';
 import { Folha } from '../components/Folha';
 import {
@@ -665,6 +667,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
     </p>
   );
 
+  useTourDaPagina(TOUR_FINANCEIRO, canSeeFinanceiro && !carregando && !erro);
+
   if (!canSeeFinanceiro) {
     return (
       <div>
@@ -703,7 +707,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         }
         acoes={
           <>
-            <Button icone={Plus} onClick={() => abrirModalCadastroTransacao('DESPESA')}>
+            <Button icone={Plus} data-tour="financeiro-novo" onClick={() => abrirModalCadastroTransacao('DESPESA')}>
               Novo lançamento
             </Button>
             <Button
@@ -727,6 +731,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         }
       />
 
+      <div data-tour="financeiro-periodo">
       <SeletorPeriodo
         atalho={periodoAtalho}
         dataInicio={dataInicio}
@@ -742,6 +747,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
           setPeriodoAtalho('CUSTOM');
         }}
       />
+      </div>
 
       <div aria-live="polite">
         {sucessoMsg && (
@@ -764,7 +770,7 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         despesasPendentes={resumoFinanceiro.despesasPendentes}
       />
 
-      <div className="mb-4">
+      <div className="mb-4" data-tour="financeiro-abas">
         <Tabs
           itens={montarAbas(despesasEmAberto)}
           ativo={activeTab}

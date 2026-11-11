@@ -16,6 +16,8 @@ import {
   Minus,
   CheckCircle2,
 } from 'lucide-react';
+import { useTourDaPagina } from '../tour/useTourDaPagina';
+import { TOUR_ESTOQUE } from '../tour/passos/estoque';
 import { Button, CLASSE_CAMPO, Field, PageHeader, Panel, Skeleton } from '../components/ui';
 import { Folha } from '../components/Folha';
 import { LinhaItem, COLUNAS_ITEM } from './estoque/LinhaItem';
@@ -594,6 +596,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
     </div>
   );
 
+  useTourDaPagina(TOUR_ESTOQUE, !carregando && itens.length > 0);
   const verFinanceiro = canSeeFinanceiro;
   const qtdAjuste = Math.max(1, parseInt(ajusteQtd, 10) || 1);
   const saldoDepois = itemParaAjuste ? saldoApos(itemParaAjuste.quantidade ?? 0, ajusteTipo, qtdAjuste) : 0;
@@ -611,7 +614,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
         abaixo={<span className="hidden sm:inline">Peças, fluidos e componentes, com saldo e alerta de mínimo.</span>}
         acoes={
           <>
-            <Button icone={Plus} onClick={abrirModalCadastro}>
+            <Button icone={Plus} data-tour="estoque-nova" onClick={abrirModalCadastro}>
               Nova peça
             </Button>
             <Button
@@ -684,7 +687,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
 
       <search className="mb-4 block space-y-3">
         <div className="flex gap-3">
-          <div className="relative min-w-0 flex-1">
+          <div className="relative min-w-0 flex-1" data-tour="estoque-busca">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
               aria-hidden="true"
@@ -707,6 +710,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
             Categorias ({categoriasCustom.length})
           </Button>
         </div>
+        <div data-tour="estoque-categorias">
         <ChipsCategoria
           categorias={categoriasCustom}
           rotulos={rotulosCategoria}
@@ -729,6 +733,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
             setApenasEstoqueBaixo(false);
           }}
         />
+        </div>
       </search>
 
       {carregando ? (
@@ -769,7 +774,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
             <span className="text-right">Saldo</span>
             <span />
           </div>
-          <ul aria-label="Peças em estoque" className="divide-y divide-line">
+          <ul aria-label="Peças em estoque" data-tour="estoque-lista" className="divide-y divide-line">
             {itensFiltrados.map((item) => (
               <LinhaItem
                 key={item.id}

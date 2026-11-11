@@ -28,6 +28,8 @@ import {
 } from '../components/ui';
 import { Folha } from '../components/Folha';
 import { LinhaCliente } from './clientes/LinhaCliente';
+import { useTourDaPagina } from '../tour/useTourDaPagina';
+import { TOUR_CLIENTES } from '../tour/passos/clientes';
 import { LinhaVeiculo } from './clientes/LinhaVeiculo';
 import {
   PAGE_SIZE,
@@ -582,6 +584,7 @@ export function ClientesVeiculos({
   );
 
   const vazio = !loading && totalItems === 0;
+  useTourDaPagina(TOUR_CLIENTES, !loading && totalItems > 0);
   const semBusca = searchTerm.trim() === '';
   const rotuloPagina = viewMode === 'clientes' ? 'clientes' : 'veículos';
 
@@ -596,7 +599,7 @@ export function ClientesVeiculos({
         }
         abaixo={loading ? undefined : <span className="tabular-nums">{veiculos.length} veículos cadastrados</span>}
         acoes={
-          <Button icone={Plus} onClick={abrirFichaNovoCliente}>
+          <Button icone={Plus} data-tour="clientes-novo" onClick={abrirFichaNovoCliente}>
             Novo cliente
           </Button>
         }
@@ -624,7 +627,7 @@ export function ClientesVeiculos({
       {erro && !fichaAberta && !veiculoEmEdicao && !novaOsRapida && <div className="mb-4">{alertaErro(erro)}</div>}
 
       <search className="mb-4 block space-y-4">
-        <div className="relative">
+        <div className="relative" data-tour="clientes-busca">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
             aria-hidden="true"
@@ -646,6 +649,7 @@ export function ClientesVeiculos({
             className={`${CLASSE_CAMPO} pl-9`}
           />
         </div>
+        <div data-tour="clientes-abas">
         <Tabs
           rotuloGrupo="Modo de visualização"
           idPainel="painel-clientes-veiculos"
@@ -659,6 +663,7 @@ export function ClientesVeiculos({
             { id: 'veiculos', rotulo: `Placas · ${veiculos.length}`, icone: Car },
           ]}
         />
+        </div>
       </search>
 
       <div role="tabpanel" id="painel-clientes-veiculos" aria-labelledby={`aba-${viewMode}`}>
@@ -695,7 +700,7 @@ export function ClientesVeiculos({
             )}
           </Panel>
         ) : viewMode === 'clientes' ? (
-          <Panel as="ul" espaco="nenhum" aria-label="Clientes" className="divide-y divide-line">
+          <Panel as="ul" espaco="nenhum" aria-label="Clientes" data-tour="clientes-lista" className="divide-y divide-line">
             {clientesPaginados.map((cli) => (
               <LinhaCliente
                 key={cli.id}
@@ -715,7 +720,7 @@ export function ClientesVeiculos({
             ))}
           </Panel>
         ) : (
-          <Panel as="ul" espaco="nenhum" aria-label="Veículos" className="divide-y divide-line">
+          <Panel as="ul" espaco="nenhum" aria-label="Veículos" data-tour="clientes-lista" className="divide-y divide-line">
             {veiculosPaginados.map((v) => {
               const dono = clientePorId[v.cliente_id];
               return (
