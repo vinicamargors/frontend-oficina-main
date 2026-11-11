@@ -1053,6 +1053,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
       >
         {itemEtiqueta && (
           <>
+            <div className="area-impressao">
             {/* codemod:ignore-start */}
             {/* ÁREA DA ETIQUETA ADESIVA (PADRÃO TÉRMICO / GAVETA) */}
             <div
@@ -1122,6 +1123,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               </div>
             </div>
             {/* codemod:ignore-end */}
+            </div>
 
             <div className="flex flex-col-reverse gap-2 print:hidden sm:flex-row sm:justify-end">
               <Button variante="secundario" onClick={() => setModalEtiquetaAberto(false)}>

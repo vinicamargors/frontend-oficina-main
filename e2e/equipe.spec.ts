@@ -29,9 +29,9 @@ const ENUM_CRU = /\b(DONO|MECANICO|ATENDENTE|FINANCEIRO|FERIAS|FOLGA|ENTRADA)\b/
 
 async function abrirHolerite(page: Page, nome = TIAGO.nome) {
   await page.getByRole('button', { name: `Ver holerite de ${nome}` }).click();
-  const h = page.getByRole('dialog', { name: 'Holerite' }).locator('#holerite-impressao');
-  await h.waitFor();
-  return h;
+  await page.getByRole('dialog', { name: 'Holerite' }).locator('#holerite-impressao').waitFor();
+  // pelo id: em `print` só o bloco fica visível e a folha (dialog) sai da árvore de acessibilidade
+  return page.locator('#holerite-impressao');
 }
 
 /** Sobrescreve a empresa devolvida em `/empresas/?empresa_id=` (null = lista vazia). */

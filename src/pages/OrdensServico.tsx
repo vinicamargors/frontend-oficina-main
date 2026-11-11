@@ -1725,6 +1725,7 @@ export function OrdensServico({
         {/* FOLHA A4 COMPACTA OCULTA NA TELA — VAI DIRETO PARA IMPRESSÃO         */}
         {/* 3 Seções separadas (Peças, Mão de Obra, Terceirizados) + Preto Forte */}
         {/* ==================================================================== */}
+        <div className="area-impressao">
         {/* codemod:ignore-start */}
         <div className="hidden print:block bg-white text-black text-[11px] leading-tight font-sans p-2 space-y-2.5">
           {/* Cabeçalho Compacto */}
@@ -1957,6 +1958,7 @@ export function OrdensServico({
           </div>
         </div>
         {/* codemod:ignore-end */}
+        </div>
 
         {/* ==================================================================== */}
         {/* INTERFACE DE TELA DA BANCADA (OCULTA NA IMPRESSÃO VIA print:hidden)  */}

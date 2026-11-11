@@ -1193,6 +1193,7 @@ export function Equipe({ empresaId }: EquipeProps) {
       <Folha aberto={modalHoleriteAberto && colaboradorHolerite !== null} titulo="Holerite" aoCancelar={() => setModalHoleriteAberto(false)}>
         {modalHoleriteAberto && colaboradorHolerite && (
           <>
+            <div className="area-impressao">
             {/* codemod:ignore-start */}
             {/* ÁREA DO HOLERITE IMPRIMÍVEL */}
             <div
@@ -1298,6 +1299,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               </div>
             </div>
             {/* codemod:ignore-end */}
+            </div>
 
             <div className="flex flex-col-reverse gap-2 print:hidden sm:flex-row sm:justify-end">
               <Button variante="secundario" onClick={() => setModalHoleriteAberto(false)}>
