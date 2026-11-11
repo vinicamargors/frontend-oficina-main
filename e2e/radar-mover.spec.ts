@@ -251,9 +251,11 @@ test.describe('radar: arrastar o card para mudar a etapa (desktop)', () => {
     await expect(cardDe(page, largura, 'EXECUCAO')).toBeAttached();
     await confirmar.click({ force: true });
     await confirmar.dblclick({ force: true });
-    // Esc não "cancela" uma gravação já enviada
+    // Esc (nem um segundo Esc) não "cancela" nem fecha a folha de uma gravação já enviada
+    await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     await expect(folha).toBeVisible();
+    expect(await page.evaluate(() => document.querySelector('dialog')?.open)).toBe(true);
     // nenhum card arrasta enquanto grava
     const outro = coluna(page, largura, 'ORCAMENTO').locator(`[data-os-id="${OUTRA.id}"]`);
     await expect(outro).toHaveAttribute('draggable', 'false');
@@ -382,6 +384,130 @@ test.describe('radar: menu "…" do card (todas as larguras)', () => {
     await esperarQuieto(page);
     expect(escritas).toHaveLength(1);
     await expect(cardDe(page, largura, 'FINALIZADO')).toBeVisible();
+  });
+});
+
+test.describe('radar: mudança de etapa e recarregamento do quadro', () => {
+  const botaoPeriodo = (page: Page) => page.getByRole('button', { name: /^(Últimos|Período) / });
+
+  /** Segura as leituras do quadro (as 9) até `soltar()`. */
+  async function segurarLeituras(page: Page) {
+    let soltar: () => void = () => {};
+    const portao = new Promise<void>((r) => (soltar = r));
+    const segurar = async (route: Route) => {
+      await portao;
+      await route.fallback();
+    };
+    await page.route(/\/api\/v1\/os\/\?/, segurar);
+    await page.route(/\/api\/v1\/dashboards\//, segurar);
+    return {
+      soltar: async () => {
+        soltar();
+        await page.unroute(/\/api\/v1\/os\/\?/, segurar);
+        await page.unroute(/\/api\/v1\/dashboards\//, segurar);
+      },
+    };
+  }
+
+  test('enquanto o quadro recarrega, o teclado não consegue pedir mudança: "Mover para" desabilitado com o motivo, sem folha, sem gravar', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    const { escritas } = await preparar(page, tema);
+    const leituras = await segurarLeituras(page);
+    await page.getByRole('button', { name: 'Atualizar' }).click();
+    await expect(page.getByTestId('radar-conteudo')).toHaveAttribute('aria-busy', 'true');
+
+    const gatilho = gatilhoMenu(page, largura, 'ORCAMENTO');
+    await gatilho.focus();
+    await page.keyboard.press('Enter');
+    const item = page.getByRole('menuitem', { name: /^Mover para Em execução/ });
+    await expect(item).toBeDisabled();
+    await expect(item).toHaveAttribute('title', 'Aguarde a atualização do quadro');
+    await expect(page.getByRole('menuitem', { name: 'Abrir ordem' })).toBeFocused();
+    await page.keyboard.press('ArrowDown'); // os itens inativos ficam fora das setas
+    await expect(page.getByRole('menuitem', { name: 'Abrir ordem' })).toBeFocused();
+    await item.click({ force: true });
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    if (largura >= 1024) await expect(cardDe(page, largura, 'ORCAMENTO')).toHaveAttribute('draggable', 'false');
+    expect(escritas).toEqual([]);
+
+    await leituras.soltar();
+    await esperarQuieto(page);
+    await gatilho.click();
+    await expect(page.getByRole('menuitem', { name: 'Mover para Em execução' })).toBeEnabled();
+    if (largura >= 1024) await expect(cardDe(page, largura, 'ORCAMENTO')).toHaveAttribute('draggable', 'true');
+  });
+
+  test('gravação que falha depois de um recarregamento mais novo (troca de período) não traz de volta o quadro antigo', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    const { escritas, liberar } = await preparar(page, tema, { segurar: true, falhar: true });
+    await gatilhoMenu(page, largura, 'ORCAMENTO').click();
+    await page.getByRole('menuitem', { name: 'Mover para Em execução' }).click();
+    await folhaMover(page, 'EXECUCAO').getByRole('button', { name: 'Confirmar' }).click();
+    await expect(contagem(page, largura, 'EXECUCAO')).toHaveText('3'); // otimista (7 dias)
+    // algo tira a folha da frente enquanto grava e o período muda para 14 dias
+    await page.evaluate(() => document.querySelector('dialog')?.close());
+    await botaoPeriodo(page).click();
+    await page.getByRole('menuitemradio', { name: '14 dias' }).click();
+    await expect(botaoPeriodo(page)).toHaveAccessibleName('Últimos 14 dias');
+    await esperarQuieto(page);
+    // 14 dias: ORC 3, AGP 2, EXE 3, FIN 2
+    await expect(contagem(page, largura, 'ORCAMENTO')).toHaveText('3');
+    await expect(contagem(page, largura, 'EXECUCAO')).toHaveText('3');
+
+    liberar();
+    await expect(page.getByRole('alert').filter({ hasText: `Não foi possível mover ${PLACA}` })).toBeVisible();
+    await esperarQuieto(page);
+    await expect(botaoPeriodo(page)).toHaveAccessibleName('Últimos 14 dias');
+    await expect(contagem(page, largura, 'ORCAMENTO')).toHaveText('3');
+    await expect(contagem(page, largura, 'AGUARDANDO_PECA')).toHaveText('2');
+    await expect(contagem(page, largura, 'EXECUCAO')).toHaveText('3');
+    await expect(contagem(page, largura, 'FINALIZADO')).toHaveText('2');
+    await expect(cardDe(page, largura, 'ORCAMENTO')).toBeVisible();
+    expect(escritas).toHaveLength(1);
+  });
+
+  test('carregamento que falha com a folha aberta: depois de "Tentar novamente" a folha antiga não volta', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    const { escritas } = await preparar(page, tema);
+    await gatilhoMenu(page, largura, 'ORCAMENTO').click();
+    await page.getByRole('menuitem', { name: 'Mover para Finalizado' }).click();
+    await expect(folhaMover(page, 'FINALIZADO')).toBeVisible();
+    // a folha sai da frente sem passar pelo Cancelar e um recarregamento falha
+    await page.evaluate(() => document.querySelector('dialog')?.close());
+    const falhar = (route: Route) =>
+      route.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{}' });
+    await page.route(/\/api\/v1\/dashboards\//, falhar);
+    await page.getByRole('button', { name: 'Atualizar' }).click();
+    await expect(page.getByText('Não foi possível carregar o Radar. Tente novamente.')).toBeVisible();
+    await page.unroute(/\/api\/v1\/dashboards\//, falhar);
+    await page.getByRole('button', { name: 'Tentar novamente' }).click();
+    await expect(coluna(page, largura, 'ORCAMENTO')).toBeVisible();
+    await esperarQuieto(page);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(escritas).toEqual([]);
+  });
+
+  test('o aviso de sucesso fica na região viva mesmo se o recarregamento seguinte falhar', async ({ page }, info) => {
+    const { tema, largura } = contextoDoProjeto(info);
+    await preparar(page, tema);
+    const falhar = (route: Route) =>
+      route.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{}' });
+    await gatilhoMenu(page, largura, 'ORCAMENTO').click();
+    await page.getByRole('menuitem', { name: 'Mover para Em execução' }).click();
+    await page.route(/\/api\/v1\/dashboards\//, falhar);
+    const regiao = page.getByRole('status').filter({ hasText: `${PLACA} movida para Em execução` });
+    const id = await page.evaluate(() => {
+      const el = document.querySelector('[aria-live="polite"]') as HTMLElement & { __marca?: string };
+      el.dataset.marca = 'mesma';
+      return el.dataset.marca;
+    });
+    expect(id).toBe('mesma');
+    await folhaMover(page, 'EXECUCAO').getByRole('button', { name: 'Confirmar' }).click();
+    await expect(page.getByText('Não foi possível carregar o Radar. Tente novamente.')).toBeVisible();
+    // a mesma região (não uma nova, montada depois) segue com o anúncio
+    await expect(regiao).toHaveCount(1);
+    await expect(regiao).toHaveAttribute('data-marca', 'mesma');
   });
 });
 
