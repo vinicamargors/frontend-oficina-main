@@ -667,8 +667,8 @@ export function Financeiro({ empresaId }: FinanceiroProps) {
         <PageHeader titulo="Caixa & Financeiro" />
         <Panel espaco="lg" className="mx-auto flex max-w-xl flex-col items-center gap-3 text-center">
           <ShieldAlert className="h-10 w-10 text-danger" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="text-base font-semibold text-ink">Acesso restrito ao módulo financeiro</h2>
-          <p className="text-sm text-ink-muted">
+          <h2 className="text-base font-semibold text-ink text-balance">Acesso restrito ao módulo financeiro</h2>
+          <p className="text-sm text-ink-muted text-pretty">
             Este painel contém informações estratégicas, DRE, margens e dados contábeis da oficina.
             Seu perfil ({user?.cargo}) não possui permissão para visualizar estes números.
           </p>

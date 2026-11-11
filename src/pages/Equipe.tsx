@@ -658,8 +658,8 @@ export function Equipe({ empresaId }: EquipeProps) {
         <PageHeader titulo="Equipe & RH" />
         <Panel espaco="lg" className="mx-auto flex max-w-xl flex-col items-center gap-3 text-center">
           <ShieldAlert className="h-10 w-10 text-danger" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="text-base font-semibold text-ink">Acesso restrito à gestão</h2>
-          <p className="text-sm text-ink-muted">
+          <h2 className="text-base font-semibold text-ink text-balance">Acesso restrito à gestão</h2>
+          <p className="text-sm text-ink-muted text-pretty">
             O módulo de Equipe &amp; RH contém informações salariais e de gestão da oficina. Seu perfil atual ({rotuloCargo(user?.cargo)}) não possui permissão para visualizar ou editar estes dados.
           </p>
         </Panel>
@@ -739,8 +739,8 @@ export function Equipe({ empresaId }: EquipeProps) {
               (colaboradoresVisiveis.length === 0 ? (
                 <Panel espaco="lg" className="flex flex-col items-center gap-3 text-center">
                   <Users className="h-10 w-10 text-ink-subtle" strokeWidth={1.5} aria-hidden="true" />
-                  <h2 className="text-base font-semibold text-ink">Nenhum colaborador cadastrado</h2>
-                  <p className="max-w-md text-sm text-ink-muted">
+                  <h2 className="text-base font-semibold text-ink text-balance">Nenhum colaborador cadastrado</h2>
+                  <p className="max-w-md text-sm text-ink-muted text-pretty">
                     Cadastre a equipe para controlar cargos, salários, comissões e o ponto de cada um.
                   </p>
                 </Panel>

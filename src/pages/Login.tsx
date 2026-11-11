@@ -389,10 +389,10 @@ export function Login() {
                 aria-hidden="true"
               />
               <div className="space-y-2">
-                <h1 className="text-2xl font-semibold leading-tight">
+                <h1 className="text-2xl font-semibold leading-tight text-balance">
                   Confirme seu e-mail para ativar sua oficina
                 </h1>
-                <p className="text-base text-ink-muted">
+                <p className="text-base text-ink-muted text-pretty">
                   Enviamos um link de ativação para:
                 </p>
                 <p className="break-all rounded-xl bg-muted px-4 py-3 font-mono text-base font-semibold">
@@ -438,10 +438,10 @@ export function Login() {
                 aria-hidden="true"
               />
               <div className="space-y-2">
-                <h1 className="text-2xl font-semibold leading-tight">
+                <h1 className="text-2xl font-semibold leading-tight text-balance">
                   Link de recuperação enviado
                 </h1>
-                <p className="text-base text-ink-muted">
+                <p className="text-base text-ink-muted text-pretty">
                   Enviamos um e-mail para criar sua nova senha em:
                 </p>
                 <p className="break-all rounded-xl bg-muted px-4 py-3 font-mono text-base font-semibold">
@@ -509,7 +509,7 @@ export function Login() {
               )}
 
               <div className="space-y-1">
-                <h1 className="text-2xl font-semibold leading-tight tracking-tight">
+                <h1 className="text-2xl font-semibold leading-tight tracking-tight text-balance">
                   {tituloModo[mode]}
                 </h1>
                 {mode !== "login" && (

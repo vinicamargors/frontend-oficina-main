@@ -24,8 +24,8 @@ export function AbaPonto({
           <div className="flex items-start gap-3">
             <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-ink-muted" strokeWidth={1.5} aria-hidden="true" />
             <div>
-              <h2 className="text-base font-semibold text-ink">Ponto por geolocalização</h2>
-              <p className="mt-1 max-w-md text-sm text-ink-muted">
+              <h2 className="text-base font-semibold text-ink text-balance">Ponto por geolocalização</h2>
+              <p className="mt-1 max-w-md text-sm text-ink-muted text-pretty">
                 O registro confere se você está dentro do raio de <span className="font-medium text-ink">{raio} m</span> da oficina.
                 Fora do raio, o ponto fica marcado para conferência do gestor.
               </p>
@@ -56,7 +56,7 @@ export function AbaPonto({
       </Panel>
 
       <Panel espaco="nenhum" as="section" aria-labelledby="titulo-registros-ponto">
-        <h2 id="titulo-registros-ponto" className="px-4 pb-1 pt-4 text-sm font-medium text-ink lg:px-5">
+        <h2 id="titulo-registros-ponto" className="px-4 pb-1 pt-4 text-sm font-medium text-ink lg:px-5 text-balance">
           Últimos registros
         </h2>
         {pontos.length === 0 ? (

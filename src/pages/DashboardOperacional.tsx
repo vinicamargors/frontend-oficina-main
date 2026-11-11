@@ -315,10 +315,10 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           <div className="flex items-start gap-4">
             <AlertOctagon className="mt-1 h-6 w-6 shrink-0 text-danger" aria-hidden="true" />
             <div>
-              <h2 className="text-lg font-semibold text-ink">
+              <h2 className="text-lg font-semibold text-ink text-balance">
                 Falha ao comunicar com o servidor da oficina
               </h2>
-              <p className="mt-1 text-sm text-ink-muted">{error}</p>
+              <p className="mt-1 text-sm text-ink-muted text-pretty">{error}</p>
             </div>
           </div>
           <Button onClick={carregarRadar} icone={RefreshCw}>
@@ -373,8 +373,8 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         {patioVazio ? (
           <Panel espaco="lg" className="space-y-4">
             <div>
-              <h2 className="text-lg font-semibold text-ink">Nenhuma ordem no período</h2>
-              <p className="mt-1 text-sm text-ink-muted">
+              <h2 className="text-lg font-semibold text-ink text-balance">Nenhuma ordem no período</h2>
+              <p className="mt-1 text-sm text-ink-muted text-pretty">
                 {periodo.tipo === '30'
                   ? 'Abra uma ordem de serviço e ela aparece aqui, na etapa em que estiver.'
                   : 'Escolha um período maior para ver mais.'}
@@ -434,7 +434,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
           ) : (
             <Panel espaco="lg">
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-ink">Reposição de peças</h2>
+                <h2 className="text-lg font-semibold text-ink text-balance">Reposição de peças</h2>
                 <Button variante="fantasma" tamanho="sm" onClick={() => onNavigateTab('estoque')}>
                   Abrir estoque
                 </Button>

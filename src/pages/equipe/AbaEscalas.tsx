@@ -27,8 +27,8 @@ export function AbaEscalas({
       {escalas.length === 0 ? (
         <Panel espaco="lg" className="flex flex-col items-center gap-3 text-center">
           <Calendar className="h-10 w-10 text-ink-subtle" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="text-base font-semibold text-ink">Nenhuma escala ou férias agendada</h2>
-          <p className="max-w-md text-sm text-ink-muted">
+          <h2 className="text-base font-semibold text-ink text-balance">Nenhuma escala ou férias agendada</h2>
+          <p className="max-w-md text-sm text-ink-muted text-pretty">
             Agende o período de descanso de um colaborador: férias, folga de revezamento, atestado ou plantão extra.
           </p>
         </Panel>

@@ -27,10 +27,10 @@ function Secao({
   return (
     <Panel as="section" aria-labelledby={idTitulo} espaco="lg" className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-10">
       <div className="mb-5 lg:mb-0">
-        <h2 id={idTitulo} className="text-base font-semibold text-ink">
+        <h2 id={idTitulo} className="text-base font-semibold text-ink text-balance">
           {titulo}
         </h2>
-        <p className="mt-1 text-sm text-ink-muted">{apoio}</p>
+        <p className="mt-1 text-sm text-ink-muted text-pretty">{apoio}</p>
       </div>
       {carregando ? (
         <div role="status" className="grid grid-cols-1 gap-4 sm:grid-cols-2">

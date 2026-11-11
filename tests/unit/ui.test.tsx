@@ -93,6 +93,11 @@ describe('Button', () => {
 });
 
 describe('PageHeader', () => {
+  it('h1 usa text-balance para não deixar palavra sozinha na última linha', () => {
+    render(<PageHeader titulo="Estoque" />);
+    expect(screen.getByRole('heading', { level: 1 }).className).toContain('text-balance');
+  });
+
   it('define document.title', () => {
     render(<PageHeader titulo="Estoque" />);
     expect(document.title).toBe('Estoque · Mecanify');

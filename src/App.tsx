@@ -411,8 +411,8 @@ function AppShell() {
         <main id="conteudo-principal" className="flex-1 w-full p-4 md:p-8 print:p-0">
           {!effectiveEmpresaId ? (
             <div className="bg-surface rounded-2xl p-8 space-y-2">
-              <h2 className="text-xl font-semibold text-ink">Selecione uma oficina para ver o pátio</h2>
-              <p className="text-sm text-ink-muted">
+              <h2 className="text-xl font-semibold text-ink text-balance">Selecione uma oficina para ver o pátio</h2>
+              <p className="text-sm text-ink-muted text-pretty">
                 Sua conta Master está autenticada. Escolha uma oficina no seletor para carregar os dados.
               </p>
             </div>

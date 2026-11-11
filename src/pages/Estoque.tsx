@@ -736,8 +736,8 @@ export function Estoque({ empresaId }: EstoqueProps) {
       ) : itensFiltrados.length === 0 ? (
         <Panel espaco="lg" className="flex flex-col items-center gap-3 text-center">
           <Package className="h-10 w-10 text-ink-subtle" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="text-base font-semibold text-ink">Nenhum item encontrado</h2>
-          <p className="max-w-md text-sm text-ink-muted">
+          <h2 className="text-base font-semibold text-ink text-balance">Nenhum item encontrado</h2>
+          <p className="max-w-md text-sm text-ink-muted text-pretty">
             {temFiltro
               ? 'Nenhuma peça corresponde aos filtros aplicados. Tente limpar a busca.'
               : 'Seu almoxarifado ainda não possui peças cadastradas. Comece cadastrando sua primeira peça agora.'}

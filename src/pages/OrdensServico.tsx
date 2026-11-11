@@ -1079,10 +1079,10 @@ export function OrdensServico({
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4 bg-surface border-2 border-line rounded-lg p-5">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-ink">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-ink text-balance">
               Dar Entrada em Veículo (Nova OS)
             </h1>
-            <p className="text-base text-ink-muted mt-1">
+            <p className="text-base text-ink-muted mt-1 text-pretty">
               1º Escolha o cliente (por placa, nome, CPF ou telefone) e 2º selecione o
               veículo dele.
             </p>
@@ -2078,7 +2078,7 @@ export function OrdensServico({
           {/* Etapas da OS */}
           <Panel as="section" aria-label="Etapa atual da Ordem de Serviço" className="mb-4 space-y-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <h2 className="text-base font-semibold text-ink">Etapa do serviço</h2>
+              <h2 className="text-base font-semibold text-ink text-balance">Etapa do serviço</h2>
               <span className="text-xs text-ink-muted">
                 <span className="font-mono">OS #{os.id.slice(0, 8).toUpperCase()}</span> · aberta em{' '}
                 <span className="tabular-nums">{formatDataHora(os.data_abertura)}</span>
@@ -2153,7 +2153,7 @@ export function OrdensServico({
             {/* COLUNA ESQUERDA: LANÇAMENTO + ITENS */}
             <Panel as="section" aria-label="Itens da ordem de serviço" className="space-y-6 lg:col-span-8">
               <div className="space-y-4">
-                <h2 className="text-base font-semibold text-ink">Lançar item</h2>
+                <h2 className="text-base font-semibold text-ink text-balance">Lançar item</h2>
                 <Tabs
                   rotuloGrupo="Tipo de item a lançar"
                   quebrar
@@ -2418,7 +2418,7 @@ export function OrdensServico({
               {/* ITENS LANÇADOS: LISTA COM DIVISORES, ROLAGEM INTERNA SÓ NO DESKTOP, EDIÇÃO INLINE */}
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold text-ink">Itens lançados</h2>
+                  <h2 className="text-base font-semibold text-ink text-balance">Itens lançados</h2>
                   {dossie.itens.length > 5 && (
                     <input
                       type="search"
@@ -2630,7 +2630,7 @@ export function OrdensServico({
             <div className="space-y-4 lg:col-span-4">
               <Panel as="section" aria-labelledby="titulo-resumo-os" className="space-y-4">
                 <div>
-                  <h2 id="titulo-resumo-os" className="text-sm text-ink-muted">
+                  <h2 id="titulo-resumo-os" className="text-sm text-ink-muted text-balance">
                     Total da ordem
                   </h2>
                   <p className="text-[2rem] font-semibold leading-tight tabular-nums text-ink">
@@ -2664,7 +2664,7 @@ export function OrdensServico({
 
               <Panel as="section" aria-labelledby="titulo-ficha-tecnica" className="space-y-4">
                 <div className="flex items-center justify-between gap-2">
-                  <h2 id="titulo-ficha-tecnica" className="text-base font-semibold text-ink">
+                  <h2 id="titulo-ficha-tecnica" className="text-base font-semibold text-ink text-balance">
                     Ficha Técnica &amp; Diagnóstico
                   </h2>
                   <span aria-live="polite" className="text-xs font-medium">
@@ -3005,7 +3005,7 @@ export function OrdensServico({
         </Panel>
       ) : ordens.length === 0 ? (
         <Panel espaco="lg" className="space-y-3">
-          <h2 className="text-lg font-semibold text-ink">
+          <h2 className="text-lg font-semibold text-ink text-balance">
             {qtdFiltrosAtivos > 0 || busca
               ? 'Nenhuma ordem de serviço encontrada neste filtro'
               : 'Nenhuma ordem de serviço ainda'}

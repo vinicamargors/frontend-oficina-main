@@ -91,10 +91,10 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
       <Casca>
         <div className="space-y-3 text-center">
           <CheckCircle2 className="mx-auto h-10 w-10 text-success" aria-hidden="true" />
-          <h1 ref={tituloObrigado} tabIndex={-1} className="text-[1.375rem] font-semibold text-ink focus:outline-none">
+          <h1 ref={tituloObrigado} tabIndex={-1} className="text-[1.375rem] font-semibold text-ink focus:outline-none text-balance">
             Obrigado pela sua avaliação
           </h1>
-          <p className="text-sm text-ink-muted">
+          <p className="text-sm text-ink-muted text-pretty">
             Ela já chegou à oficina e ajuda a melhorar o atendimento e a reconhecer o trabalho dos mecânicos. Pode fechar esta página.
           </p>
         </div>
@@ -106,8 +106,8 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
     <Casca>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-1 text-center">
-          <h1 className="text-[1.375rem] font-semibold text-ink">Como foi o serviço no seu carro?</h1>
-          <p className="text-sm text-ink-muted">Sua nota ajuda a oficina a reconhecer os melhores mecânicos.</p>
+          <h1 className="text-[1.375rem] font-semibold text-ink text-balance">Como foi o serviço no seu carro?</h1>
+          <p className="text-sm text-ink-muted text-pretty">Sua nota ajuda a oficina a reconhecer os melhores mecânicos.</p>
         </div>
 
         <div className="space-y-2 text-center">

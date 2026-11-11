@@ -66,7 +66,7 @@ export function Folha({
     >
       {aberto && (
         <div className="space-y-5 p-5 sm:p-6" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}>
-          <h2 id={idTitulo} ref={tituloRef} tabIndex={-1} className="text-lg font-semibold text-ink focus:outline-none">
+          <h2 id={idTitulo} ref={tituloRef} tabIndex={-1} className="text-lg font-semibold text-ink focus:outline-none text-balance">
             {titulo}
           </h2>
           {children}

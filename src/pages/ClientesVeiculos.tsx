@@ -668,7 +668,7 @@ export function ClientesVeiculos({
           </Panel>
         ) : vazio ? (
           <Panel espaco="lg" className="space-y-2">
-            <h2 className="text-lg font-semibold text-ink">
+            <h2 className="text-lg font-semibold text-ink text-balance">
               {semBusca
                 ? viewMode === 'clientes'
                   ? 'Nenhum cliente cadastrado'
@@ -677,7 +677,7 @@ export function ClientesVeiculos({
                   ? 'Nenhum cliente encontrado'
                   : 'Nenhum veículo encontrado'}
             </h2>
-            <p className="text-sm text-ink-muted">
+            <p className="text-sm text-ink-muted text-pretty">
               {semBusca
                 ? 'Use “Novo cliente” para cadastrar o primeiro cliente com seus veículos.'
                 : 'Confira a grafia ou busque por outra placa, nome ou telefone.'}

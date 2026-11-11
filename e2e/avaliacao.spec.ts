@@ -38,6 +38,7 @@ test.describe('avaliação pública', () => {
 
     await expect(page.getByRole('img', { name: 'Mecanify' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 1, name: 'Como foi o serviço no seu carro?' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveClass(/text-balance/);
     await expect(page.getByRole('navigation')).toHaveCount(0);
     await expect(enviar(page)).toHaveCount(1);
     const texto = await page.locator('body').innerText();

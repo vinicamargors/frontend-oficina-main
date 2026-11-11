@@ -115,10 +115,10 @@ export function AbaContas({
       {transacoes.length === 0 ? (
         <Panel espaco="lg" className="flex flex-col items-center gap-3 text-center">
           <CreditCard className="h-10 w-10 text-ink-subtle" strokeWidth={1.5} aria-hidden="true" />
-          <h2 className="text-base font-semibold text-ink">
+          <h2 className="text-base font-semibold text-ink text-balance">
             {temFiltro && totalNoPeriodo > 0 ? 'Nenhum lançamento no filtro atual' : 'Nenhum lançamento no período'}
           </h2>
-          <p className="max-w-md text-sm text-ink-muted">
+          <p className="max-w-md text-sm text-ink-muted text-pretty">
             {temFiltro && totalNoPeriodo > 0
               ? 'Nenhuma conta corresponde aos filtros aplicados.'
               : 'Cadastre aluguel, luz, taxas, folha de pagamento ou aportes para controlar o fluxo de caixa.'}

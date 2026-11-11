@@ -20,7 +20,7 @@ export function PageHeader({
   useEffect(() => {
     document.title = `${titulo} · Mecanify`;
   }, [titulo]);
-  const h1 = <h1 className="text-[1.375rem] font-semibold text-ink">{titulo}</h1>;
+  const h1 = <h1 className="text-[1.375rem] font-semibold text-ink text-balance">{titulo}</h1>;
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
       {inicio || complemento || abaixo ? (
