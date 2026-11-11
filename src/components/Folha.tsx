@@ -14,6 +14,7 @@ export function Folha({
   tamanho = 'sm',
   fecharNoFundo = true,
   focoInicial = 'titulo',
+  bloquearFechar = false,
 }: {
   aberto: boolean;
   titulo: string;
@@ -25,6 +26,8 @@ export function Folha({
   fecharNoFundo?: boolean;
   /** `titulo` (padrão): confirmações e pagamento. `primeiro-campo`: formulários. */
   focoInicial?: 'titulo' | 'primeiro-campo';
+  /** true: Esc não fecha nem pede para fechar (ex.: gravação em andamento). Sem isso, um 2º Esc fecharia o `<dialog>` à força. */
+  bloquearFechar?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
@@ -51,7 +54,7 @@ export function Folha({
   };
 
   const cliqueNoFundo = (e: MouseEvent<HTMLDialogElement>) => {
-    if (fecharNoFundo && e.target === ref.current) aoCancelar();
+    if (fecharNoFundo && !bloquearFechar && e.target === ref.current) aoCancelar();
   };
 
   return (
@@ -59,6 +62,9 @@ export function Folha({
       ref={ref}
       aria-labelledby={idTitulo}
       onCancel={cancelar}
+      onKeyDown={(e) => {
+        if (bloquearFechar && e.key === 'Escape') e.preventDefault();
+      }}
       onClick={cliqueNoFundo}
       className={`m-0 mt-auto w-full max-w-full rounded-t-2xl bg-surface p-0 text-ink backdrop:bg-ink/40 dark:backdrop:bg-black/60 sm:m-auto sm:rounded-2xl ${
         tamanho === 'lg' ? 'max-h-[92dvh] overflow-y-auto sm:w-[40rem]' : 'sm:w-[28rem]'

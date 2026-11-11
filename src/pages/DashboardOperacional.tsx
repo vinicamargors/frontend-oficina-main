@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useId, type DragEvent } from 'react';
+import { useEffect, useState, useCallback, useRef, useId, type DragEvent, type ReactNode } from 'react';
 import { api } from '../api/client';
 import { ItemCritico, StatusOS, UltimaOS } from '../types';
 import { AlertOctagon, AlertTriangle, ChevronDown, CircleCheck, FileText, MessageCircle, Move, RefreshCw } from 'lucide-react';
@@ -37,6 +37,7 @@ const formatBRL = (valor: number) =>
 const ETAPAS = ETAPAS_QUADRO;
 // Some depois da primeira mudança de etapa que dá certo no Radar.
 const CHAVE_DICA_ARRASTAR = 'mecanify_radar_dica_arrastar';
+const MOTIVO_RECARREGANDO = 'Aguarde a atualização do quadro';
 // Quantas ordens antigas (fora do período) o aviso lista.
 const LIMITE_ANTIGAS = 5;
 // Quantos cards cada etapa desenha; o total exato vem da contagem da API.
@@ -75,6 +76,8 @@ interface ControleMover {
   pode: boolean;
   /** Uma gravação em andamento: nada mais arrasta e os itens "Mover para" ficam inativos. */
   gravando: boolean;
+  /** O quadro está recarregando: idem (o teclado alcança o menu mesmo com o quadro esmaecido). */
+  carregando: boolean;
   /** Id do elemento com a dica para leitor de tela (`aria-describedby` do card). */
   idDica: string;
   /** Ordem sendo arrastada agora e a coluna sob o ponteiro. */
@@ -97,7 +100,8 @@ function AcoesCard({ os, st, onAbrir, mover }: { os: UltimaOS; st: StatusOS; onA
       rotulo: `Mover para ${STATUS_OS[para].rotulo}`,
       icone: STATUS_OS[para].icone,
       aoClicar: () => mover.aoPedir(os, st, para),
-      desabilitado: mover.gravando,
+      desabilitado: mover.gravando || mover.carregando,
+      motivo: mover.carregando ? MOTIVO_RECARREGANDO : mover.gravando ? 'Aguarde: outra mudança está sendo gravada' : undefined,
     })),
   ];
   return (
@@ -138,7 +142,7 @@ function CardOS({ os, onAbrir, mover }: { os: UltimaOS; onAbrir: () => void; mov
     <li
       data-os-id={os.id}
       data-arrastando={arrastando || undefined}
-      draggable={mover.pode ? !mover.gravando : undefined}
+      draggable={mover.pode ? !mover.gravando && !mover.carregando : undefined}
       onDragStart={mover.pode ? (e) => mover.aoIniciarArrasto(os, st, e) : undefined}
       onDragEnd={mover.pode ? mover.aoFimArrasto : undefined}
       className={`relative transition-opacity motion-reduce:transition-none ${arrastando ? 'opacity-50' : ''}`}
@@ -149,7 +153,7 @@ function CardOS({ os, onAbrir, mover }: { os: UltimaOS; onAbrir: () => void; mov
           onClick={onAbrir}
           aria-describedby={mover.pode ? mover.idDica : undefined}
           className={`block w-full rounded-2xl p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-            mover.pode && !mover.gravando ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+            mover.pode && !mover.gravando && !mover.carregando ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
           }`}
         >
           <span className={`flex flex-wrap items-center justify-between gap-2 ${mover.pode ? 'pr-10' : ''}`}>
@@ -470,13 +474,21 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   const [anuncio, setAnuncio] = useState('');
   const [dicaVista, setDicaVista] = useState(lerDicaVista);
   const focarAcoesDe = useRef<string | null>(null);
+  // Valores da última renderização, para os manipuladores assíncronos (o estado do fechamento fica velho)
+  const loadingRef = useRef(true);
+  loadingRef.current = loading;
+  const quadroRef = useRef<Quadro | null>(null);
+  quadroRef.current = quadro;
 
   const carregarRadar = useCallback(async () => {
     if (!empresaId) return;
     const minha = ++seqRadar.current;
+    loadingRef.current = true;
     setLoading(true);
     setError(null);
     setErroMover(null);
+    // Um pedido de mudança aberto é do quadro anterior: some (não volta depois de um erro + "Tentar novamente")
+    setPedido(null);
     try {
       const { inicio, fim } = intervaloDoPeriodo(periodo);
       const doPeriodo = { empresaId, dataInicio: inicio, dataFim: fim, ordenacao: 'data_desc' as const };
@@ -506,6 +518,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
       if (minha !== seqRadar.current) return;
       // O detalhe técnico fica só no console; a tela mostra uma frase que o dono entende.
       console.error('Radar do pátio: falha ao carregar', err);
+      setPedido(null);
       setError('Não foi possível carregar o Radar. Tente novamente.');
     } finally {
       if (minha === seqRadar.current) setLoading(false);
@@ -515,6 +528,9 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   useEffect(() => {
     carregarRadar();
   }, [carregarRadar]);
+  // Os caminhos assíncronos (depois da gravação) usam o carregamento do período ATUAL, não o da hora do clique
+  const carregarRef = useRef(carregarRadar);
+  carregarRef.current = carregarRadar;
 
   const fimArrasto = () => {
     arrastoRef.current = null;
@@ -523,7 +539,8 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   };
 
   const pedirMovimento = (os: UltimaOS, de: StatusOS, para: StatusOS, viaMenu: boolean) => {
-    if (!podeMover || gravandoRef.current || !podeSoltar(de, para)) return;
+    // Recarregando, não: o quadro ainda vai mudar e a confirmação seria sobre dados velhos
+    if (!podeMover || gravandoRef.current || loadingRef.current || !podeSoltar(de, para)) return;
     setErroMover(null);
     setPedido({ osId: os.id, placa: os.veiculos?.placa || 'SEM-PLACA', de, para, viaMenu });
   };
@@ -531,12 +548,13 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   const controleMover: ControleMover = {
     pode: podeMover,
     gravando,
+    carregando: loading,
     idDica,
     arrastandoId: arrasto?.osId ?? null,
     sobre,
     podeSoltarEm: (st) => !!arrastoRef.current && podeSoltar(arrastoRef.current.de, st),
     aoIniciarArrasto: (os, de, e) => {
-      if (gravandoRef.current) {
+      if (gravandoRef.current || loadingRef.current) {
         e.preventDefault();
         return;
       }
@@ -560,14 +578,18 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   // Só depois de Confirmar: move na hora (otimista), grava, e recarrega o quadro; se falhar, desfaz e avisa
   const confirmarMovimento = async () => {
     const p = pedido;
-    if (!p || !quadro || gravandoRef.current) return;
+    if (!p || !quadro || gravandoRef.current || loadingRef.current) return;
     gravandoRef.current = true;
     setGravando(true);
     setErroMover(null);
     setAnuncio('');
     const anterior = quadro.etapas;
-    const seq = seqRadar.current;
-    setQuadro((q) => (q ? { ...q, etapas: moverNoQuadro(q.etapas, p.osId, p.de, p.para) } : q));
+    const otimista = moverNoQuadro(anterior, p.osId, p.de, p.para);
+    // Uma leitura começada antes de confirmar não pode sobrescrever o movimento otimista: vira velha aqui
+    seqRadar.current++;
+    loadingRef.current = false;
+    setLoading(false);
+    setQuadro((q) => (q ? { ...q, etapas: otimista } : q));
     try {
       await api.atualizarOS(empresaId, p.osId, { status: p.para });
       setAnuncio(anuncioMovida(p.placa, p.para));
@@ -575,12 +597,17 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
       setDicaVista(true);
       if (p.viaMenu) focarAcoesDe.current = p.osId;
       setPedido(null);
-      carregarRadar();
+      carregarRef.current();
     } catch (err: unknown) {
       // O detalhe técnico fica só no console; a tela diz o que aconteceu com a ordem
       console.error('Radar do pátio: falha ao mudar a etapa', err);
-      // Só desfaz se nenhum carregamento novo trocou o quadro nesse meio-tempo (aí ele já é a verdade)
-      if (seq === seqRadar.current) setQuadro((q) => (q ? { ...q, etapas: anterior } : q));
+      // Só desfaz se o quadro na tela ainda é o otimista; se um carregamento mais novo o trocou, ele fica
+      // (nunca põe as colunas de antes, de outro período, embaixo do seletor atual) e o quadro é relido
+      if (quadroRef.current?.etapas === otimista) {
+        setQuadro((q) => (q && q.etapas === otimista ? { ...q, etapas: anterior } : q));
+      } else {
+        carregarRef.current();
+      }
       setErroMover(
         `Não foi possível mover ${formatarPlaca(p.placa)} para ${STATUS_OS[p.para].rotulo}. A ordem continua em ${STATUS_OS[p.de].rotulo}. Tente novamente.`
       );
@@ -641,8 +668,18 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
     />
   );
 
+  // A região viva fica sempre montada no mesmo lugar (o erro ou o esqueleto não cortam o anúncio de sucesso)
+  const comRegiaoViva = (corpo: ReactNode) => (
+    <>
+      <p role="status" aria-live="polite" className="sr-only">
+        {anuncio}
+      </p>
+      {corpo}
+    </>
+  );
+
   if (error) {
-    return (
+    return comRegiaoViva(
       <div>
         {cabecalho}
         <Panel espaco="lg" className="space-y-5">
@@ -664,7 +701,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   }
 
   if (!quadro) {
-    return (
+    return comRegiaoViva(
       <div aria-busy="true" aria-label="Carregando Radar do pátio">
         {cabecalho}
         <div data-testid="radar-conteudo" aria-busy="true" className="grid gap-4 md:grid-cols-4">
@@ -683,14 +720,10 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
   const orcamentos = quadro.etapas.ORCAMENTO.total;
   const { antigas, pagas, itensCriticos, criticosCount } = quadro;
 
-  return (
+  return comRegiaoViva(
     <div>
       {cabecalho}
 
-      {/* Fora da área que fica aria-busy no recarregamento, para o leitor de tela não segurar o aviso */}
-      <p role="status" aria-live="polite" className="sr-only">
-        {anuncio}
-      </p>
       {podeMover && (
         <span id={idDica} className="sr-only">
           Use o menu … para mover para outra etapa
@@ -806,7 +839,7 @@ export function DashboardOperacional({ empresaId, onNavigateTab }: DashboardProp
         </section>
       </div>
 
-      <ConfirmarMovimento pedido={pedido} gravando={gravando} aoConfirmar={confirmarMovimento} aoCancelar={() => setPedido(null)} />
+      <ConfirmarMovimento pedido={pedido} gravando={gravando} aguardando={loading} aoConfirmar={confirmarMovimento} aoCancelar={() => setPedido(null)} />
     </div>
   );
 }

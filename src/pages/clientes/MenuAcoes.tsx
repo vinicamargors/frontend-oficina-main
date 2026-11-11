@@ -10,6 +10,8 @@ export interface ItemMenu {
   aoClicar: () => void;
   /** Item visível mas inativo (ex.: saída com saldo zero). */
   desabilitado?: boolean;
+  /** Por que o item está inativo (dica ao passar o mouse e texto para leitor de tela). */
+  motivo?: string;
 }
 
 /**
@@ -103,12 +105,13 @@ export function MenuAcoes({ rotulo, itens }: { rotulo: string; itens: ItemMenu[]
           aria-label={rotulo}
           className={`absolute right-0 z-20 w-60 rounded-2xl bg-surface p-1.5 shadow-card ring-1 ring-line dark:bg-line dark:ring-line-strong ${acima ? 'bottom-full mb-1' : 'top-full mt-1'}`}
         >
-          {itens.map(({ rotulo: r, icone: Icone, aoClicar, desabilitado }) => (
+          {itens.map(({ rotulo: r, icone: Icone, aoClicar, desabilitado, motivo }) => (
             <button
               key={r}
               type="button"
               role="menuitem"
               disabled={desabilitado}
+              title={desabilitado && motivo ? motivo : undefined}
               onClick={() => {
                 setAberto(false);
                 gatilho.current?.focus(); // se ainda montado; uma folha aberta por aoClicar devolve o foco aqui ao fechar
@@ -118,6 +121,7 @@ export function MenuAcoes({ rotulo, itens }: { rotulo: string; itens: ItemMenu[]
             >
               <Icone size={16} className="text-ink-muted" aria-hidden="true" />
               {r}
+              {desabilitado && motivo && <span className="sr-only">. {motivo}</span>}
             </button>
           ))}
         </div>

@@ -20,11 +20,14 @@ export interface PedidoMovimento {
 export function ConfirmarMovimento({
   pedido,
   gravando,
+  aguardando = false,
   aoConfirmar,
   aoCancelar,
 }: {
   pedido: PedidoMovimento | null;
   gravando: boolean;
+  /** O quadro está recarregando: Confirmar fica inativo até terminar. */
+  aguardando?: boolean;
   aoConfirmar: () => void;
   aoCancelar: () => void;
 }) {
@@ -32,7 +35,7 @@ export function ConfirmarMovimento({
     if (!gravando) aoCancelar();
   };
   return (
-    <Folha aberto={pedido !== null} titulo={pedido ? tituloMover(pedido.placa, pedido.para) : ''} aoCancelar={cancelar}>
+    <Folha aberto={pedido !== null} titulo={pedido ? tituloMover(pedido.placa, pedido.para) : ''} aoCancelar={cancelar} bloquearFechar={gravando}>
       {pedido && (
         <div className="space-y-2">
           <p className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
@@ -47,13 +50,19 @@ export function ConfirmarMovimento({
             </span>
           </p>
           <p className="text-xs text-ink-muted">Para marcar como pago, abra a ordem.</p>
+          {aguardando && !gravando && <p className="text-xs text-ink-muted">Aguarde a atualização do quadro.</p>}
         </div>
       )}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button variante="secundario" disabled={gravando} onClick={cancelar}>
           Cancelar
         </Button>
-        <Button carregando={gravando} onClick={aoConfirmar}>
+        <Button
+          carregando={gravando}
+          disabled={aguardando}
+          title={aguardando && !gravando ? 'Aguarde a atualização do quadro' : undefined}
+          onClick={aoConfirmar}
+        >
           Confirmar
         </Button>
       </div>
