@@ -27,6 +27,8 @@ import {
   UserX,
   Navigation,
 } from 'lucide-react';
+import { useTourDaPagina } from '../tour/useTourDaPagina';
+import { TOUR_EQUIPE } from '../tour/passos/equipe';
 import { Button, CLASSE_CAMPO, Field, PageHeader, Panel, Skeleton, type TabItem } from '../components/ui';
 import { Folha } from '../components/Folha';
 import { AbasEquipe } from './equipe/AbasEquipe';
@@ -658,6 +660,8 @@ export function Equipe({ empresaId }: EquipeProps) {
     fechar();
   };
 
+  useTourDaPagina(TOUR_EQUIPE, isGestor && carregado && !carregando);
+
   if (!isGestor) {
     return (
       <div>
@@ -692,7 +696,7 @@ export function Equipe({ empresaId }: EquipeProps) {
         }
         acoes={
           <>
-            <Button icone={UserPlus} onClick={abrirModalCadastroColaborador}>
+            <Button icone={UserPlus} data-tour="equipe-novo" onClick={abrirModalCadastroColaborador}>
               Novo colaborador
             </Button>
             <Button
@@ -703,6 +707,7 @@ export function Equipe({ empresaId }: EquipeProps) {
                 setModalConviteAberto(true);
               }}
               aria-label="Convidar no WhatsApp"
+              data-tour="equipe-convidar"
               title="Convidar no WhatsApp"
             >
               <span className="hidden sm:inline">Convidar no WhatsApp</span>
@@ -731,7 +736,9 @@ export function Equipe({ empresaId }: EquipeProps) {
       </div>
       {erroCarga && <div className="mb-4">{alertaErro(erroCarga)}</div>}
 
-      <AbasEquipe itens={ABAS} ativo={activeTab} aoMudar={(id) => setActiveTab(id as TabEquipe)} idPainel="painel-equipe" />
+      <div data-tour="equipe-abas">
+        <AbasEquipe itens={ABAS} ativo={activeTab} aoMudar={(id) => setActiveTab(id as TabEquipe)} idPainel="painel-equipe" />
+      </div>
 
       <div role="tabpanel" id="painel-equipe" aria-labelledby={`aba-${activeTab}`}>
         {!carregado ? (

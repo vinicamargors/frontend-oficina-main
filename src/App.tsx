@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { TourProvider } from './tour/TourProvider';
+import { AjudaPage } from './ajuda/AjudaPage';
 import { Login } from './pages/Login';
 import { DashboardOperacional } from './pages/DashboardOperacional';
 import { OrdensServico } from './pages/OrdensServico';
@@ -23,6 +25,7 @@ import {
   LogOut,
   Building2,
   UserCheck,
+  CircleHelp,
 } from 'lucide-react';
 
 type NavTab =
@@ -33,7 +36,8 @@ type NavTab =
   | 'estoque'
   | 'financeiro'
   | 'equipe'
-  | 'oficina';
+  | 'oficina'
+  | 'ajuda';
 
 const ROTULO_CARGO: Record<string, string> = {
   DONO: 'Dono',
@@ -142,6 +146,16 @@ function AppShell() {
 
   // Dados da Oficina com alterações não salvas: trocar de tela ou de oficina pergunta antes de descartar
   const oficinaSuja = useRef(false);
+  // Pedidos de navegação vindos de componentes fundos (botão "?" do cabeçalho)
+  const navegarRef = useRef<((id: NavTab, guia?: string) => void) | null>(null);
+  useEffect(() => {
+    const f = (e: Event) => {
+      const d = (e as CustomEvent<{ tab: NavTab; guia?: string }>).detail;
+      navegarRef.current?.(d.tab, d.guia);
+    };
+    window.addEventListener('mecanify:navegar', f);
+    return () => window.removeEventListener('mecanify:navegar', f);
+  }, []);
   const aoMudarSujoOficina = useCallback((sujo: boolean) => {
     oficinaSuja.current = sujo;
   }, []);
@@ -151,7 +165,7 @@ function AppShell() {
     else acao();
   };
 
-  const handleNavigateTab = (tab: string, status?: StatusOS, osId?: string, substituir = false) => {
+  const handleNavigateTab = (tab: string, status?: StatusOS, osId?: string, substituir = false, guia?: string) => {
     let nextTab = (tab as NavTab) || 'patio';
 
     // Impede navegação indevida por perfil
@@ -168,6 +182,8 @@ function AppShell() {
 
     const url = new URL(window.location.href);
     url.searchParams.delete('modo');
+    url.searchParams.delete('guia');
+    if (guia && nextTab === 'ajuda') url.searchParams.set('guia', guia);
     url.searchParams.set('tab', nextTab);
     if (status) {
       url.searchParams.set('status', status);
@@ -182,6 +198,8 @@ function AppShell() {
     // `substituir`: a tela que sai deixou uma entrada extra no histórico (formulário sujo); a nova tela fica no lugar dela
     if (substituir) window.history.replaceState({}, '', url.toString());
     else window.history.pushState({}, '', url.toString());
+    // a Ajuda guarda o guia aberto em estado próprio: avisa que a URL mudou
+    if (nextTab === 'ajuda') window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   useEffect(() => {
@@ -288,6 +306,13 @@ function AppShell() {
       icon: Building2,
       visible: canSeeConfig,
     },
+    {
+      id: 'ajuda',
+      label: 'Ajuda',
+      shortLabel: 'Ajuda',
+      icon: CircleHelp,
+      visible: true,
+    },
   ];
 
   const visibleNav = navItems.filter((item) => item.visible);
@@ -297,12 +322,13 @@ function AppShell() {
   const extrasMobile = visibleNav.slice(4);
   const abaNoExtra = extrasMobile.some((i) => i.id === activeTab);
 
-  const irPara = (id: NavTab) => {
+  const irPara = (id: NavTab, guia?: string) => {
     setMaisAberto(false);
     if (oficinaSuja.current && id === activeTab) return;
     // Descartar com o formulário sujo: a entrada extra que a Oficina deixou no histórico vira a da nova tela
-    protegerSaida(() => handleNavigateTab(id, undefined, undefined, oficinaSuja.current));
+    protegerSaida(() => handleNavigateTab(id, undefined, undefined, oficinaSuja.current, guia));
   };
+  navegarRef.current = irPara;
 
   const sair = () => {
     setMaisAberto(false);
@@ -409,7 +435,9 @@ function AppShell() {
         </header>
 
         <main id="conteudo-principal" className="flex-1 w-full p-4 md:p-8 print:p-0">
-          {!effectiveEmpresaId ? (
+          {activeTab === 'ajuda' ? (
+            <AjudaPage cargo={user.cargo} />
+          ) : !effectiveEmpresaId ? (
             <div className="bg-surface rounded-2xl p-8 space-y-2">
               <h2 className="text-xl font-semibold text-ink text-balance">Selecione uma oficina para ver o pátio</h2>
               <p className="text-sm text-ink-muted text-pretty">
@@ -568,7 +596,9 @@ function AppShell() {
 export function App() {
   return (
     <AuthProvider>
-      <AppShell />
+      <TourProvider>
+        <AppShell />
+      </TourProvider>
     </AuthProvider>
   );
 }

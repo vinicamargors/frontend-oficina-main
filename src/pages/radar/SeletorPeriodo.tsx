@@ -90,6 +90,7 @@ export function SeletorPeriodo({
       ref={raiz}
       role="group"
       aria-label="Período do quadro"
+      data-tour="radar-periodo"
       className={`relative flex min-w-0 items-center gap-2 ${className}`}
       onKeyDown={aoTeclar}
     >

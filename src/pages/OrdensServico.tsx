@@ -43,6 +43,9 @@ import { ConfirmarEtapa } from '../components/ConfirmarEtapa';
 import { FORMAS_PAGAMENTO } from './ordens/formasPagamento';
 import { ETAPAS_OS, mensagemEtapa } from './ordens/etapas';
 import { LinhaOrdem } from './ordens/LinhaOrdem';
+import { useTourDaPagina } from '../tour/useTourDaPagina';
+import { TOUR_ORDENS } from '../tour/passos/ordens';
+import { TOUR_BANCADA } from '../tour/passos/bancada';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
 import { dataLocalISO } from '../lib/data';
 import { useCelular } from '../lib/useMediaQuery';
@@ -1067,6 +1070,9 @@ export function OrdensServico({
   // ============================================================================
   // VISÃO 2: ENTRADA DE VEÍCULO (1º ESCOLHER CLIENTE -> 2º VEÍCULOS DO CLIENTE)
   // ============================================================================
+  useTourDaPagina(TOUR_ORDENS, view === 'lista' && !loadingLista && ordens.length > 0);
+  useTourDaPagina(TOUR_BANCADA, view === 'bancada' && !loadingDossie && !!dossie);
+
   if (view === 'nova') {
     const clienteSelecionado = clientes.find((c) => c.id === clienteSelecionadoId);
     const carrosDoClienteSelecionado = clienteSelecionadoId
@@ -2013,6 +2019,7 @@ export function OrdensServico({
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Mandar orçamento no WhatsApp"
+                  data-tour="os-whatsapp"
                   className={`${classesBotao('secundario')} hidden lg:inline-flex`}
                 >
                   <MessageCircle size={16} aria-hidden="true" />
@@ -2078,7 +2085,7 @@ export function OrdensServico({
           )}
 
           {/* Etapas da OS */}
-          <Panel as="section" aria-label="Etapa atual da ordem de serviço" className="mb-4 space-y-4">
+          <Panel as="section" aria-label="Etapa atual da ordem de serviço" data-tour="os-etapa" className="mb-4 space-y-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h2 className="text-base font-semibold text-ink text-balance">Etapa do serviço</h2>
               <span className="text-xs text-ink-muted">
@@ -2155,7 +2162,7 @@ export function OrdensServico({
             {/* COLUNA ESQUERDA: LANÇAMENTO + ITENS */}
             <Panel as="section" aria-label="Itens da ordem de serviço" className="space-y-6 lg:col-span-8">
               <div className="space-y-4">
-                <h2 className="text-base font-semibold text-ink text-balance">Lançar item</h2>
+                <h2 data-tour="os-lancar-item" className="text-base font-semibold text-ink text-balance">Lançar item</h2>
                 <Tabs
                   rotuloGrupo="Tipo de item a lançar"
                   quebrar
@@ -2630,7 +2637,7 @@ export function OrdensServico({
 
             {/* COLUNA DIREITA (≥1024) / ABAIXO DOS ITENS (CELULAR): RESUMO + FICHA TÉCNICA */}
             <div className="space-y-4 lg:col-span-4">
-              <Panel as="section" aria-labelledby="titulo-resumo-os" className="space-y-4">
+              <Panel as="section" aria-labelledby="titulo-resumo-os" data-tour="os-total" className="space-y-4">
                 <div>
                   <h2 id="titulo-resumo-os" className="text-sm text-ink-muted text-balance">
                     Total da ordem
@@ -2736,6 +2743,7 @@ export function OrdensServico({
               target="_blank"
               rel="noreferrer"
               aria-label="Mandar orçamento no WhatsApp"
+              data-tour="os-whatsapp"
               className={`${classesBotao('secundario')} flex-1`}
             >
               <MessageCircle size={16} aria-hidden="true" />
@@ -2797,7 +2805,7 @@ export function OrdensServico({
             >
               Atualizar
             </Button>
-            <Button onClick={abrirTelaNovaOS}>Nova ordem de serviço</Button>
+            <Button data-tour="ordens-nova" onClick={abrirTelaNovaOS}>Nova ordem de serviço</Button>
           </>
         }
       />
@@ -2822,7 +2830,7 @@ export function OrdensServico({
       {/* Busca + filtros extras (datas, valor, ordenação) */}
       <search className="mb-4 block space-y-4">
         <div className="flex items-center gap-2">
-          <div className="relative flex-1">
+          <div className="relative flex-1" data-tour="ordens-busca">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-subtle"
               aria-hidden="true"
@@ -2863,6 +2871,7 @@ export function OrdensServico({
           ref={faixaChipsRef}
           role="group"
           aria-label="Filtrar por etapa"
+          data-tour="ordens-etapas"
           className="-mx-4 flex snap-x scroll-px-4 gap-1 overflow-x-auto px-4 [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] [scrollbar-width:none] md:-mx-8 md:scroll-px-8 md:px-8 lg:mx-0 lg:flex-wrap lg:gap-2 lg:overflow-visible lg:px-0 lg:[mask-image:none] [&::-webkit-scrollbar]:hidden"
         >
           {(['TODAS', ...ETAPAS_OS] as const).map((id) => {
@@ -3031,7 +3040,7 @@ export function OrdensServico({
       ) : (
         <div className="space-y-4">
           <Panel espaco="nenhum" className="overflow-hidden">
-            <ul aria-label="Ordens de serviço" className="divide-y divide-line">
+            <ul aria-label="Ordens de serviço" data-tour="ordens-lista" className="divide-y divide-line">
               {ordens.map((os) => (
                 <LinhaOrdem
                   key={os.id}

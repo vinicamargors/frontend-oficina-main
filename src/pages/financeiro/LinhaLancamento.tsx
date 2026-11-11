@@ -87,7 +87,7 @@ export function LinhaLancamento({
 
       <div className="hidden justify-end lg:flex">
         {!isLiquidado && (
-          <Button variante="secundario" tamanho="sm" icone={CheckCircle2} onClick={aoDarBaixa} aria-label={`${acaoBaixa} ${t.descricao}`}>
+          <Button variante="secundario" tamanho="sm" icone={CheckCircle2} data-tour="financeiro-baixa" onClick={aoDarBaixa} aria-label={`${acaoBaixa} ${t.descricao}`}>
             {acaoBaixa}
           </Button>
         )}
