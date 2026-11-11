@@ -166,6 +166,19 @@ export async function simularBackend(page: Page, cenario: Cenario): Promise<void
       if (u.pathname.startsWith('/auth/v1/')) {
         const cargo = usuarioPorId(usuarioDoToken(auth) ?? '')?.cargo ?? 'DONO';
         const sessao = sessaoSupabase(cargo);
+        if (u.pathname.endsWith('/user') && metodo === 'PUT') {
+          // updateUser: mescla `data` em user_metadata (como o Supabase) e guarda a escrita
+          let corpo: { data?: Record<string, unknown> } | null = null;
+          try {
+            corpo = req.postDataJSON();
+          } catch {
+            /* sem corpo */
+          }
+          await page
+            .evaluate((c) => ((window as unknown as { __ultimaAuthUser: unknown }).__ultimaAuthUser = c), corpo)
+            .catch(() => {});
+          return json(route, { ...sessao.user, user_metadata: { ...sessao.user.user_metadata, ...(corpo?.data ?? {}) } });
+        }
         if (u.pathname.endsWith('/user')) return json(route, sessao.user);
         if (u.pathname.endsWith('/logout')) return json(route, {}, 204);
         return json(route, sessao); // token, signup...
