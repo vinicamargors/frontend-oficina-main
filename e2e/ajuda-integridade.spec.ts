@@ -6,6 +6,9 @@ import { TOUR_ORDENS } from '../src/tour/passos/ordens';
 import { TOUR_CLIENTES } from '../src/tour/passos/clientes';
 import { TOUR_ESTOQUE } from '../src/tour/passos/estoque';
 import { TOUR_FINANCEIRO } from '../src/tour/passos/financeiro';
+import { TOUR_EQUIPE } from '../src/tour/passos/equipe';
+import { TOUR_OFICINA } from '../src/tour/passos/oficina';
+import { TOUR_BANCADA } from '../src/tour/passos/bancada';
 import type { TourDef } from '../src/tour/tipos';
 
 type Cargo = 'DONO' | 'ATENDENTE' | 'MECANICO' | 'FINANCEIRO';
@@ -15,6 +18,9 @@ const TOURS: { tela: Tela; def: TourDef; cargos: Cargo[] }[] = [
   { tela: 'clientes', def: TOUR_CLIENTES, cargos: ['DONO', 'ATENDENTE', 'MECANICO', 'FINANCEIRO'] },
   { tela: 'estoque', def: TOUR_ESTOQUE, cargos: ['DONO', 'ATENDENTE', 'MECANICO', 'FINANCEIRO'] },
   { tela: 'financeiro', def: TOUR_FINANCEIRO, cargos: ['DONO', 'FINANCEIRO'] },
+  { tela: 'equipe', def: TOUR_EQUIPE, cargos: ['DONO'] },
+  { tela: 'oficina', def: TOUR_OFICINA, cargos: ['DONO'] },
+  { tela: 'bancada', def: TOUR_BANCADA, cargos: ['DONO', 'ATENDENTE', 'MECANICO', 'FINANCEIRO'] },
 ];
 
 for (const { tela, def, cargos } of TOURS) {

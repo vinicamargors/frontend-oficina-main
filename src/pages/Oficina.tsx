@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useId, useRef, type ReactNode } from 'react';
 import { api, COR_PRIMARIA_PADRAO, COR_SECUNDARIA_PADRAO } from '../api/client';
 import { AlertTriangle, CheckCircle2, ExternalLink, RefreshCw } from 'lucide-react';
+import { useTourDaPagina } from '../tour/useTourDaPagina';
+import { TOUR_OFICINA } from '../tour/passos/oficina';
 import { Button, Field, PageHeader, Panel } from '../components/ui';
 
 interface OficinaProps {
@@ -15,8 +17,10 @@ function Secao({
   apoio,
   carregando,
   campos = 4,
+  tour,
   children,
 }: {
+  tour?: string;
   titulo: string;
   apoio: string;
   carregando: boolean;
@@ -25,7 +29,7 @@ function Secao({
 }) {
   const idTitulo = useId();
   return (
-    <Panel as="section" aria-labelledby={idTitulo} espaco="lg" className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-10">
+    <Panel as="section" aria-labelledby={idTitulo} data-tour={tour} espaco="lg" className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-10">
       <div className="mb-5 lg:mb-0">
         <h2 id={idTitulo} className="text-base font-semibold text-ink text-balance">
           {titulo}
@@ -373,6 +377,8 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
   );
 
   // Falha na primeira carga: sem formulário vazio, que poderia ser salvo por cima dos dados reais
+  useTourDaPagina(TOUR_OFICINA, !mostrarEsqueleto && !erroCarga);
+
   if (!carregando && semDados && erroCarga) {
     return (
       <div className="mx-auto max-w-4xl">
@@ -403,7 +409,7 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
       )}
 
       <form onSubmit={handleSalvar} className="space-y-4">
-        <Secao titulo="Identificação" apoio="Nome, documentos e contatos da oficina." carregando={mostrarEsqueleto} campos={7}>
+        <Secao tour="oficina-identificacao" titulo="Identificação" apoio="Nome, documentos e contatos da oficina." carregando={mostrarEsqueleto} campos={7}>
           <div className="sm:col-span-2">
             <Field rotulo="Nome fantasia *">
               <input type="text" required value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} />
@@ -448,7 +454,7 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
           </div>
         </Secao>
 
-        <Secao titulo="Pagamento (PIX)" apoio="Como o cliente paga a ordem de serviço." carregando={mostrarEsqueleto} campos={1}>
+        <Secao tour="oficina-pix" titulo="Pagamento (PIX)" apoio="Como o cliente paga a ordem de serviço." carregando={mostrarEsqueleto} campos={1}>
           <div className="sm:col-span-2">
             <Field rotulo="Chave PIX" dica="Aparece nas ordens de serviço impressas. Pode ser CNPJ, e-mail, celular ou chave aleatória.">
               <input type="text" value={chavePix} onChange={(e) => setChavePix(e.target.value)} placeholder="CNPJ, e-mail, celular ou chave aleatória" />
@@ -456,7 +462,7 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
           </div>
         </Secao>
 
-        <Secao titulo="Ponto (GPS)" apoio="A equipe só registra o ponto dentro do raio do pátio." carregando={mostrarEsqueleto} campos={1}>
+        <Secao tour="oficina-gps" titulo="Ponto (GPS)" apoio="A equipe só registra o ponto dentro do raio do pátio." carregando={mostrarEsqueleto} campos={1}>
           <div className="sm:col-span-2 space-y-4">
             <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
               <Field rotulo="Raio de tolerância (metros)">
@@ -519,7 +525,7 @@ export function Oficina({ empresaId, onSujoChange }: OficinaProps) {
           </div>
         </Secao>
 
-        <Secao titulo="Folha e comissões" apoio="Regras padrão, usadas quando o colaborador não tem uma taxa própria." carregando={mostrarEsqueleto} campos={6}>
+        <Secao tour="oficina-folha" titulo="Folha e comissões" apoio="Regras padrão, usadas quando o colaborador não tem uma taxa própria." carregando={mostrarEsqueleto} campos={6}>
           <Field rotulo="Dia de pagamento da folha" dica="Ex.: dia 5 do mês seguinte">
             <input
               type="number"

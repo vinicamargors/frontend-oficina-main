@@ -2,10 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { BookOpen, CircleHelp, Route } from 'lucide-react';
 import { useTour } from '../../tour/contexto';
 import { TOUR_POR_ABA } from '../../tour/porAba';
+import { TOUR_BANCADA } from '../../tour/passos/bancada';
+import { GUIAS } from '../../ajuda/guias';
+import { filtrarGuias } from '../../ajuda/busca';
+import type { Cargo } from '../../ajuda/tipos';
 
 /** Pede ao app para trocar de aba (respeita a proteção de formulário sujo). */
-export function navegarPara(tab: string) {
-  window.dispatchEvent(new CustomEvent('mecanify:navegar', { detail: { tab } }));
+export function navegarPara(tab: string, guia?: string) {
+  window.dispatchEvent(new CustomEvent('mecanify:navegar', { detail: { tab, guia } }));
 }
 
 const ITEM = 'flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-ink hover:bg-muted focus-visible:bg-muted focus-visible:outline-none';
@@ -15,9 +19,12 @@ export function BotaoAjuda() {
   const [aberto, setAberto] = useState(false);
   const raiz = useRef<HTMLDivElement>(null);
   const gatilho = useRef<HTMLButtonElement>(null);
-  const { refazer } = useTour();
-  const aba = new URLSearchParams(window.location.search).get('tab') || 'patio';
-  const tour = TOUR_POR_ABA[aba];
+  const { refazer, cargo } = useTour();
+  const params = new URLSearchParams(window.location.search);
+  const aba = params.get('tab') || 'patio';
+  // a bancada de uma ordem (osId na URL) tem tour próprio
+  const tour = aba === 'os' && params.get('osId') ? TOUR_BANCADA : TOUR_POR_ABA[aba];
+  const guiasDaPagina = cargo ? filtrarGuias(GUIAS, '', cargo as Cargo).filter((g) => g.abas.includes(aba)) : [];
 
   useEffect(() => {
     if (!aberto) return;
@@ -51,12 +58,12 @@ export function BotaoAjuda() {
         aria-haspopup="menu"
         aria-expanded={aberto}
         onClick={() => setAberto((v) => !v)}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-ink-subtle opacity-35 transition hover:bg-muted hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand md:h-8 md:w-8"
       >
-        <CircleHelp size={20} strokeWidth={1.5} aria-hidden="true" />
+        <CircleHelp size={16} strokeWidth={1.5} aria-hidden="true" />
       </button>
       {aberto && (
-        <div role="menu" aria-label="Ajuda" className="absolute left-0 top-full z-30 mt-1 w-64 rounded-xl bg-surface p-1 shadow-card ring-1 ring-line">
+        <div role="menu" aria-label="Ajuda" className="absolute left-0 top-full z-30 mt-1 w-72 rounded-xl bg-surface p-1 shadow-card ring-1 ring-line">
           {tour && (
             <button
               type="button"
@@ -71,6 +78,21 @@ export function BotaoAjuda() {
               Refazer o tour desta página
             </button>
           )}
+          {guiasDaPagina.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              role="menuitem"
+              className={ITEM}
+              onClick={() => {
+                setAberto(false);
+                navegarPara('ajuda', g.id);
+              }}
+            >
+              <BookOpen size={16} aria-hidden="true" className="shrink-0" />
+              <span className="min-w-0">{g.titulo}</span>
+            </button>
+          ))}
           <button
             type="button"
             role="menuitem"
@@ -80,7 +102,7 @@ export function BotaoAjuda() {
               navegarPara('ajuda');
             }}
           >
-            <BookOpen size={16} aria-hidden="true" />
+            <CircleHelp size={16} aria-hidden="true" />
             Ver guias de ajuda
           </button>
         </div>

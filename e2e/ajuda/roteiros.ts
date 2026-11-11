@@ -58,6 +58,19 @@ export const ROTEIROS: Record<string, Roteiro> = {
     await page.getByRole('menuitem', { name: 'Registrar entrada' }).first().waitFor();
     await foto(3, ['estoque-lista']);
   },
+  'equipe-colaborador': async (page, foto) => {
+    await abrirTela(page, 'equipe');
+    await foto(2, ['equipe-novo']);
+    await foto(5, ['equipe-convidar']);
+  },
+  'equipe-folha': async (page, foto) => {
+    await abrirTela(page, 'equipe');
+    await foto(1, ['equipe-abas']);
+  },
+  'oficina-dados': async (page, foto) => {
+    await abrirTela(page, 'oficina');
+    await foto(4, ['oficina-pix']);
+  },
   'conta-baixa': async (page, foto) => {
     await abrirTela(page, 'financeiro');
     await foto(2, ['financeiro-novo']);

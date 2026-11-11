@@ -4,7 +4,7 @@ import { GUIAS } from '../../src/ajuda/guias';
 
 describe('filtrarGuias', () => {
   it('termo vazio lista todos do cargo', () => {
-    expect(filtrarGuias(GUIAS, '', 'DONO')).toHaveLength(7);
+    expect(filtrarGuias(GUIAS, '', 'DONO')).toHaveLength(11);
   });
   it('ignora acento e caixa', () => {
     const r = filtrarGuias(GUIAS, 'ORCAMENTO', 'DONO');

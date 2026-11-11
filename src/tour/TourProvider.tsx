@@ -93,8 +93,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
   }, [gravar]);
 
   const valor = useMemo<Ctx>(
-    () => ({ meta, ativo, iniciar, cancelar, refazer, pularTodos }),
-    [meta, ativo, iniciar, cancelar, refazer, pularTodos]
+    () => ({ meta, ativo, iniciar, cancelar, refazer, pularTodos, cargo: user?.cargo ?? null }),
+    [meta, ativo, iniciar, cancelar, refazer, pularTodos, user?.cargo]
   );
 
   return (

@@ -45,6 +45,7 @@ import { ETAPAS_OS, mensagemEtapa } from './ordens/etapas';
 import { LinhaOrdem } from './ordens/LinhaOrdem';
 import { useTourDaPagina } from '../tour/useTourDaPagina';
 import { TOUR_ORDENS } from '../tour/passos/ordens';
+import { TOUR_BANCADA } from '../tour/passos/bancada';
 import { useDebouncedValue } from '../lib/useDebouncedValue';
 import { dataLocalISO } from '../lib/data';
 import { useCelular } from '../lib/useMediaQuery';
@@ -1070,6 +1071,7 @@ export function OrdensServico({
   // VISÃO 2: ENTRADA DE VEÍCULO (1º ESCOLHER CLIENTE -> 2º VEÍCULOS DO CLIENTE)
   // ============================================================================
   useTourDaPagina(TOUR_ORDENS, view === 'lista' && !loadingLista && ordens.length > 0);
+  useTourDaPagina(TOUR_BANCADA, view === 'bancada' && !loadingDossie && !!dossie);
 
   if (view === 'nova') {
     const clienteSelecionado = clientes.find((c) => c.id === clienteSelecionadoId);
@@ -2083,7 +2085,7 @@ export function OrdensServico({
           )}
 
           {/* Etapas da OS */}
-          <Panel as="section" aria-label="Etapa atual da ordem de serviço" className="mb-4 space-y-4">
+          <Panel as="section" aria-label="Etapa atual da ordem de serviço" data-tour="os-etapa" className="mb-4 space-y-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h2 className="text-base font-semibold text-ink text-balance">Etapa do serviço</h2>
               <span className="text-xs text-ink-muted">
@@ -2635,7 +2637,7 @@ export function OrdensServico({
 
             {/* COLUNA DIREITA (≥1024) / ABAIXO DOS ITENS (CELULAR): RESUMO + FICHA TÉCNICA */}
             <div className="space-y-4 lg:col-span-4">
-              <Panel as="section" aria-labelledby="titulo-resumo-os" className="space-y-4">
+              <Panel as="section" aria-labelledby="titulo-resumo-os" data-tour="os-total" className="space-y-4">
                 <div>
                   <h2 id="titulo-resumo-os" className="text-sm text-ink-muted text-balance">
                     Total da ordem
@@ -2741,6 +2743,7 @@ export function OrdensServico({
               target="_blank"
               rel="noreferrer"
               aria-label="Mandar orçamento no WhatsApp"
+              data-tour="os-whatsapp"
               className={`${classesBotao('secundario')} flex-1`}
             >
               <MessageCircle size={16} aria-hidden="true" />

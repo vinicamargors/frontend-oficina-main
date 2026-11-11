@@ -11,7 +11,7 @@ async function abrir(page: Page, cargo: 'DONO' | 'ATENDENTE' | 'MECANICO' | 'FIN
 }
 
 test.describe('central de ajuda', () => {
-  test('menu tem "Ajuda"; a lista mostra os 7 guias e a busca filtra', async ({ page }, info) => {
+  test('menu tem "Ajuda"; a lista mostra os 11 guias e a busca filtra', async ({ page }, info) => {
     const { tema, largura } = contextoDoProjeto(info);
     await abrir(page, 'DONO', tema, '/?tab=patio');
     if (largura < 1024) {
@@ -21,8 +21,8 @@ test.describe('central de ajuda', () => {
       await page.getByRole('navigation').getByRole('button', { name: 'Ajuda' }).click();
     }
     await expect(page.getByRole('heading', { level: 1, name: 'Ajuda' })).toBeVisible();
-    await expect(page.getByRole('list', { name: 'Guias' }).getByRole('listitem')).toHaveCount(7);
-    await page.getByRole('searchbox', { name: /Buscar um guia/ }).fill('whatsapp');
+    await expect(page.getByRole('list', { name: 'Guias' }).getByRole('listitem')).toHaveCount(11);
+    await page.getByRole('searchbox', { name: /Buscar um guia/ }).fill('montar o orcamento');
     await expect(page.getByRole('list', { name: 'Guias' }).getByRole('listitem')).toHaveCount(1);
     await page.getByRole('searchbox', { name: /Buscar um guia/ }).fill('zzzz');
     await expect(page.getByText(/Nenhum guia encontrado/)).toBeVisible();
@@ -68,7 +68,6 @@ test.describe('central de ajuda', () => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, 'DONO', tema, '/?tab=equipe');
     await page.getByRole('main').getByRole('button', { name: 'Ajuda', exact: true }).click();
-    await expect(page.getByRole('menuitem', { name: 'Refazer o tour desta página' })).toHaveCount(0);
     await page.getByRole('menuitem', { name: 'Ver guias de ajuda' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Ajuda' })).toBeVisible();
     await expect(page.getByRole('main').getByRole('button', { name: 'Ajuda', exact: true })).toHaveCount(0);
@@ -79,4 +78,26 @@ test.describe('central de ajuda', () => {
     await abrir(page, 'DONO', tema, '/?tab=ajuda&guia=receber-pagamento');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
+});
+
+test.describe('"?" por página', () => {
+  const PAGINAS: { aba: string; cargo: 'DONO'; guia: RegExp }[] = [
+    { aba: 'patio', cargo: 'DONO', guia: /Mover a OS de etapa/ },
+    { aba: 'os', cargo: 'DONO', guia: /Abrir uma ordem de serviço/ },
+    { aba: 'clientes', cargo: 'DONO', guia: /Cadastrar cliente e veículo/ },
+    { aba: 'estoque', cargo: 'DONO', guia: /Ajustar o estoque/ },
+    { aba: 'financeiro', cargo: 'DONO', guia: /Lançar uma conta e dar baixa/ },
+    { aba: 'equipe', cargo: 'DONO', guia: /Cadastrar um colaborador/ },
+    { aba: 'oficina', cargo: 'DONO', guia: /Configurar os dados da oficina/ },
+  ];
+  for (const { aba, cargo, guia } of PAGINAS) {
+    test(`${aba}: o "?" oferece o guia da página e abre direto`, async ({ page }, info) => {
+      const { tema } = contextoDoProjeto(info);
+      await abrir(page, cargo, tema, `/?tab=${aba}`);
+      await page.getByRole('main').getByRole('button', { name: 'Ajuda', exact: true }).click();
+      await page.getByRole('menuitem', { name: guia }).click();
+      await expect(page.getByRole('heading', { level: 1, name: guia })).toBeVisible();
+      expect(new URL(page.url()).searchParams.get('tab')).toBe('ajuda');
+    });
+  }
 });

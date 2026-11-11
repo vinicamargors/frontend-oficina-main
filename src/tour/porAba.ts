@@ -1,4 +1,6 @@
 import { TOUR_CLIENTES } from './passos/clientes';
+import { TOUR_EQUIPE } from './passos/equipe';
+import { TOUR_OFICINA } from './passos/oficina';
 import { TOUR_ESTOQUE } from './passos/estoque';
 import { TOUR_FINANCEIRO } from './passos/financeiro';
 import { TOUR_ORDENS } from './passos/ordens';
@@ -13,4 +15,6 @@ export const TOUR_POR_ABA: Record<string, TourDef> = {
   veiculos: TOUR_CLIENTES,
   estoque: TOUR_ESTOQUE,
   financeiro: TOUR_FINANCEIRO,
+  equipe: TOUR_EQUIPE,
+  oficina: TOUR_OFICINA,
 };

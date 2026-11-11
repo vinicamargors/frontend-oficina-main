@@ -147,9 +147,12 @@ function AppShell() {
   // Dados da Oficina com alterações não salvas: trocar de tela ou de oficina pergunta antes de descartar
   const oficinaSuja = useRef(false);
   // Pedidos de navegação vindos de componentes fundos (botão "?" do cabeçalho)
-  const navegarRef = useRef<((id: NavTab) => void) | null>(null);
+  const navegarRef = useRef<((id: NavTab, guia?: string) => void) | null>(null);
   useEffect(() => {
-    const f = (e: Event) => navegarRef.current?.((e as CustomEvent<{ tab: NavTab }>).detail.tab);
+    const f = (e: Event) => {
+      const d = (e as CustomEvent<{ tab: NavTab; guia?: string }>).detail;
+      navegarRef.current?.(d.tab, d.guia);
+    };
     window.addEventListener('mecanify:navegar', f);
     return () => window.removeEventListener('mecanify:navegar', f);
   }, []);
@@ -162,7 +165,7 @@ function AppShell() {
     else acao();
   };
 
-  const handleNavigateTab = (tab: string, status?: StatusOS, osId?: string, substituir = false) => {
+  const handleNavigateTab = (tab: string, status?: StatusOS, osId?: string, substituir = false, guia?: string) => {
     let nextTab = (tab as NavTab) || 'patio';
 
     // Impede navegação indevida por perfil
@@ -180,6 +183,7 @@ function AppShell() {
     const url = new URL(window.location.href);
     url.searchParams.delete('modo');
     url.searchParams.delete('guia');
+    if (guia && nextTab === 'ajuda') url.searchParams.set('guia', guia);
     url.searchParams.set('tab', nextTab);
     if (status) {
       url.searchParams.set('status', status);
@@ -316,11 +320,11 @@ function AppShell() {
   const extrasMobile = visibleNav.slice(4);
   const abaNoExtra = extrasMobile.some((i) => i.id === activeTab);
 
-  const irPara = (id: NavTab) => {
+  const irPara = (id: NavTab, guia?: string) => {
     setMaisAberto(false);
     if (oficinaSuja.current && id === activeTab) return;
     // Descartar com o formulário sujo: a entrada extra que a Oficina deixou no histórico vira a da nova tela
-    protegerSaida(() => handleNavigateTab(id, undefined, undefined, oficinaSuja.current));
+    protegerSaida(() => handleNavigateTab(id, undefined, undefined, oficinaSuja.current, guia));
   };
   navegarRef.current = irPara;
 

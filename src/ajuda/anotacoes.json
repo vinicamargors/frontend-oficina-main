@@ -2,7 +2,7 @@
   "abrir-os/2": {
     "ordens-nova": {
       "x": 81.96,
-      "y": 3.78,
+      "y": 3.56,
       "w": 15.33,
       "h": 4.44
     }
@@ -10,7 +10,7 @@
   "orcamento-whatsapp/2": {
     "os-lancar-item": {
       "x": 3.04,
-      "y": 36.44,
+      "y": 35.22,
       "w": 60.14,
       "h": 2.67
     }
@@ -18,7 +18,7 @@
   "orcamento-whatsapp/5": {
     "os-whatsapp": {
       "x": 74.28,
-      "y": 10,
+      "y": 9.39,
       "w": 10.45,
       "h": 4.44
     }
@@ -50,7 +50,7 @@
   "cliente-veiculo/2": {
     "clientes-novo": {
       "x": 85.67,
-      "y": 5.11,
+      "y": 4.5,
       "w": 11.62,
       "h": 4.44
     }
@@ -66,7 +66,7 @@
   "ajustar-estoque/1": {
     "estoque-categorias": {
       "x": 1.35,
-      "y": 34.67,
+      "y": 33.44,
       "w": 95.95,
       "h": 8.89
     }
@@ -79,10 +79,42 @@
       "h": 142.22
     }
   },
+  "equipe-colaborador/2": {
+    "equipe-novo": {
+      "x": 59.99,
+      "y": 4.5,
+      "w": 14.54,
+      "h": 4.44
+    }
+  },
+  "equipe-colaborador/5": {
+    "equipe-convidar": {
+      "x": 75.21,
+      "y": 4.5,
+      "w": 17.36,
+      "h": 4.44
+    }
+  },
+  "equipe-folha/1": {
+    "equipe-abas": {
+      "x": 1.35,
+      "y": 12.56,
+      "w": 95.95,
+      "h": 4.89
+    }
+  },
+  "oficina-dados/4": {
+    "oficina-pix": {
+      "x": 11.49,
+      "y": 42.44,
+      "w": 75.68,
+      "h": 15.11
+    }
+  },
   "conta-baixa/2": {
     "financeiro-novo": {
       "x": 65.32,
-      "y": 5.11,
+      "y": 4.5,
       "w": 14.41,
       "h": 4.44
     }
