@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { EMPRESA_ID, abrirTela, avaliacoes, entrarComo, escalas, exigirRedeCompleta, simularBackend, usuarios, type Cenario } from './mocks';
+import { EMPRESA_ID, abrirTela, avaliacoes, empresa, entrarComo, escalas, exigirRedeCompleta, simularBackend, usuarios, type Cenario } from './mocks';
 import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
@@ -26,6 +26,25 @@ const RAFAEL = usuarios[2]; // atendente
 const TOTAL_FOLHA = ATIVOS.reduce((s, u) => s + (u.salario_base ?? 0) + (u.vale_transporte ?? 0) + (u.vale_refeicao ?? 0), 0);
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, ' ');
 const ENUM_CRU = /\b(DONO|MECANICO|ATENDENTE|FINANCEIRO|FERIAS|FOLGA|ENTRADA)\b/;
+
+async function abrirHolerite(page: Page, nome = TIAGO.nome) {
+  await page.getByRole('button', { name: `Ver holerite de ${nome}` }).click();
+  const h = page.getByRole('dialog', { name: 'Holerite' }).locator('#holerite-impressao');
+  await h.waitFor();
+  return h;
+}
+
+/** Sobrescreve a empresa devolvida em `/empresas/?empresa_id=` (null = lista vazia). */
+async function empresaDoHolerite(page: Page, dados: { razao_social: string; nome_fantasia: string; cnpj: string } | null) {
+  await page.route(/\/api\/v1\/empresas\/\?empresa_id=/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify(dados ? [{ ...empresa, ...dados }] : []),
+    })
+  );
+}
 
 test.describe('colaboradores', () => {
   test('cabeçalho, abas, todos os colaboradores numa lista e sem rolagem lateral', async ({ page }, info) => {
@@ -197,7 +216,9 @@ test.describe('formulário do colaborador', () => {
     await expect(d).toHaveCount(0);
 
     await page.getByRole('button', { name: /Novo colaborador/ }).click();
-    await d.getByLabel(/Nome completo/).fill('Alguém');
+    // digitar de verdade (teclas) dá ativação de usuário, como no celular; sem ela o Chrome não deixa o Esc ser
+    // interceptado se passarem mais de 5 s (fill() não gera teclas e falhava sob carga)
+    await d.getByLabel(/Nome completo/).pressSequentially('Alguém');
     await page.keyboard.press('Escape');
     await expect(d).toBeVisible();
     await expect(d.getByRole('alert')).toContainText('Descartar alterações?');
@@ -267,24 +288,106 @@ test.describe('folha e holerite', () => {
     await expect(page.getByRole('status').filter({ hasText: 'agendada' })).toBeVisible();
   });
 
-  test('holerite impresso fica intacto: bloco branco com tinta preta em qualquer tema', async ({ page }, info) => {
+  test('holerite: bloco branco com tinta preta, mesmos valores, cargo legível, mês por extenso e empresa', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     await irParaAba(page, 'Folha');
-    await page.getByRole('button', { name: `Ver holerite de ${TIAGO.nome}` }).click();
-    const d = page.getByRole('dialog', { name: 'Holerite' });
-    const h = d.locator('#holerite-impressao');
+    await page.getByLabel('Mês de referência').fill('2026-11');
+    const h = await abrirHolerite(page);
     await expect(h).toHaveAttribute('class', 'bg-white text-black p-5 rounded-xl border-2 border-black space-y-4 font-mono text-xs select-all');
-    await expect(h).toContainText('RECIBO DE PAGAMENTO DE SALÁRIO E COMISSÕES');
+    // identidade da oficina (fixture: razão social e CNPJ já formatado)
+    await expect(h.getByRole('heading')).toHaveText('Oficina Modelo Mecanify Ltda');
+    await expect(h).toContainText('CNPJ 12.345.678/0001-90');
+    await expect(h).not.toContainText('MECANIFY • OFICINA MECÂNICA');
+    await expect(h).toContainText('Recibo de pagamento de salário e comissões');
+    await expect(h).toContainText('Mês de referência: novembro de 2026');
+    await expect(h).not.toContainText('2026-11');
+    await expect(h).toContainText('Cargo: Mecânico');
+    expect(await h.innerText()).not.toMatch(/MECANICO|undefined|null/);
     await expect(h).toContainText(TIAGO.nome);
-    await expect(h).toContainText('Auxílio Transporte (VT)');
-    await expect(h).toContainText(/R\$\s4\.020,00/);
+    await expect(h).toContainText('Data de pagamento: Dia 5');
+    // valores idênticos aos de antes
+    await expect(h).toContainText('Auxílio transporte (VT)');
+    await expect(h).toContainText(/R\$\s3\.200,00/);
+    await expect(h).toContainText(/R\$\s220,00/);
+    await expect(h).toContainText(/R\$\s600,00/);
+    await expect(h).toContainText(/Valor líquido a receber:\s*R\$\s4\.020,00/);
+    await expect(h).toContainText('Assinatura do colaborador: Tiago Ferreira');
     const cores = await h.evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).color]);
     expect(cores).toEqual(['rgb(255, 255, 255)', 'rgb(0, 0, 0)']);
+    const d = page.getByRole('dialog', { name: 'Holerite' });
     await expect(d.getByRole('button', { name: /Imprimir holerite/ })).toBeVisible();
+
+    // impressão: continua preto no branco
+    await page.emulateMedia({ media: 'print' });
+    const coresImpressao = await h.evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).color]);
+    expect(coresImpressao).toEqual(['rgb(255, 255, 255)', 'rgb(0, 0, 0)']);
+    await page.emulateMedia({ media: 'screen' });
     await d.getByRole('button', { name: 'Fechar' }).click();
     await expect(d).toHaveCount(0);
   });
+
+  test('holerite: sem razão social usa o nome fantasia e CNPJ só com dígitos ganha máscara', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await empresaDoHolerite(page, { razao_social: '', nome_fantasia: 'Auto Center Silva', cnpj: '12345678000190' });
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'equipe');
+    await irParaAba(page, 'Folha');
+    const h = await abrirHolerite(page);
+    await expect(h.getByRole('heading')).toHaveText('Auto Center Silva');
+    await expect(h).toContainText('CNPJ 12.345.678/0001-90');
+  });
+
+  test('holerite: sem dados da empresa mostra o nome padrão e nenhuma linha de CNPJ', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await empresaDoHolerite(page, null);
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'equipe');
+    await irParaAba(page, 'Folha');
+    const h = await abrirHolerite(page);
+    await expect(h.getByRole('heading')).not.toHaveText('');
+    await expect(h).not.toContainText('CNPJ');
+    expect(await h.innerText()).not.toMatch(/undefined|null/);
+  });
+
+  for (const largura of [360, 390]) {
+    test(`holerite em ${largura}px: nada se sobrepõe nem vaza (tela e impressão)`, async ({ page }, info) => {
+      const { tema } = contextoDoProjeto(info);
+      await page.setViewportSize({ width: largura, height: 800 });
+      await abrir(page, tema);
+      await irParaAba(page, 'Folha');
+      const h = await abrirHolerite(page);
+      for (const midia of ['screen', 'print'] as const) {
+        await page.emulateMedia({ media: midia });
+        const problemas = await h.evaluate((bloco) => {
+          const caixa = bloco.getBoundingClientRect();
+          const erros: string[] = [];
+          if (bloco.scrollWidth > bloco.clientWidth + 1) erros.push(`bloco rola: ${bloco.scrollWidth} > ${bloco.clientWidth}`);
+          for (const el of Array.from(bloco.querySelectorAll<HTMLElement>('*'))) {
+            const r = el.getBoundingClientRect();
+            if (r.width === 0) continue;
+            if (r.right > caixa.right + 1 || r.left < caixa.left - 1) erros.push(`vaza: ${el.tagName} "${el.textContent?.slice(0, 30)}"`);
+          }
+          // campos do cabeçalho do colaborador não se sobrepõem
+          const campos = Array.from(bloco.querySelectorAll<HTMLElement>('[data-campo]')).map((e) => [e.dataset.campo, e.getBoundingClientRect()] as const);
+          for (let i = 0; i < campos.length; i++)
+            for (let j = i + 1; j < campos.length; j++) {
+              const [na, a] = campos[i];
+              const [nb, b] = campos[j];
+              const cruza = a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+              if (cruza) erros.push(`sobreposição: ${na} × ${nb}`);
+            }
+          if (campos.length < 4) erros.push('campos do colaborador não marcados');
+          return erros;
+        });
+        expect(problemas, midia).toEqual([]);
+      }
+      await page.emulateMedia({ media: 'screen' });
+      expect(await sobraLateral(page)).toBeLessThanOrEqual(0);
+    });
+  }
 });
 
 test.describe('escalas', () => {
