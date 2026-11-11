@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "e2e": "playwright test -c e2e/playwright.config.ts e2e/telas.spec.ts e2e/tema.spec.ts e2e/shell.spec.ts e2e/login.spec.ts e2e/radar.spec.ts e2e/radar-mover.spec.ts e2e/radar-periodo.spec.ts e2e/radar-antigas.spec.ts e2e/radar-cabecalho.spec.ts e2e/ordens.spec.ts e2e/clientes.spec.ts e2e/estoque.spec.ts e2e/financeiro.spec.ts e2e/equipe.spec.ts e2e/oficina.spec.ts e2e/avaliacao.spec.ts e2e/impressao.spec.ts e2e/tour.spec.ts e2e/ajuda.spec.ts e2e/ajuda-integridade.spec.ts",
     "prints": "node e2e/prints.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "ajuda:prints": "AJUDA_PRINTS=1 playwright test -c e2e/playwright.config.ts e2e/ajuda/prints.spec.ts --project=claro-1440",
+    "ajuda:check": "AJUDA_CHECK=1 playwright test -c e2e/playwright.config.ts e2e/ajuda/prints.spec.ts --project=claro-1440"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

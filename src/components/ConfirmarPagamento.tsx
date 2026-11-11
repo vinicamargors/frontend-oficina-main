@@ -72,7 +72,7 @@ export function ConfirmarPagamento({
           <Button variante="secundario" onClick={aoCancelar}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={!forma}>
+          <Button type="submit" data-tour="pagamento-confirmar" disabled={!forma}>
             Confirmar pagamento
           </Button>
         </div>

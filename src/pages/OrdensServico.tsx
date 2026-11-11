@@ -2017,6 +2017,7 @@ export function OrdensServico({
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Mandar orçamento no WhatsApp"
+                  data-tour="os-whatsapp"
                   className={`${classesBotao('secundario')} hidden lg:inline-flex`}
                 >
                   <MessageCircle size={16} aria-hidden="true" />
@@ -2159,7 +2160,7 @@ export function OrdensServico({
             {/* COLUNA ESQUERDA: LANÇAMENTO + ITENS */}
             <Panel as="section" aria-label="Itens da ordem de serviço" className="space-y-6 lg:col-span-8">
               <div className="space-y-4">
-                <h2 className="text-base font-semibold text-ink text-balance">Lançar item</h2>
+                <h2 data-tour="os-lancar-item" className="text-base font-semibold text-ink text-balance">Lançar item</h2>
                 <Tabs
                   rotuloGrupo="Tipo de item a lançar"
                   quebrar

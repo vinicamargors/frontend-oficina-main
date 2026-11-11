@@ -13,6 +13,9 @@ export const GUIA_RECEBER_PAGAMENTO: GuiaDef = {
     { texto: 'Na linha da ordem, toque em "Receber / dar baixa".' },
     { texto: 'Confira o total mostrado na tela de confirmação.' },
     { texto: 'Escolha a forma de pagamento: PIX, cartão de crédito, cartão de débito, dinheiro ou boleto. Nenhuma vem marcada.' },
-    { texto: 'Toque em "Confirmar pagamento". A ordem passa para "Pago" e entra no caixa.' },
+    {
+      texto: 'Toque em "Confirmar pagamento". A ordem passa para "Pago" e entra no caixa.',
+      imagem: { arquivo: '5.jpg', alvos: ['pagamento-confirmar'], alt: 'Folha de confirmação do pagamento com o botão Confirmar pagamento destacado' },
+    },
   ],
 };

@@ -10,8 +10,14 @@ export const GUIA_CLIENTE_VEICULO: GuiaDef = {
   abas: ['clientes', 'veiculos'],
   passos: [
     { texto: 'No menu, abra "Clientes & veículos".' },
-    { texto: 'Toque em "Novo cliente".' },
-    { texto: 'Informe nome e telefone (WhatsApp). CPF e endereço são opcionais.' },
+    {
+      texto: 'Toque em "Novo cliente".',
+      imagem: { arquivo: '2.jpg', alvos: ['clientes-novo'], alt: 'Tela de clientes com o botão Novo cliente destacado' },
+    },
+    {
+      texto: 'Informe nome e telefone (WhatsApp). CPF e endereço são opcionais.',
+      imagem: { arquivo: '3.jpg', alvos: ['cliente-nome'], alt: 'Ficha de novo cliente com o campo Nome completo destacado' },
+    },
     { texto: 'Em "Novo veículo", informe a placa, o modelo, a marca e a cor. Para outro carro do mesmo cliente, adicione mais um veículo.' },
     { texto: 'Salve. Para incluir um carro depois, use o menu "…" do cliente e "Adicionar veículo".' },
   ],

@@ -10,7 +10,10 @@ export const GUIA_ABRIR_OS: GuiaDef = {
   abas: ['patio', 'os'],
   passos: [
     { texto: 'No menu, abra "Ordens de serviço" ou use o botão "Nova OS" do Radar.' },
-    { texto: 'Toque em "Nova ordem de serviço".' },
+    {
+      texto: 'Toque em "Nova ordem de serviço".',
+      imagem: { arquivo: '2.jpg', alvos: ['ordens-nova'], alt: 'Tela de ordens de serviço com o botão Nova ordem de serviço destacado no canto superior direito' },
+    },
     { texto: 'Procure o cliente pelo nome, telefone, CPF ou placa. Se ele ainda não existe, use "+ Novo cliente".' },
     { texto: 'Escolha o veículo do cliente. Se for um carro novo, use "+ Novo veículo" e informe a placa.' },
     { texto: 'Descreva o defeito relatado pelo cliente e salve. A ordem nasce na etapa "Orçamento".' },

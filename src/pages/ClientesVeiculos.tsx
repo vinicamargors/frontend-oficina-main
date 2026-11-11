@@ -807,6 +807,7 @@ export function ClientesVeiculos({
               <Field rotulo="Nome completo *">
                 <input
                   id="cli-nome"
+                  data-tour="cliente-nome"
                   name="nome"
                   type="text"
                   required
