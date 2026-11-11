@@ -121,5 +121,4 @@ test.describe('correções da revisão', () => {
     await page.getByRole('navigation').getByRole('button', { name: 'Ajuda' }).click();
     await expect(page.getByRole('list', { name: 'Guias' })).toBeVisible();
   });
-  });
 });
