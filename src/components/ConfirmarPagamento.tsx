@@ -1,10 +1,9 @@
+import { formatBRL } from '../lib/format';
 import { useEffect, useId, useState } from 'react';
 import { Button } from './ui';
 import { Folha } from './Folha';
 import { FORMAS_PAGAMENTO } from '../pages/ordens/formasPagamento';
 
-const formatBRL = (valor: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(valor || 0));
 
 /**
  * Folha obrigatória antes de marcar a OS como paga. Abre sempre sem forma marcada, mesmo que a OS já tenha uma;

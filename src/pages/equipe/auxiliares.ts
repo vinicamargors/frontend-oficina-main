@@ -1,3 +1,5 @@
+import { formatBRL, formatData } from '../../lib/format';
+export { formatBRL, formatData };
 import type { CargoUsuario, EscalaFolga, RegistroPonto, Usuario } from '../../types';
 
 // Rótulos só para exibição: o valor enviado ao backend continua o enum (ex.: "MECANICO").
@@ -56,23 +58,10 @@ export const iniciais = (nome: string): string => {
 
 export const formatHora = (hora: string): string => (/^\d{2}:\d{2}:\d{2}$/.test(hora) ? hora.slice(0, 5) : hora);
 
-export const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    Number(valor || 0)
-  );
 
 /** Acréscimo sempre com "+" escrito (nunca só cor). */
 export const comMais = (valor: number) => `+ ${formatBRL(valor)}`;
 
-export const formatData = (iso?: string | null) => {
-  if (!iso) return '—';
-  try {
-    const [y, m, d] = iso.slice(0, 10).split('-');
-    return `${d}/${m}/${y}`;
-  } catch {
-    return iso.slice(0, 10);
-  }
-};
 
 // ------------------------------------------------------------ regras (mesmas da tela antiga, só extraídas)
 
@@ -91,10 +80,9 @@ export const vencimentoFolha = (mesFolhaRef: string, diaPagamento: number): stri
   const [ano, mes] = mesFolhaRef.split('-');
   const proximoMes = parseInt(mes, 10) === 12 ? 1 : parseInt(mes, 10) + 1;
   const proximoAno = parseInt(mes, 10) === 12 ? parseInt(ano, 10) + 1 : parseInt(ano, 10);
-  return `${proximoAno}-${String(proximoMes).padStart(
-    2,
-    '0'
-  )}-${String(diaPagamento).padStart(2, '0')}`;
+  // dia 31 em mês de 30 dias (ou fevereiro) vira o último dia do mês, como no servidor
+  const dia = Math.min(diaPagamento, new Date(proximoAno, proximoMes, 0).getDate());
+  return `${proximoAno}-${String(proximoMes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 };
 
 // Cálculo de distância entre dois pontos GPS em metros (Fórmula de Haversine)
