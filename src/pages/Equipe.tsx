@@ -38,7 +38,6 @@ import { AbaEscalas } from './equipe/AbaEscalas';
 import { AbaPonto } from './equipe/AbaPonto';
 import { AbaAvaliacoes } from './equipe/AbaAvaliacoes';
 import {
-  calcularDistanciaMetros,
   formatBRL,
   formatData,
   formatMesExtenso,
@@ -565,32 +564,9 @@ export function Equipe({ empresaId }: EquipeProps) {
       async (pos) => {
         const userLat = pos.coords.latitude;
         const userLon = pos.coords.longitude;
-        const distancia = calcularDistanciaMetros(
-          userLat,
-          userLon,
-          coordsOficina.lat,
-          coordsOficina.lon
-        );
-
-        const dentroRaio = distancia <= coordsOficina.raio;
-        const agora = new Date();
-        const dataStr = dataLocalISO(agora);
-        const horaStr = agora.toTimeString().slice(0, 5);
-
         let novoPonto: RegistroPonto;
         try {
-          novoPonto = await api.registrarPonto({
-            empresa_id: empresaId,
-            usuario_id: user?.id || 'usr-atual',
-            usuario_nome: user?.nome || 'Colaborador',
-            data: dataStr,
-            hora: horaStr,
-            tipo: 'ENTRADA',
-            latitude: userLat,
-            longitude: userLon,
-            dentro_raio: dentroRaio,
-            distancia_metros: distancia,
-          });
+          novoPonto = await api.registrarPonto(empresaId, { tipo: 'ENTRADA', latitude: userLat, longitude: userLon });
         } catch (e) {
           setPontoFeedback({
             sucesso: false,
@@ -603,7 +579,10 @@ export function Equipe({ empresaId }: EquipeProps) {
 
         setPontos((prev) => [novoPonto, ...prev]);
 
-        if (dentroRaio) {
+        // Hora, distância e "dentro do raio" são os que o servidor gravou
+        const horaStr = novoPonto.hora.slice(0, 5);
+        const distancia = Math.round(novoPonto.distancia_metros ?? 0);
+        if (novoPonto.dentro_raio) {
           setPontoFeedback({
             sucesso: true,
             msg: `Ponto registrado com sucesso às ${horaStr}! Você está a ${distancia}m da oficina (dentro do raio permitido).`,

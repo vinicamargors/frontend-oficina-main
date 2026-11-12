@@ -382,8 +382,9 @@ export const api = {
   },
 
   // Registro de Ponto Eletrônico
-  registrarPonto: (dados: Omit<RegistroPonto, 'id'>) =>
-    post<RegistroPonto>(`/equipe/pontos/${dados.empresa_id}`, dados),
+  // Quem bate o ponto é o usuário logado; data, hora, distância e "dentro do raio" são decididos pelo servidor.
+  registrarPonto: (empresaId: string, dados: { tipo: RegistroPonto['tipo']; latitude?: number; longitude?: number }) =>
+    post<RegistroPonto>(`/equipe/pontos/${empresaId}`, dados),
 
   listarPontos: (empresaId: string, dataFiltro?: string) =>
     request<RegistroPonto[]>(
@@ -391,7 +392,14 @@ export const api = {
     ),
 
   // Avaliações de Clientes (NPS & 5 Estrelas). A média do mecânico é atualizada pelo banco (trigger).
-  salvarAvaliacaoOS: (dados: Omit<AvaliacaoOS, 'id'>) => post<AvaliacaoOS>('/equipe/avaliar', dados),
+  // Rotas públicas (sem login): o token assinado do link aponta para a OS; o servidor deriva todo o resto.
+  obterAvaliacaoPublica: (token: string) =>
+    request<{ veiculo_modelo: string; veiculo_placa: string; ja_avaliada: boolean }>(`/equipe/avaliar/${encodeURIComponent(token)}`),
+  salvarAvaliacaoOS: (dados: { token: string; nota: number; comentario: string | null }) =>
+    post<AvaliacaoOS>('/equipe/avaliar', dados),
+  // Link para o atendente mandar ao cliente (só OS finalizada ou paga). `caminho` é relativo à origem do app.
+  gerarLinkAvaliacao: (empresaId: string, osId: string) =>
+    request<{ token: string; caminho: string }>(`/equipe/avaliacoes/${empresaId}/link/${osId}`),
 
   listarAvaliacoesOS: (empresaId: string) =>
     request<AvaliacaoOS[]>(`/equipe/avaliacoes/${empresaId}`),

@@ -1,5 +1,5 @@
-import { ExternalLink, Star } from 'lucide-react';
-import { Button, Panel } from '../../components/ui';
+import { Star } from 'lucide-react';
+import { Panel } from '../../components/ui';
 import type { AvaliacaoOS } from '../../types';
 import { formatData, formatMedia, mediaNotas, rotuloNota } from './auxiliares';
 
@@ -43,19 +43,9 @@ export function AbaAvaliacoes({ avaliacoes }: { avaliacoes: AvaliacaoOS[] }) {
             </p>
           )}
           <p className="mt-1 max-w-md text-sm text-ink-muted">
-            Enviadas pelo cliente no link do WhatsApp ao receber a OS concluída.
+            Enviadas pelo cliente no link do WhatsApp ao receber a OS concluída. O link sai do botão "Pedir avaliação" na tela da OS finalizada.
           </p>
         </div>
-        <Button
-          variante="secundario"
-          icone={ExternalLink}
-          onClick={() => {
-            const url = `${window.location.origin}/?modo=avaliar&osId=EXEMPLO-OS`;
-            window.open(url, '_blank');
-          }}
-        >
-          Ver tela pública de avaliação
-        </Button>
       </Panel>
 
       {avaliacoes.length === 0 ? (

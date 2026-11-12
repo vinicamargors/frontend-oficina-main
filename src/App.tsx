@@ -223,15 +223,10 @@ function AppShell() {
 
   const searchParams = new URLSearchParams(window.location.search);
   const modoPublico = searchParams.get('modo');
-  const osIdPublico = searchParams.get('osId');
+  const tokenPublico = searchParams.get('token');
 
-  if (modoPublico === 'avaliar' && osIdPublico) {
-    return (
-      <AvaliacaoPublicaOS
-        osId={osIdPublico}
-        empresaId={searchParams.get('empresaId') || undefined}
-      />
-    );
+  if (modoPublico === 'avaliar' && tokenPublico) {
+    return <AvaliacaoPublicaOS token={tokenPublico} />;
   }
 
   if (loading) {

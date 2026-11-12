@@ -2,6 +2,8 @@ import type { Page, Route, Request } from '@playwright/test';
 import {
   EMPRESA_ID,
   OS_BANCADA_ID,
+  OS_FINALIZADA_ID,
+  TOKEN_AVALIACAO,
   avaliacoes,
   configuracoesEmpresa,
   dashboard,
@@ -36,7 +38,8 @@ export type Tela =
   | 'financeiro'
   | 'equipe'
   | 'oficina'
-  | 'avaliacao';
+  | 'avaliacao'
+  | 'bancadaFinalizada';
 
 export const TELAS: Tela[] = [
   'login',
@@ -62,7 +65,8 @@ export const CAMINHO_DA_TELA: Record<Tela, string> = {
   financeiro: '/?tab=financeiro',
   equipe: '/?tab=equipe',
   oficina: '/?tab=oficina',
-  avaliacao: `/?modo=avaliar&osId=${OS_BANCADA_ID}&empresaId=${EMPRESA_ID}`,
+  avaliacao: `/?modo=avaliar&token=${TOKEN_AVALIACAO}`,
+  bancadaFinalizada: `/?tab=os&osId=${OS_FINALIZADA_ID}`,
 };
 
 // ------------------------------------------------------------------ estado por página
@@ -116,6 +120,8 @@ const GET: Array<[RegExp, Handler]> = [
   [/^\/equipe\/escalas\/[^/]+$/, ({ cenario }) => escalas(cenario)],
   [/^\/equipe\/pontos\/[^/]+$/, ({ cenario }) => pontos(cenario)],
   [/^\/equipe\/avaliacoes\/[^/]+$/, ({ cenario }) => avaliacoes(cenario)],
+  [/^\/equipe\/avaliacoes\/[^/]+\/link\/[^/]+$/, () => ({ token: TOKEN_AVALIACAO, caminho: `/?modo=avaliar&token=${TOKEN_AVALIACAO}` })],
+  [/^\/equipe\/avaliar\/[^/]+$/, () => ({ veiculo_modelo: 'Fiat Argo 1.3', veiculo_placa: 'ABC1D23', ja_avaliada: false })],
 ];
 
 const hosts = (url: string) => {
@@ -222,6 +228,11 @@ export async function simularBackend(page: Page, cenario: Cenario): Promise<void
       }
       const registro = { metodo, url, caminho, corpo };
       await page.evaluate((r) => ((window as unknown as { __ultimaEscrita: unknown }).__ultimaEscrita = r), registro).catch(() => {});
+      // ponto: o servidor decide usuário, data, hora e raio (aqui: dentro do raio, 08:15 de hoje)
+      if (metodo === 'POST' && /^\/equipe\/pontos\/[^/]+$/.test(caminho)) {
+        const c = (corpo ?? {}) as { tipo?: string; latitude?: number; longitude?: number };
+        return json(route, { id: 'ponto-novo-0000', empresa_id: EMPRESA_ID, usuario_id: usuarios[3].id, usuario_nome: usuarios[3].nome, data: new Date().toLocaleDateString('sv-SE'), hora: '08:15:00', tipo: c.tipo, latitude: c.latitude, longitude: c.longitude, dentro_raio: true, distancia_metros: 0 });
+      }
       const eco = corpo && typeof corpo === 'object' && !Array.isArray(corpo) ? { id: 'novo-id-0000', ...(corpo as object) } : (corpo ?? { status: 'ok', detail: 'ok' });
       return json(route, eco);
     }
