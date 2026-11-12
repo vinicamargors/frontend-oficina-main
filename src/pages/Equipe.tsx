@@ -379,8 +379,13 @@ export function Equipe({ empresaId }: EquipeProps) {
       return;
     }
 
+    if (!colaboradorEmEdicao && !formSenha.trim()) {
+      setErroForm('Defina a senha inicial do colaborador (mínimo 6 caracteres).');
+      return;
+    }
+
     if (formSenha.trim() && formSenha.trim().length < 6) {
-      setErroForm('A nova senha deve ter no mínimo 6 caracteres.');
+      setErroForm('A senha deve ter no mínimo 6 caracteres.');
       return;
     }
 
@@ -427,7 +432,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           email: formEmail.trim(),
           telefone: formTelefone.trim() || null,
           cargo: formCargo,
-          senha: formSenha || 'Autotec@123',
+          senha: formSenha.trim(),
           salario_base: salarioNum || 0,
           comissao_servico_pct: comissaoServicoNum,
           comissao_peca_pct: comissaoPecaNum,
@@ -936,7 +941,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               </Field>
             </div>
             <Field
-              rotulo={colaboradorEmEdicao ? 'Nova senha (deixe vazio para manter)' : 'Senha inicial'}
+              rotulo={colaboradorEmEdicao ? 'Nova senha (deixe vazio para manter)' : 'Senha inicial *'}
               dica="Mínimo 6 caracteres."
             >
               <input
