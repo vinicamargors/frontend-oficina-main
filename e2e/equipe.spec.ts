@@ -192,6 +192,18 @@ test.describe('formulário do colaborador', () => {
     await expect(lista(page)).toContainText('Bruno Lima');
   });
 
+  test('novo sem senha inicial mostra erro e não grava (sem senha padrão conhecida)', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /Novo colaborador/ }).click();
+    const d = page.getByRole('dialog', { name: 'Novo colaborador' });
+    await d.getByLabel(/Nome completo/).fill('Sem Senha');
+    await d.getByLabel(/E-mail de acesso/).fill('semsenha@oficina.example.com');
+    await d.getByRole('button', { name: 'Salvar colaborador' }).click();
+    await expect(d.getByRole('alert')).toContainText('senha inicial');
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
   test('editar abre preenchido; senha curta mostra erro na folha e não grava', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
@@ -655,6 +667,7 @@ test.describe('polimento da equipe', () => {
     const d = page.getByRole('dialog', { name: 'Novo colaborador' });
     await d.getByLabel(/Nome completo/).fill('Bruno Lima');
     await d.getByLabel(/E-mail/).fill('bruno@oficinamodelo.example.com');
+    await d.getByLabel(/Senha inicial/).fill('segredo1');
     await d.getByRole('button', { name: 'Salvar colaborador' }).click();
     await expect(d.getByRole('alert')).toContainText('Erro ao salvar colaborador');
     await d.getByRole('button', { name: 'Cancelar' }).click();
