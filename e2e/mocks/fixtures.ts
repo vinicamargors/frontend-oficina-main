@@ -266,6 +266,12 @@ export const ordens: UltimaOS[] = PLANO_OS.map(([status, dias, total], i) => {
 /** OS aberta na bancada (`?tab=os&osId=`). */
 export const OS_BANCADA_ID = ordens[1].id;
 
+/** OS finalizada (é a única da bancada com o botão "Pedir avaliação"; a da bancada padrão está em execução). */
+export const OS_FINALIZADA_ID = ordens[5].id;
+
+/** Token do link público de avaliação (o servidor real assina; aqui qualquer valor serve). */
+export const TOKEN_AVALIACAO = 'tok-avaliacao-teste';
+
 /**
  * `/os/` simulado. `statusAtual` (opcional) sobrescreve o status de ordens por id: os testes que mudam a etapa
  * guardam ali o que foi gravado, para a próxima leitura já trazer a ordem na etapa nova.

@@ -447,7 +447,8 @@ test.describe('escalas', () => {
 const NOITE_SP = new Date('2026-11-11T01:00:00Z');
 
 test.describe('datas no calendário local (22h em São Paulo)', () => {
-  test('ponto batido às 22h grava a data e a hora locais', async ({ page, context }, info) => {
+  // Fase 5: data e hora do ponto são do servidor (America/Sao_Paulo, testado no backend); o navegador não manda nem as dele.
+  test('ponto batido às 22h: o navegador não envia data nem hora (o servidor decide em Brasília)', async ({ page, context }, info) => {
     const { tema } = contextoDoProjeto(info);
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: -23.55052, longitude: -46.633308 });
@@ -457,7 +458,9 @@ test.describe('datas no calendário local (22h em São Paulo)', () => {
     await page.getByRole('button', { name: 'Bater ponto agora' }).click();
     await page.getByRole('dialog', { name: 'Registrar ponto agora?' }).getByRole('button', { name: 'Registrar ponto' }).click();
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
-    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ data: '2026-11-10', hora: '22:00', tipo: 'ENTRADA' });
+    const corpo = (await ultimaEscrita(page))!.corpo as Record<string, unknown>;
+    expect(corpo).toMatchObject({ tipo: 'ENTRADA' });
+    for (const proibido of ['data', 'hora', 'usuario_id', 'dentro_raio', 'distancia_metros']) expect(corpo).not.toHaveProperty(proibido);
   });
 
   test('agendar período às 22h: começa hoje e termina em 15 dias, no calendário local', async ({ page }, info) => {
@@ -495,8 +498,11 @@ test.describe('ponto eletrônico', () => {
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     const e = (await ultimaEscrita(page))!;
     expect(e.metodo).toBe('POST');
-    expect(e.corpo).toMatchObject({ tipo: 'ENTRADA', dentro_raio: true, distancia_metros: 0 });
-    await expect(page.getByRole('status').filter({ hasText: 'dentro do raio' })).toBeVisible();
+    // só tipo e coordenadas: usuário, data, hora e "dentro do raio" são do servidor (fase 5)
+    expect(e.corpo).toEqual({ tipo: 'ENTRADA', latitude: -23.55052, longitude: -46.633308 });
+    const aviso = page.getByRole('status').filter({ hasText: 'dentro do raio' });
+    await expect(aviso).toBeVisible();
+    await expect(aviso).toContainText('08:15');   // a hora mostrada é a que o servidor gravou
     await expect(hist.getByRole('listitem')).toHaveCount(3);
   });
 });

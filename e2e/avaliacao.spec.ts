@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { EMPRESA_ID, OS_BANCADA_ID, abrirTela, exigirRedeCompleta, simularBackend } from './mocks';
+import { TOKEN_AVALIACAO, abrirTela, exigirRedeCompleta, simularBackend } from './mocks';
 import { coletarErros, contextoDoProjeto } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> };
@@ -25,10 +25,13 @@ const grupo = (page: Page) => page.getByRole('radiogroup', { name: 'Sua nota par
 const estrela = (page: Page, n: number) => grupo(page).getByRole('radio', { name: n === 1 ? '1 estrela' : `${n} estrelas`, exact: true });
 const enviar = (page: Page) => page.getByRole('button', { name: /^(Enviar avaliação|Tentar novamente)$/ });
 
-async function preencher(page: Page) {
-  await page.getByLabel('Seu nome').fill('Maria Souza');
-  await page.getByLabel('Modelo do veículo').fill('Fiat Argo 1.3');
-}
+/** Respostas de erro do servidor para a conferência do link (GET) e para o envio (POST). */
+const resposta = (status: number, detail: string) => ({
+  status,
+  contentType: 'application/json',
+  headers: { 'access-control-allow-origin': '*' },
+  body: JSON.stringify({ detail }),
+});
 
 test.describe('avaliação pública', () => {
   test('abre sem login: marca no topo, um título, um bloco só, nenhum dado interno da oficina', async ({ page }, info) => {
@@ -41,6 +44,9 @@ test.describe('avaliação pública', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveClass(/text-balance/);
     await expect(page.getByRole('navigation')).toHaveCount(0);
     await expect(enviar(page)).toHaveCount(1);
+    await expect(page.getByText('Fiat Argo 1.3 · ABC1D23')).toBeVisible();   // veículo vem da OS, o cliente não digita
+    await expect(page.getByLabel('Seu nome')).toHaveCount(0);
+    await expect(page.getByLabel('Modelo do veículo')).toHaveCount(0);
     const texto = await page.locator('body').innerText();
     expect(texto).not.toMatch(/Oficina Modelo|12\.345\.678|Marcos Almeida|DONO/);
     expect(await sobraLateral(page)).toBeLessThanOrEqual(0);
@@ -108,7 +114,7 @@ test.describe('avaliação pública', () => {
     await expect(estrela(page, 1)).toHaveAttribute('aria-checked', 'true');
     // Tab sai do grupo para o campo seguinte
     await page.keyboard.press('Tab');
-    await expect(page.getByLabel('Seu nome')).toBeFocused();
+    await expect(page.getByLabel(/Comentário/)).toBeFocused();
   });
 
   test('estrela apagada tem contraste de pelo menos 3:1 com o fundo do bloco', async ({ page }, info) => {
@@ -168,47 +174,76 @@ test.describe('avaliação pública', () => {
     expect(resultado.comBorda).toBe(0);
   });
 
-  test('enviar leva exatamente os mesmos campos de antes e mostra o agradecimento', async ({ page }, info) => {
+  test('enviar leva só o token, a nota e o comentário (nada de empresa, OS, cliente ou placa) e mostra o agradecimento', async ({ page }, info) => {
     contextoDoProjeto(info);
     await abrir(page);
     const escritas = registrarEscritas(page);
     await estrela(page, 4).click();
-    await preencher(page);
     await page.getByLabel(/Comentário/).fill('  Atendimento rápido.  ');
     await enviar(page).click();
 
     await expect(page.getByRole('heading', { level: 1, name: 'Obrigado pela sua avaliação' })).toBeVisible();
     await expect(page.getByRole('img', { name: 'Mecanify' })).toBeVisible();
-    await expect(page.getByLabel('Seu nome')).toHaveCount(0);
     await expect(page.getByRole('button')).toHaveCount(0);
     expect(escritas).toHaveLength(1);
     const { metodo, caminho, corpo } = escritas[0];
     expect(metodo).toBe('POST');
     expect(caminho).toBe('/equipe/avaliar');
-    expect(corpo).toMatchObject({
-      empresa_id: EMPRESA_ID,
-      os_id: OS_BANCADA_ID,
-      cliente_nome: 'Maria Souza',
-      veiculo_modelo: 'Fiat Argo 1.3',
-      veiculo_placa: 'AUT-0000',
-      nota: 4,
-      comentario: 'Atendimento rápido.',
-    });
-    expect(Object.keys(corpo).sort()).toEqual(['cliente_nome', 'comentario', 'data', 'empresa_id', 'nota', 'os_id', 'veiculo_modelo', 'veiculo_placa']);
-    expect(Number.isNaN(Date.parse(corpo.data as string))).toBe(false);
+    expect(corpo).toEqual({ token: TOKEN_AVALIACAO, nota: 4, comentario: 'Atendimento rápido.' });
   });
 
-  test('comentário e veículo são opcionais; nome é obrigatório e sem ele nada é enviado', async ({ page }, info) => {
+  test('comentário é opcional: sem ele vai null com a nota de partida', async ({ page }, info) => {
     contextoDoProjeto(info);
     await abrir(page);
     const escritas = registrarEscritas(page);
     await enviar(page).click();
-    await expect(page.getByLabel('Seu nome')).toBeFocused();
-    expect(escritas).toHaveLength(0);
-    await page.getByLabel('Seu nome').fill('João');
-    await enviar(page).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Obrigado pela sua avaliação' })).toBeVisible();
-    expect(escritas[0].corpo).toMatchObject({ cliente_nome: 'João', veiculo_modelo: 'Veículo do Cliente', comentario: null, nota: 5 });
+    expect(escritas[0].corpo).toEqual({ token: TOKEN_AVALIACAO, nota: 5, comentario: null });
+  });
+
+  test('link adulterado ou vencido: mensagem do servidor, sem formulário e sem nada enviado', async ({ page }, info) => {
+    contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await page.route('**/api/v1/equipe/avaliar/*', (r) => r.fulfill(resposta(404, 'Link de avaliação inválido ou expirado.')));
+    const escritas = registrarEscritas(page);
+    await abrirTela(page, 'avaliacao');
+    await expect(page.getByRole('heading', { level: 1, name: 'Não foi possível abrir a avaliação' })).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText('Link de avaliação inválido ou expirado.');
+    await expect(page.getByRole('heading', { level: 1 })).toBeFocused();   // o foco vai para o aviso, não cai no <body>
+    await expect(page.getByRole('radiogroup')).toHaveCount(0);
+    await expect(page.getByRole('button')).toHaveCount(0);   // link ruim não adianta tentar de novo
+    expect(escritas).toHaveLength(0);
+  });
+
+  test('OS já avaliada: agradece e não mostra o formulário', async ({ page }, info) => {
+    contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await page.route('**/api/v1/equipe/avaliar/*', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ veiculo_modelo: 'Fiat Argo 1.3', veiculo_placa: 'ABC1D23', ja_avaliada: true }) })
+    );
+    await abrirTela(page, 'avaliacao');
+    await expect(page.getByRole('heading', { level: 1, name: 'Este serviço já foi avaliado' })).toBeVisible();
+    await expect(page.getByRole('radiogroup')).toHaveCount(0);
+  });
+
+  test('duas avaliações ao mesmo tempo: o 409 do envio vira "já foi avaliado"', async ({ page }, info) => {
+    contextoDoProjeto(info);
+    await abrir(page);
+    await page.route('**/api/v1/equipe/avaliar', (r) => (r.request().method() === 'POST' ? r.fulfill(resposta(409, 'Esta OS já foi avaliada. Obrigado!')) : r.fallback()));
+    await enviar(page).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Este serviço já foi avaliado' })).toBeFocused();
+  });
+
+  test('servidor fora ao abrir o link: oferece "Tentar de novo" e abre o formulário quando volta', async ({ page }, info) => {
+    contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    let fora = true;
+    await page.route('**/api/v1/equipe/avaliar/*', (r) => (fora ? r.fulfill(resposta(500, 'x')) : r.fallback()));
+    await abrirTela(page, 'avaliacao');
+    await expect(page.getByRole('alert')).toContainText('Não foi possível abrir esta avaliação agora');
+    fora = false;
+    await page.getByRole('button', { name: 'Tentar de novo' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Como foi o serviço no seu carro?' })).toBeVisible();
   });
 
   test('enviando: botão ocupado e bloqueado, sem envio duplicado', async ({ page }, info) => {
@@ -219,7 +254,6 @@ test.describe('avaliação pública', () => {
       await r.fallback();
     });
     const escritas = registrarEscritas(page);
-    await preencher(page);
     await enviar(page).click();
     const ocupado = page.getByRole('button', { name: 'Enviando…' });
     await expect(ocupado).toBeDisabled();
@@ -233,21 +267,19 @@ test.describe('avaliação pública', () => {
     await abrir(page);
     let falhar = true;
     await page.route('**/api/v1/equipe/avaliar', async (r) => {
-      if (falhar) {
+      if (falhar && r.request().method() === 'POST') {
         return r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'x' }) });
       }
       await r.fallback();
     });
     await estrela(page, 3).click();
-    await preencher(page);
     await page.getByLabel(/Comentário/).fill('Demorou um pouco.');
     await enviar(page).click();
     const alerta = page.getByRole('alert');
     await expect(alerta).toContainText('Não foi possível enviar sua avaliação');
     await expect(alerta).toContainText('Tente novamente');
+    await expect(alerta).toBeFocused();
     await expect(estrela(page, 3)).toHaveAttribute('aria-checked', 'true');
-    await expect(page.getByLabel('Seu nome')).toHaveValue('Maria Souza');
-    await expect(page.getByLabel('Modelo do veículo')).toHaveValue('Fiat Argo 1.3');
     await expect(page.getByLabel(/Comentário/)).toHaveValue('Demorou um pouco.');
 
     falhar = false;
@@ -275,7 +307,6 @@ test.describe('avaliação pública', () => {
   test('o agradecimento também cabe sem rolagem lateral e leva o foco ao título', async ({ page }, info) => {
     contextoDoProjeto(info);
     await abrir(page);
-    await page.getByLabel('Seu nome').fill('Ana');
     await enviar(page).click();
     const h1 = page.getByRole('heading', { level: 1, name: 'Obrigado pela sua avaliação' });
     await expect(h1).toBeFocused();

@@ -43,6 +43,7 @@ import { ConfirmarEtapa } from '../components/ConfirmarEtapa';
 import { FORMAS_PAGAMENTO } from './ordens/formasPagamento';
 import { ETAPAS_OS, mensagemEtapa } from './ordens/etapas';
 import { LinhaOrdem } from './ordens/LinhaOrdem';
+import { PedirAvaliacao } from './ordens/PedirAvaliacao';
 import { useTourDaPagina } from '../tour/useTourDaPagina';
 import { TOUR_ORDENS } from '../tour/passos/ordens';
 import { TOUR_BANCADA } from '../tour/passos/bancada';
@@ -2025,6 +2026,15 @@ export function OrdensServico({
                   <MessageCircle size={16} aria-hidden="true" />
                   WhatsApp
                 </a>
+                <PedirAvaliacao
+                  empresaId={empresaId}
+                  osId={os.id}
+                  status={statusAtual}
+                  nomeCliente={os.clientes?.nome || 'Cliente'}
+                  telefone={os.clientes?.telefone || ''}
+                  nomeOficina={dossie.empresa?.nome_fantasia || 'Mecanify'}
+                  className="hidden lg:inline-flex"
+                />
                 <Button
                   variante="secundario"
                   icone={Printer}
@@ -2749,6 +2759,15 @@ export function OrdensServico({
               <MessageCircle size={16} aria-hidden="true" />
               WhatsApp
             </a>
+            <PedirAvaliacao
+              empresaId={empresaId}
+              osId={os.id}
+              status={statusAtual}
+              nomeCliente={os.clientes?.nome || 'Cliente'}
+              telefone={os.clientes?.telefone || ''}
+              nomeOficina={dossie.empresa?.nome_fantasia || 'Mecanify'}
+              className="flex-1"
+            />
             <Button variante="secundario" icone={Printer} onClick={() => window.print()} className="flex-1">
               Imprimir (A4)
             </Button>

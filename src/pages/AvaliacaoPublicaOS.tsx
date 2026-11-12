@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import { AlertTriangle, CheckCircle2, Star } from 'lucide-react';
 import { Button, Field, Logo, Panel } from '../components/ui';
 
 interface AvaliacaoPublicaOSProps {
-  osId: string;
-  empresaId?: string;
+  /** Token assinado do link (`?modo=avaliar&token=...`): o servidor deriva OS, oficina, mecânico e veículo dele. */
+  token: string;
 }
 
 const NOTAS = [1, 2, 3, 4, 5];
@@ -33,21 +33,67 @@ function Casca({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps) {
+type Link =
+  | { estado: 'carregando' }
+  | { estado: 'ok'; veiculo: string }
+  | { estado: 'ja-avaliada' }
+  | { estado: 'erro'; msg: string; podeRepetir: boolean };
+
+const erroDoCliente = (e: unknown): ApiError | null => (e instanceof ApiError && e.status >= 400 && e.status < 500 ? e : null);
+
+export function AvaliacaoPublicaOS({ token }: AvaliacaoPublicaOSProps) {
   const [nota, setNota] = useState<number>(5);
   const [hoverNota, setHoverNota] = useState<number>(0);
   const [comentario, setComentario] = useState('');
-  const [nomeCliente, setNomeCliente] = useState('');
-  const [veiculo, setVeiculo] = useState('');
+  const [link, setLink] = useState<Link>({ estado: 'carregando' });
+  const [tentativa, setTentativa] = useState(0);
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
   const estrelas = useRef<(HTMLButtonElement | null)[]>([]);
   const tituloObrigado = useRef<HTMLHeadingElement>(null);
+  const tituloEstado = useRef<HTMLHeadingElement>(null);
+  const alertaEnvio = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     if (enviado) tituloObrigado.current?.focus();
   }, [enviado]);
+
+  // Troca de tela (link inválido, já avaliada) e erro de envio: o foco vai para o aviso em vez de cair no <body>
+  useEffect(() => {
+    if (link.estado === 'ja-avaliada' || link.estado === 'erro') tituloEstado.current?.focus();
+  }, [link.estado]);
+  useEffect(() => {
+    if (erroEnvio) alertaEnvio.current?.focus();
+  }, [erroEnvio]);
+
+  // Confere o link antes de mostrar o formulário: adulterado/expirado ou já avaliado não deixam digitar à toa
+  useEffect(() => {
+    let ativo = true;
+    setLink({ estado: 'carregando' });
+    api
+      .obterAvaliacaoPublica(token)
+      .then((info) => {
+        if (!ativo) return;
+        setLink(
+          info.ja_avaliada
+            ? { estado: 'ja-avaliada' }
+            : { estado: 'ok', veiculo: [info.veiculo_modelo, info.veiculo_placa].filter(Boolean).join(' · ') }
+        );
+      })
+      .catch((e: unknown) => {
+        if (!ativo) return;
+        const doLink = erroDoCliente(e);
+        setLink({
+          estado: 'erro',
+          msg: doLink ? doLink.message : 'Não foi possível abrir esta avaliação agora. Tente de novo em instantes.',
+          podeRepetir: !doLink,
+        });
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [token, tentativa]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,19 +101,13 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
     setErroEnvio(null);
 
     try {
-      await api.salvarAvaliacaoOS({
-        empresa_id: empresaId || 'empresa-atual',
-        os_id: osId,
-        cliente_nome: nomeCliente.trim() || 'Cliente Satisfeito',
-        veiculo_modelo: veiculo.trim() || 'Veículo do Cliente',
-        veiculo_placa: 'AUT-0000',
-        nota,
-        comentario: comentario.trim() || null,
-        data: new Date().toISOString(),
-      });
+      await api.salvarAvaliacaoOS({ token, nota, comentario: comentario.trim() || null });
       setEnviado(true);
-    } catch {
-      setErroEnvio('Não foi possível enviar sua avaliação agora. Tente novamente em instantes.');
+    } catch (e) {
+      const doCliente = erroDoCliente(e);
+      if (doCliente?.status === 409) setLink({ estado: 'ja-avaliada' });
+      else if (doCliente) setErroEnvio(doCliente.message);
+      else setErroEnvio('Não foi possível enviar sua avaliação agora. Tente novamente em instantes.');
     } finally {
       setEnviando(false);
     }
@@ -102,11 +142,48 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
     );
   }
 
+  if (link.estado === 'carregando') {
+    return (
+      <Casca>
+        <p role="status" className="text-center text-sm text-ink-muted">
+          Abrindo sua avaliação…
+        </p>
+      </Casca>
+    );
+  }
+
+  if (link.estado === 'ja-avaliada' || link.estado === 'erro') {
+    const jaAvaliada = link.estado === 'ja-avaliada';
+    return (
+      <Casca>
+        <div className="space-y-3 text-center">
+          {jaAvaliada ? (
+            <CheckCircle2 className="mx-auto h-10 w-10 text-success" aria-hidden="true" />
+          ) : (
+            <AlertTriangle className="mx-auto h-10 w-10 text-danger" aria-hidden="true" />
+          )}
+          <h1 ref={tituloEstado} tabIndex={-1} className="text-[1.375rem] font-semibold text-ink focus:outline-none text-balance">
+            {jaAvaliada ? 'Este serviço já foi avaliado' : 'Não foi possível abrir a avaliação'}
+          </h1>
+          <p role={jaAvaliada ? undefined : 'alert'} className="text-sm text-ink-muted text-pretty">
+            {link.estado === 'erro' ? link.msg : 'Obrigado! A oficina já recebeu a sua avaliação. Pode fechar esta página.'}
+          </p>
+          {link.estado === 'erro' && link.podeRepetir && (
+            <Button variante="secundario" onClick={() => setTentativa((n) => n + 1)}>
+              Tentar de novo
+            </Button>
+          )}
+        </div>
+      </Casca>
+    );
+  }
+
   return (
     <Casca>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-1 text-center">
           <h1 className="text-[1.375rem] font-semibold text-ink text-balance">Como foi o serviço no seu carro?</h1>
+          {link.veiculo && <p className="text-sm font-medium text-ink">{link.veiculo}</p>}
           <p className="text-sm text-ink-muted text-pretty">Sua nota ajuda a oficina a reconhecer os melhores mecânicos.</p>
         </div>
 
@@ -145,25 +222,6 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
         </div>
 
         <div className="space-y-4">
-          <Field rotulo="Seu nome">
-            <input
-              type="text"
-              required
-              value={nomeCliente}
-              onChange={(e) => setNomeCliente(e.target.value)}
-              placeholder="Ex: João da Silva"
-            />
-          </Field>
-
-          <Field rotulo="Modelo do veículo">
-            <input
-              type="text"
-              value={veiculo}
-              onChange={(e) => setVeiculo(e.target.value)}
-              placeholder="Ex: Chevrolet Onix 1.4"
-            />
-          </Field>
-
           <Field rotulo="Comentário (opcional)">
             <textarea
               rows={3}
@@ -177,7 +235,7 @@ export function AvaliacaoPublicaOS({ osId, empresaId }: AvaliacaoPublicaOSProps)
 
         <div className="space-y-3">
           {erroEnvio && (
-            <p role="alert" className="flex items-start gap-2 text-sm font-medium text-danger">
+            <p ref={alertaEnvio} tabIndex={-1} role="alert" className="flex items-start gap-2 text-sm font-medium text-danger focus:outline-none">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{erroEnvio}</span>
             </p>
