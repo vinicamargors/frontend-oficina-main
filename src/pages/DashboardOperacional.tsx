@@ -1,3 +1,4 @@
+import { formatBRL, linkWhatsApp } from '../lib/format';
 import { useEffect, useState, useCallback, useRef, useId, type DragEvent, type ReactNode } from 'react';
 import { api } from '../api/client';
 import { ItemCritico, StatusOS, UltimaOS } from '../types';
@@ -29,11 +30,6 @@ interface DashboardProps {
   onNavigateTab: (tab: string, statusFilter?: StatusOS, osId?: string) => void;
 }
 
-const formatBRL = (valor: number) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(valor || 0);
 
 // Etapas que viram coluna do quadro. "Pago / entregue" sai do pátio e fica só como contagem.
 const ETAPAS = ETAPAS_QUADRO;
@@ -116,7 +112,7 @@ function AcoesCard({ os, st, onAbrir, mover }: { os: UltimaOS; st: StatusOS; onA
 function LinkWhatsApp({ fone, clienteNome, className }: { fone: string; clienteNome: string; className: string }) {
   return (
     <a
-      href={`https://wa.me/55${fone}`}
+      href={linkWhatsApp(fone)}
       target="_blank"
       rel="noreferrer"
       draggable={false}

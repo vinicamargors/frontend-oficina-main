@@ -233,6 +233,12 @@ export async function simularBackend(page: Page, cenario: Cenario): Promise<void
         const c = (corpo ?? {}) as { tipo?: string; latitude?: number; longitude?: number };
         return json(route, { id: 'ponto-novo-0000', empresa_id: EMPRESA_ID, usuario_id: usuarios[3].id, usuario_nome: usuarios[3].nome, data: new Date().toLocaleDateString('sv-SE'), hora: '08:15:00', tipo: c.tipo, latitude: c.latitude, longitude: c.longitude, dentro_raio: true, distancia_metros: 0 });
       }
+      // folha: o servidor soma salário + VT + VR dos ativos
+      if (metodo === 'POST' && /^\/equipe\/folha\/[^/]+\/lancar-contas-a-pagar$/.test(caminho)) {
+        const ativos = usuarios.filter((u) => u.ativo);
+        const total = ativos.reduce((s, u) => s + (u.salario_base ?? 0) + (u.vale_transporte ?? 0) + (u.vale_refeicao ?? 0), 0);
+        return json(route, { sucesso: true, total_funcionarios: ativos.length, valor_total_folha: total, transacao_id: 'folha-0000', mensagem: 'ok' });
+      }
       const eco = corpo && typeof corpo === 'object' && !Array.isArray(corpo) ? { id: 'novo-id-0000', ...(corpo as object) } : (corpo ?? { status: 'ok', detail: 'ok' });
       return json(route, eco);
     }

@@ -1,10 +1,9 @@
+import { formatBRL } from '../../lib/format';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Barcode, Pencil, Trash2 } from 'lucide-react';
 import type { EstoqueItem } from '../../types';
 import { MenuAcoes } from '../clientes/MenuAcoes';
 import { estaCritico, margemPercentual } from './auxiliares';
 
-const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(valor || 0));
 
 /** Colunas da linha no desktop (≥1024px); o cabeçalho da lista usa a mesma grade. No celular a linha é: peça | saldo | menu. */
 export const COLUNAS_ITEM = {
