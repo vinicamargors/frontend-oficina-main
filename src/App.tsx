@@ -115,15 +115,18 @@ function AppShell() {
     ? selectedEmpresaId || user?.empresa_id || ''
     : user?.empresa_id || '';
 
+  // Depende do id, não do objeto: o refresh de token troca `user` por outro igual e refaria tudo
+  const userId = user?.id;
+  const userEmpresaId = user?.empresa_id;
   useEffect(() => {
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated || !userId) return;
 
     api
-      .getEmpresas(user.empresa_id || undefined)
+      .getEmpresas(userEmpresaId || undefined)
       .then((lista) => {
         setEmpresas(lista);
         if (lista.length > 0 && !selectedEmpresaId) {
-          const idInicial = user.empresa_id || lista[0].id;
+          const idInicial = userEmpresaId || lista[0].id;
           setSelectedEmpresaId(idInicial);
           localStorage.setItem('autotec_tenant_id', idInicial);
         }
@@ -142,7 +145,7 @@ function AppShell() {
       url.searchParams.set('tab', 'patio');
       window.history.replaceState({}, '', url.toString());
     }
-  }, [isAuthenticated, user, selectedEmpresaId, activeTab, canSeeConfig, canSeeFinanceiro]);
+  }, [isAuthenticated, userId, userEmpresaId, selectedEmpresaId, activeTab, canSeeConfig, canSeeFinanceiro]);
 
   // Dados da Oficina com alterações não salvas: trocar de tela ou de oficina pergunta antes de descartar
   const oficinaSuja = useRef(false);
@@ -223,15 +226,10 @@ function AppShell() {
 
   const searchParams = new URLSearchParams(window.location.search);
   const modoPublico = searchParams.get('modo');
-  const osIdPublico = searchParams.get('osId');
+  const tokenPublico = searchParams.get('token');
 
-  if (modoPublico === 'avaliar' && osIdPublico) {
-    return (
-      <AvaliacaoPublicaOS
-        osId={osIdPublico}
-        empresaId={searchParams.get('empresaId') || undefined}
-      />
-    );
+  if (modoPublico === 'avaliar' && tokenPublico) {
+    return <AvaliacaoPublicaOS token={tokenPublico} />;
   }
 
   if (loading) {

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { EMPRESA_ID, abrirTela, avaliacoes, empresa, entrarComo, escalas, exigirRedeCompleta, simularBackend, usuarios, type Cenario } from './mocks';
+import { EMPRESA_ID, abrirTela, configuracoesEmpresa, avaliacoes, empresa, entrarComo, escalas, exigirRedeCompleta, simularBackend, usuarios, type Cenario } from './mocks';
 import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
@@ -192,6 +192,18 @@ test.describe('formulário do colaborador', () => {
     await expect(lista(page)).toContainText('Bruno Lima');
   });
 
+  test('novo sem senha inicial mostra erro e não grava (sem senha padrão conhecida)', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /Novo colaborador/ }).click();
+    const d = page.getByRole('dialog', { name: 'Novo colaborador' });
+    await d.getByLabel(/Nome completo/).fill('Sem Senha');
+    await d.getByLabel(/E-mail de acesso/).fill('semsenha@oficina.example.com');
+    await d.getByRole('button', { name: 'Salvar colaborador' }).click();
+    await expect(d.getByRole('alert')).toContainText('senha inicial');
+    expect(await ultimaEscrita(page)).toBeUndefined();
+  });
+
   test('editar abre preenchido; senha curta mostra erro na folha e não grava', async ({ page }, info) => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
@@ -277,15 +289,38 @@ test.describe('folha e holerite', () => {
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     const e = (await ultimaEscrita(page))!;
     expect(e.metodo).toBe('POST');
-    expect(e.corpo).toMatchObject({
-      tipo: 'DESPESA',
-      categoria: 'FOLHA_PAGAMENTO',
-      valor: TOTAL_FOLHA,
+    expect(e.caminho).toMatch(/\/equipe\/folha\/[^/]+\/lancar-contas-a-pagar$/);
+    expect(e.corpo).toEqual({
+      mes_referencia: '11/2026',
       data_vencimento: '2026-12-05',
-      status: 'PENDENTE',
-      descricao: 'Folha de Pagamento & Comissões — Mês 11/2026',
+      incluir_vales: true,
+      descricao_custom: 'Folha de Pagamento & Comissões — Mês 11/2026',
     });
     await expect(page.getByRole('status').filter({ hasText: 'agendada' })).toBeVisible();
+  });
+
+  test('F10: dia de pagamento 31 em mês de 30 dias vence no último dia (30/11), não em 31/11', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    // registrada depois da simulação para valer antes dela
+    await page.route(/\/empresas\/[^/]+\/configuracoes$/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify({ ...configuracoesEmpresa, dia_pagamento_folha: 31 }),
+      })
+    );
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'equipe');
+    await irParaAba(page, 'Folha');
+    await page.getByLabel('Mês de referência').fill('2026-10');
+    await page.getByRole('button', { name: /Lançar em contas a pagar/ }).click();
+    const d = page.getByRole('dialog', { name: 'Lançar folha em contas a pagar?' });
+    await expect(d).toContainText('30/11/2026');
+    await d.getByRole('button', { name: /Lançar folha de/ }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ mes_referencia: '10/2026', data_vencimento: '2026-11-30' });
   });
 
   test('holerite: bloco branco com tinta preta, mesmos valores, cargo legível, mês por extenso e empresa', async ({ page }, info) => {
@@ -435,7 +470,8 @@ test.describe('escalas', () => {
 const NOITE_SP = new Date('2026-11-11T01:00:00Z');
 
 test.describe('datas no calendário local (22h em São Paulo)', () => {
-  test('ponto batido às 22h grava a data e a hora locais', async ({ page, context }, info) => {
+  // Fase 5: data e hora do ponto são do servidor (America/Sao_Paulo, testado no backend); o navegador não manda nem as dele.
+  test('ponto batido às 22h: o navegador não envia data nem hora (o servidor decide em Brasília)', async ({ page, context }, info) => {
     const { tema } = contextoDoProjeto(info);
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: -23.55052, longitude: -46.633308 });
@@ -445,7 +481,9 @@ test.describe('datas no calendário local (22h em São Paulo)', () => {
     await page.getByRole('button', { name: 'Bater ponto agora' }).click();
     await page.getByRole('dialog', { name: 'Registrar ponto agora?' }).getByRole('button', { name: 'Registrar ponto' }).click();
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
-    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ data: '2026-11-10', hora: '22:00', tipo: 'ENTRADA' });
+    const corpo = (await ultimaEscrita(page))!.corpo as Record<string, unknown>;
+    expect(corpo).toMatchObject({ tipo: 'ENTRADA' });
+    for (const proibido of ['data', 'hora', 'usuario_id', 'dentro_raio', 'distancia_metros']) expect(corpo).not.toHaveProperty(proibido);
   });
 
   test('agendar período às 22h: começa hoje e termina em 15 dias, no calendário local', async ({ page }, info) => {
@@ -483,8 +521,11 @@ test.describe('ponto eletrônico', () => {
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     const e = (await ultimaEscrita(page))!;
     expect(e.metodo).toBe('POST');
-    expect(e.corpo).toMatchObject({ tipo: 'ENTRADA', dentro_raio: true, distancia_metros: 0 });
-    await expect(page.getByRole('status').filter({ hasText: 'dentro do raio' })).toBeVisible();
+    // só tipo e coordenadas: usuário, data, hora e "dentro do raio" são do servidor (fase 5)
+    expect(e.corpo).toEqual({ tipo: 'ENTRADA', latitude: -23.55052, longitude: -46.633308 });
+    const aviso = page.getByRole('status').filter({ hasText: 'dentro do raio' });
+    await expect(aviso).toBeVisible();
+    await expect(aviso).toContainText('08:15');   // a hora mostrada é a que o servidor gravou
     await expect(hist.getByRole('listitem')).toHaveCount(3);
   });
 });
@@ -655,6 +696,7 @@ test.describe('polimento da equipe', () => {
     const d = page.getByRole('dialog', { name: 'Novo colaborador' });
     await d.getByLabel(/Nome completo/).fill('Bruno Lima');
     await d.getByLabel(/E-mail/).fill('bruno@oficinamodelo.example.com');
+    await d.getByLabel(/Senha inicial/).fill('segredo1');
     await d.getByRole('button', { name: 'Salvar colaborador' }).click();
     await expect(d.getByRole('alert')).toContainText('Erro ao salvar colaborador');
     await d.getByRole('button', { name: 'Cancelar' }).click();

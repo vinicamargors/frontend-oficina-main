@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../api/client';
 import { dataLocalISO, hojeLocalISO } from '../lib/data';
+import { linkWhatsApp } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import {
   Usuario,
@@ -38,7 +39,6 @@ import { AbaEscalas } from './equipe/AbaEscalas';
 import { AbaPonto } from './equipe/AbaPonto';
 import { AbaAvaliacoes } from './equipe/AbaAvaliacoes';
 import {
-  calcularDistanciaMetros,
   formatBRL,
   formatData,
   formatMesExtenso,
@@ -379,8 +379,13 @@ export function Equipe({ empresaId }: EquipeProps) {
       return;
     }
 
+    if (!colaboradorEmEdicao && !formSenha.trim()) {
+      setErroForm('Defina a senha inicial do colaborador (mínimo 6 caracteres).');
+      return;
+    }
+
     if (formSenha.trim() && formSenha.trim().length < 6) {
-      setErroForm('A nova senha deve ter no mínimo 6 caracteres.');
+      setErroForm('A senha deve ter no mínimo 6 caracteres.');
       return;
     }
 
@@ -427,7 +432,7 @@ export function Equipe({ empresaId }: EquipeProps) {
           email: formEmail.trim(),
           telefone: formTelefone.trim() || null,
           cargo: formCargo,
-          senha: formSenha || 'Autotec@123',
+          senha: formSenha.trim(),
           salario_base: salarioNum || 0,
           comissao_servico_pct: comissaoServicoNum,
           comissao_peca_pct: comissaoPecaNum,
@@ -462,10 +467,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     if (!linkConviteGerado) handleGerarConvite();
     const tel = telConvite.replace(/\D/g, '');
     const msg = `Olá ${nomeConvite || 'Colaborador'}, você foi convidado para a equipe no Mecanify (${cargoConvite}). Crie sua senha e acesse seu painel aqui: ${linkConviteGerado}`;
-    const waUrl = tel
-      ? `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-    window.open(waUrl, '_blank');
+    window.open(linkWhatsApp(tel, msg), '_blank');
   };
 
   // Automação: Lançar Folha no Contas a Pagar (Sem dados fictícios) — valores mostrados na folha de confirmação
@@ -477,25 +479,21 @@ export function Equipe({ empresaId }: EquipeProps) {
     const [ano, mes] = mesFolhaRef.split('-');
     try {
       setProcessando(true);
-      await api.criarTransacaoFinanceira({
-        empresa_id: empresaId,
-        tipo: 'DESPESA',
-        descricao: `Folha de Pagamento & Comissões — Mês ${mes}/${ano}`,
-        categoria: 'FOLHA_PAGAMENTO',
-        valor: totalFolhaGeral,
+      // O servidor soma a folha (a tela só mostra a prévia) e grava a despesa
+      const r = await api.lancarFolhaContasAPagar(empresaId, {
+        mes_referencia: `${mes}/${ano}`,
         data_vencimento: dataVencimentoFolha,
-        status: 'PENDENTE',
-        forma_pagamento: 'TED / Transferência',
-        observacoes: `Lançamento automático de folha (${usuariosAtivos.length} colaboradores ativos).`,
+        incluir_vales: true,
+        descricao_custom: `Folha de Pagamento & Comissões — Mês ${mes}/${ano}`,
       });
       setConfirmarFolhaAberto(false);
       dispararFeedback(
         `Folha de ${formatBRL(
-          totalFolhaGeral
+          r.valor_total_folha
         )} agendada com sucesso em contas a pagar para ${formatData(dataVencimentoFolha)}!`
       );
-    } catch {
-      setErroFolha('Erro ao agendar folha no financeiro.');
+    } catch (e) {
+      setErroFolha((e as Error).message || 'Erro ao agendar folha no financeiro.');
     } finally {
       setProcessando(false);
     }
@@ -560,32 +558,9 @@ export function Equipe({ empresaId }: EquipeProps) {
       async (pos) => {
         const userLat = pos.coords.latitude;
         const userLon = pos.coords.longitude;
-        const distancia = calcularDistanciaMetros(
-          userLat,
-          userLon,
-          coordsOficina.lat,
-          coordsOficina.lon
-        );
-
-        const dentroRaio = distancia <= coordsOficina.raio;
-        const agora = new Date();
-        const dataStr = dataLocalISO(agora);
-        const horaStr = agora.toTimeString().slice(0, 5);
-
         let novoPonto: RegistroPonto;
         try {
-          novoPonto = await api.registrarPonto({
-            empresa_id: empresaId,
-            usuario_id: user?.id || 'usr-atual',
-            usuario_nome: user?.nome || 'Colaborador',
-            data: dataStr,
-            hora: horaStr,
-            tipo: 'ENTRADA',
-            latitude: userLat,
-            longitude: userLon,
-            dentro_raio: dentroRaio,
-            distancia_metros: distancia,
-          });
+          novoPonto = await api.registrarPonto(empresaId, { tipo: 'ENTRADA', latitude: userLat, longitude: userLon });
         } catch (e) {
           setPontoFeedback({
             sucesso: false,
@@ -598,7 +573,10 @@ export function Equipe({ empresaId }: EquipeProps) {
 
         setPontos((prev) => [novoPonto, ...prev]);
 
-        if (dentroRaio) {
+        // Hora, distância e "dentro do raio" são os que o servidor gravou
+        const horaStr = novoPonto.hora.slice(0, 5);
+        const distancia = Math.round(novoPonto.distancia_metros ?? 0);
+        if (novoPonto.dentro_raio) {
           setPontoFeedback({
             sucesso: true,
             msg: `Ponto registrado com sucesso às ${horaStr}! Você está a ${distancia}m da oficina (dentro do raio permitido).`,
@@ -936,7 +914,7 @@ export function Equipe({ empresaId }: EquipeProps) {
               </Field>
             </div>
             <Field
-              rotulo={colaboradorEmEdicao ? 'Nova senha (deixe vazio para manter)' : 'Senha inicial'}
+              rotulo={colaboradorEmEdicao ? 'Nova senha (deixe vazio para manter)' : 'Senha inicial *'}
               dica="Mínimo 6 caracteres."
             >
               <input

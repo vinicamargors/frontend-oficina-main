@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { formatBRL } from '../lib/format';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { api } from '../api/client';
 import { hojeLocalISO } from '../lib/data';
 import { useAuth } from '../context/AuthContext';
@@ -24,24 +25,34 @@ import { LinhaItem, COLUNAS_ITEM } from './estoque/LinhaItem';
 import { ChipsCategoria } from './estoque/ChipsCategoria';
 import { categoriaEquivalente, rotuloCategoria, rotulosDasCategorias, saldoApos } from './estoque/auxiliares';
 
+/**
+ * Categorias criadas antes ficavam só neste navegador (`autotec_categorias_<empresa>`): sobe as que o servidor não
+ * tem e apaga a chave. Se alguma falhar, a chave fica para a próxima carga.
+ */
+async function migrarCategoriasLegadas(empresaId: string, doServidor: string[]): Promise<string[]> {
+  const chave = `autotec_categorias_${empresaId}`;
+  let locais: string[] = [];
+  try {
+    const salvas = localStorage.getItem(chave);
+    if (!salvas) return doServidor;
+    locais = (JSON.parse(salvas) as unknown[]).filter((c): c is string => typeof c === 'string');
+  } catch {
+    return doServidor;
+  }
+  const faltam = locais.filter((c) => c.trim() && !categoriaEquivalente(doServidor, c));
+  try {
+    const criadas = await Promise.all(faltam.map((c) => api.criarCategoriaEstoque(empresaId, c)));
+    localStorage.removeItem(chave);
+    return [...doServidor, ...criadas.map((c) => c.nome)];
+  } catch {
+    return doServidor;
+  }
+}
+
 interface EstoqueProps {
   empresaId: string;
 }
 
-const CATEGORIAS_PADRAO = [
-  'PECAS',
-  'FLUIDOS',
-  'PNEUS',
-  'ELETRICA',
-  'ACESSORIOS',
-  'FERRAMENTAS',
-  'DIVERSOS',
-];
-
-const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    Number(valor || 0)
-  );
 
 // Gerador vetorial nativo de Código de Barras Code 128 (padrão universal B)
 // Sem nenhuma dependência externa, 100% offline e ultra-nítido na impressão térmica
@@ -106,17 +117,11 @@ export function Estoque({ empresaId }: EstoqueProps) {
   const [apenasEstoqueBaixo, setApenasEstoqueBaixo] = useState(false);
 
   // Categorias Customizáveis da Oficina
-  const [categoriasCustom, setCategoriasCustom] = useState<string[]>(() => {
-    try {
-      const salvas = localStorage.getItem(`autotec_categorias_${empresaId}`);
-      if (salvas) return JSON.parse(salvas);
-    } catch {
-      // fallback
-    }
-    return CATEGORIAS_PADRAO;
-  });
+  // Vem do servidor (padrão + criadas + as que os itens usam); o servidor guarda, não o navegador
+  const [categoriasCustom, setCategoriasCustom] = useState<string[]>([]);
 
   const [mostrarModalCategorias, setMostrarModalCategorias] = useState(false);
+  const campoNovaCategoria = useRef<HTMLInputElement>(null);
   const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
   // Categoria com itens aguardando confirmação para reclassificar e excluir
   const [categoriaParaExcluir, setCategoriaParaExcluir] = useState<string | null>(null);
@@ -157,20 +162,18 @@ export function Estoque({ empresaId }: EstoqueProps) {
     try {
       setCarregando(true);
       setErro(null);
-      const res = await api.listarEstoque(empresaId);
+      // Separadas: se só as categorias falharem, as peças continuam na tela (e as categorias saem das próprias peças)
+      const [res, cats] = await Promise.all([
+        api.listarEstoque(empresaId),
+        api.listarCategoriasEstoque(empresaId).catch(() => null),
+      ]);
       setItens(res.itens || []);
-
-      // Mescla categorias existentes nos itens com as cadastradas
-      const catsDosItens = Array.from(
-        new Set((res.itens || []).map((i) => (i.categoria || 'PECAS').toUpperCase()))
-      );
-      setCategoriasCustom((prev) => {
-        const uniao = Array.from(new Set([...prev, ...catsDosItens]));
-        try {
-          localStorage.setItem(`autotec_categorias_${empresaId}`, JSON.stringify(uniao));
-        } catch {}
-        return uniao;
-      });
+      if (cats) {
+        setCategoriasCustom(await migrarCategoriasLegadas(empresaId, cats));
+      } else {
+        setCategoriasCustom(Array.from(new Set((res.itens || []).map((i) => (i.categoria || 'PECAS').toUpperCase()))));
+        setErro('Não foi possível carregar as categorias agora; mostrando só as que as peças já usam. Recarregue a página para tentar de novo.');
+      }
     } catch (e) {
       const err = e as Error;
       setErro(err.message || 'Erro ao carregar lista de estoque.');
@@ -193,7 +196,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
   const rotuloDe = (raw?: string | null) => rotulosCategoria[(raw || 'PECAS').toUpperCase()] ?? rotuloCategoria(raw);
 
   // Gerenciamento de Categorias
-  const handleAdicionarCategoria = (e: React.FormEvent) => {
+  const handleAdicionarCategoria = async (e: React.FormEvent) => {
     e.preventDefault();
     const nomeLimpo = novaCategoriaNome.trim().toUpperCase();
     if (!nomeLimpo) return;
@@ -208,13 +211,15 @@ export function Estoque({ empresaId }: EstoqueProps) {
       return;
     }
 
-    const atualizadas = [...categoriasCustom, nomeLimpo];
-    setCategoriasCustom(atualizadas);
+    setErro(null);
     try {
-      localStorage.setItem(`autotec_categorias_${empresaId}`, JSON.stringify(atualizadas));
-    } catch {}
-    setNovaCategoriaNome('');
-    dispararFeedback(`Categoria "${rotuloDe(nomeLimpo)}" criada com sucesso!`);
+      const { nome } = await api.criarCategoriaEstoque(empresaId, nomeLimpo);
+      setCategoriasCustom((prev) => (prev.includes(nome) ? prev : [...prev, nome]));
+      setNovaCategoriaNome('');
+      dispararFeedback(`Categoria "${rotuloDe(nome)}" criada com sucesso!`);
+    } catch (err) {
+      setErro((err as Error).message || 'Não foi possível criar a categoria.');
+    }
   };
 
   const handleExcluirCategoria = async (catNome: string, confirmado = false) => {
@@ -222,31 +227,24 @@ export function Estoque({ empresaId }: EstoqueProps) {
       (i) => (i.categoria || '').toUpperCase() === catNome.toUpperCase()
     );
 
-    if (itensUsando.length > 0) {
-      // Pede confirmação na própria folha (antes era window.confirm); a ação em si não muda
-      if (!confirmado) {
-        setCategoriaParaExcluir(catNome);
-        return;
-      }
-      setCategoriaParaExcluir(null);
-      setErro(null);
-
-      try {
-        for (const item of itensUsando) {
-          await api.atualizarItemEstoque(empresaId, item.id, { categoria: 'DIVERSOS' });
-        }
-        await carregarEstoque();
-      } catch {
-        setErro('Falha ao reclassificar itens da categoria.');
-        return;
-      }
+    // Com itens, pede confirmação na própria folha; o servidor move os itens para "Diversos" e remove a categoria
+    if (itensUsando.length > 0 && !confirmado) {
+      setCategoriaParaExcluir(catNome);
+      return;
     }
+    setCategoriaParaExcluir(null);
+    setErro(null);
 
-    const atualizadas = categoriasCustom.filter((c) => c !== catNome);
-    setCategoriasCustom(atualizadas);
     try {
-      localStorage.setItem(`autotec_categorias_${empresaId}`, JSON.stringify(atualizadas));
-    } catch {}
+      await api.excluirCategoriaEstoque(empresaId, catNome);
+      // Sem recarregar a página toda (isso desmonta a folha e o foco se perde): o servidor já moveu os itens para DIVERSOS
+      setItens((prev) => prev.map((i) => ((i.categoria || '').toUpperCase() === catNome.toUpperCase() ? { ...i, categoria: 'DIVERSOS' } : i)));
+      setCategoriasCustom((prev) => Array.from(new Set([...prev.filter((c) => c !== catNome), 'DIVERSOS'])));
+      requestAnimationFrame(() => campoNovaCategoria.current?.focus());
+    } catch (err) {
+      setErro((err as Error).message || 'Não foi possível excluir a categoria.');
+      return;
+    }
     if (categoriaAtiva === catNome) setCategoriaAtiva('TODAS');
     dispararFeedback(`Categoria "${rotuloDe(catNome)}" removida.`);
   };
@@ -706,7 +704,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
               className={`${CLASSE_CAMPO} pl-9`}
             />
           </div>
-          <Button variante="secundario" icone={FolderPlus} onClick={() => setMostrarModalCategorias(true)}>
+          <Button variante="secundario" icone={FolderPlus} disabled={carregando} onClick={() => setMostrarModalCategorias(true)}>
             Categorias ({categoriasCustom.length})
           </Button>
         </div>
@@ -986,6 +984,7 @@ export function Estoque({ empresaId }: EstoqueProps) {
           <div className="flex-1">
             <Field rotulo="Nome da nova categoria">
               <input
+                ref={campoNovaCategoria}
                 type="text"
                 required
                 value={novaCategoriaNome}

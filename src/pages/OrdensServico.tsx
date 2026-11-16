@@ -1,3 +1,4 @@
+import { formatBRL, linkWhatsApp } from '../lib/format';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api, OrdenacaoOS } from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -43,6 +44,7 @@ import { ConfirmarEtapa } from '../components/ConfirmarEtapa';
 import { FORMAS_PAGAMENTO } from './ordens/formasPagamento';
 import { ETAPAS_OS, mensagemEtapa } from './ordens/etapas';
 import { LinhaOrdem } from './ordens/LinhaOrdem';
+import { PedirAvaliacao } from './ordens/PedirAvaliacao';
 import { useTourDaPagina } from '../tour/useTourDaPagina';
 import { TOUR_ORDENS } from '../tour/passos/ordens';
 import { TOUR_BANCADA } from '../tour/passos/bancada';
@@ -68,10 +70,6 @@ const ROTULO_TIPO_ITEM: Record<TipoItemOS, string> = {
   TERCEIRIZADO: 'Terceirizado',
 };
 
-const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    Number(valor || 0)
-  );
 
 const formatDataHora = (iso?: string | null) => {
   if (!iso) return '—';
@@ -389,6 +387,10 @@ export function OrdensServico({
     });
   }, [estoque, buscaEstoqueTexto]);
 
+  // Ref: o refresh de token troca o objeto `user`; como dependência reabriria a OS (e perderia o que foi digitado)
+  const userRef = useRef(user);
+  userRef.current = user;
+
   const abrirBancadaOS = useCallback(
     async (osId: string, mensagemInicial: string | null = null) => {
       setSelectedOsId(osId);
@@ -413,14 +415,14 @@ export function OrdensServico({
           dossieRes.ordem.km_atual != null ? String(dossieRes.ordem.km_atual) : ''
         );
         setEditProblema(dossieRes.ordem.descricao_problema || '');
-        setEditMecanicoId(dossieRes.ordem.mecanico_responsavel_id || user?.id || '');
+        setEditMecanicoId(dossieRes.ordem.mecanico_responsavel_id || userRef.current?.id || '');
         setEditFormaPagamento(dossieRes.ordem.forma_pagamento || 'PIX');
 
         api
           .getUsuarios(empresaId)
           .then((lista) => setMecanicos(lista.filter((u) => u.ativo)))
           .catch(() => {
-            if (user) setMecanicos([user]);
+            if (userRef.current) setMecanicos([userRef.current]);
           });
       } catch (err: unknown) {
         const e = err as Error;
@@ -429,7 +431,7 @@ export function OrdensServico({
         setLoadingDossie(false);
       }
     },
-    [empresaId, user]
+    [empresaId]
   );
 
   const sincronizarDossieSilencioso = useCallback(
@@ -1047,8 +1049,7 @@ export function OrdensServico({
       .filter(Boolean)
       .join('\n');
 
-    const base = fone ? `https://wa.me/55${fone}` : 'https://wa.me/';
-    return `${base}?text=${encodeURIComponent(texto)}`;
+    return linkWhatsApp(fone, texto);
   };
 
   const aplicarAtalhoPeriodo = (dias: number | null) => {
@@ -2025,6 +2026,15 @@ export function OrdensServico({
                   <MessageCircle size={16} aria-hidden="true" />
                   WhatsApp
                 </a>
+                <PedirAvaliacao
+                  empresaId={empresaId}
+                  osId={os.id}
+                  status={statusAtual}
+                  nomeCliente={os.clientes?.nome || 'Cliente'}
+                  telefone={os.clientes?.telefone || ''}
+                  nomeOficina={dossie.empresa?.nome_fantasia || 'Mecanify'}
+                  className="hidden lg:inline-flex"
+                />
                 <Button
                   variante="secundario"
                   icone={Printer}
@@ -2749,6 +2759,15 @@ export function OrdensServico({
               <MessageCircle size={16} aria-hidden="true" />
               WhatsApp
             </a>
+            <PedirAvaliacao
+              empresaId={empresaId}
+              osId={os.id}
+              status={statusAtual}
+              nomeCliente={os.clientes?.nome || 'Cliente'}
+              telefone={os.clientes?.telefone || ''}
+              nomeOficina={dossie.empresa?.nome_fantasia || 'Mecanify'}
+              className="flex-1"
+            />
             <Button variante="secundario" icone={Printer} onClick={() => window.print()} className="flex-1">
               Imprimir (A4)
             </Button>

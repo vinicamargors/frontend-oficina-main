@@ -535,15 +535,13 @@ test('print avaliacao estados (nota escolhida, enviada, erro)', async ({ page },
   await simularBackend(page, 'cheio');
   let falhar = true;
   await page.route('**/api/v1/equipe/avaliar', async (r) => {
-    if (falhar) {
+    if (falhar && r.request().method() === 'POST') {
       return r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'x' }) });
     }
     await r.fallback();
   });
   await abrirTela(page, 'avaliacao');
   await page.getByRole('radio', { name: '3 estrelas' }).click();
-  await page.getByLabel('Seu nome').fill('Maria Souza');
-  await page.getByLabel('Modelo do veículo').fill('Fiat Argo 1.3');
   await page.getByLabel(/Comentário/).fill('Atendimento rápido e o carro ficou como novo.');
   await page.mouse.move(1, 1);
   await tirar('nota');

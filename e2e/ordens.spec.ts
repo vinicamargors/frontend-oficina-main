@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { OS_BANCADA_ID, abrirTela, dossie, entrarComo, exigirRedeCompleta, ordens, simularBackend } from './mocks';
+import { EMPRESA_ID, OS_BANCADA_ID, OS_FINALIZADA_ID, TOKEN_AVALIACAO, abrirTela, dossie, entrarComo, exigirRedeCompleta, ordens, simularBackend } from './mocks';
 import { coletarErros, contextoDoProjeto } from './contexto';
 
 // As opções da folha são exatamente as strings de FORMAS_PAGAMENTO (src/pages/OrdensServico.tsx).
@@ -563,5 +563,46 @@ test.describe('paginação da lista', () => {
     await abrirTela(page, 'ordens');
     await expect(page.getByRole('list', { name: 'Ordens de serviço' }).getByRole('listitem')).toHaveCount(ordens.length);
     await expect(page.getByRole('navigation', { name: 'Paginação de ordens de serviço' })).toHaveCount(0);
+  });
+});
+
+test.describe('bancada: pedir avaliação (fase 5)', () => {
+  const botao = (page: Page) => page.getByRole('button', { name: 'Pedir avaliação' }).filter({ visible: true });
+
+  test('OS em execução não oferece o pedido de avaliação', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrirBancada(page, tema);
+    await expect(page.getByRole('button', { name: 'Pedir avaliação' })).toHaveCount(0);
+  });
+
+  test('OS finalizada: pede o link ao servidor e o botão vira o WhatsApp com o link assinado', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'bancadaFinalizada');
+    const pedidos: string[] = [];
+    page.on('request', (r) => r.url().includes('/link/') && pedidos.push(r.method() + ' ' + new URL(r.url()).pathname));
+
+    await botao(page).click();
+    const enviar = page.getByRole('link', { name: 'Enviar avaliação' }).filter({ visible: true });
+    await expect(enviar).toBeVisible();
+    expect(pedidos).toEqual([`GET /api/v1/equipe/avaliacoes/${EMPRESA_ID}/link/${OS_FINALIZADA_ID}`]);
+    const href = (await enviar.getAttribute('href'))!;
+    expect(href).toMatch(/^https:\/\/wa\.me\//);
+    expect(decodeURIComponent(href)).toContain(`/?modo=avaliar&token=${TOKEN_AVALIACAO}`);
+    expect(await page.getByRole('alert').count()).toBe(0);
+  });
+
+  test('erro do servidor aparece na tela e o botão continua disponível', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await entrarComo(page, 'DONO', tema);
+    await page.route('**/api/v1/equipe/avaliacoes/*/link/*', (r) =>
+      r.fulfill({ status: 400, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'A avaliação só fica disponível depois que a OS é finalizada.' }) })
+    );
+    await abrirTela(page, 'bancadaFinalizada');
+    await botao(page).click();
+    await expect(page.getByRole('alert').filter({ visible: true })).toContainText('só fica disponível depois que a OS é finalizada');
+    await expect(botao(page)).toBeEnabled();
   });
 });

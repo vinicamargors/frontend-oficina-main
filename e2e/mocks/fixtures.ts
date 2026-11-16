@@ -198,6 +198,13 @@ export const estoque: EstoqueItem[] = ITENS.map(([nome, categoria, quantidade, c
 
 const abaixoDoMinimo = (e: EstoqueItem) => e.quantidade < e.minimo_alerta;
 
+// Como o servidor: padrão da oficina + as categorias que os itens já usam
+export const CATEGORIAS_PADRAO_ESTOQUE = ['PECAS', 'FLUIDOS', 'PNEUS', 'ELETRICA', 'ACESSORIOS', 'FERRAMENTAS', 'DIVERSOS'];
+export function categoriasEstoque(cenario: Cenario): string[] {
+  const base = cenario === 'vazio' ? [] : estoque;
+  return Array.from(new Set([...CATEGORIAS_PADRAO_ESTOQUE, ...base.map((i) => i.categoria)]));
+}
+
 export function listaEstoque(cenario: Cenario, categoria?: string | null): EstoqueListResponse {
   const base = cenario === 'vazio' ? [] : estoque;
   const itens = categoria ? base.filter((i) => i.categoria === categoria.toUpperCase()) : base;
@@ -265,6 +272,12 @@ export const ordens: UltimaOS[] = PLANO_OS.map(([status, dias, total], i) => {
 
 /** OS aberta na bancada (`?tab=os&osId=`). */
 export const OS_BANCADA_ID = ordens[1].id;
+
+/** OS finalizada (é a única da bancada com o botão "Pedir avaliação"; a da bancada padrão está em execução). */
+export const OS_FINALIZADA_ID = ordens[5].id;
+
+/** Token do link público de avaliação (o servidor real assina; aqui qualquer valor serve). */
+export const TOKEN_AVALIACAO = 'tok-avaliacao-teste';
 
 /**
  * `/os/` simulado. `statusAtual` (opcional) sobrescreve o status de ordens por id: os testes que mudam a etapa
