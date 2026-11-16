@@ -118,20 +118,24 @@ function AppShell() {
   // Depende do id, não do objeto: o refresh de token troca `user` por outro igual e refaria tudo
   const userId = user?.id;
   const userEmpresaId = user?.empresa_id;
+  // Só no login (userId/empresa mudam): trocar de aba ou de oficina não rebusca a lista
   useEffect(() => {
     if (!isAuthenticated || !userId) return;
-
     api
       .getEmpresas(userEmpresaId || undefined)
       .then((lista) => {
         setEmpresas(lista);
-        if (lista.length > 0 && !selectedEmpresaId) {
+        if (lista.length > 0 && !localStorage.getItem('autotec_tenant_id')) {
           const idInicial = userEmpresaId || lista[0].id;
-          setSelectedEmpresaId(idInicial);
+          setSelectedEmpresaId((atual) => atual || idInicial);
           localStorage.setItem('autotec_tenant_id', idInicial);
         }
       })
       .catch(console.error);
+  }, [isAuthenticated, userId, userEmpresaId]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !userId) return;
 
     // Trava de segurança: redireciona para pátio se o cargo não puder acessar a aba atual
     if ((activeTab === 'equipe' || activeTab === 'oficina') && !canSeeConfig) {
@@ -145,7 +149,7 @@ function AppShell() {
       url.searchParams.set('tab', 'patio');
       window.history.replaceState({}, '', url.toString());
     }
-  }, [isAuthenticated, userId, userEmpresaId, selectedEmpresaId, activeTab, canSeeConfig, canSeeFinanceiro]);
+  }, [isAuthenticated, userId, activeTab, canSeeConfig, canSeeFinanceiro]);
 
   // Dados da Oficina com alterações não salvas: trocar de tela ou de oficina pergunta antes de descartar
   const oficinaSuja = useRef(false);

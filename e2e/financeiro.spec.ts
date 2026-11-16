@@ -133,6 +133,7 @@ test.describe('abas', () => {
     const { tema } = contextoDoProjeto(info);
     await abrir(page, tema);
     const painel = page.getByRole('tabpanel');
+    await expect(painel.getByRole('note')).toContainText('Valores estimados');
     await expect(painel).toContainText('Ativo circulante');
     await expect(painel).toContainText('Caixa e bancos');
     await expect(painel).toContainText('Contas a receber');

@@ -60,7 +60,20 @@ const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
  *  - leitura (GET): erro de rede, 502, 503 e 504;
  *  - escrita: apenas 503 (servidor acordando, a requisição não chegou ao app).
  */
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+// GETs idênticos em andamento viram uma só requisição (Promise.all de telas, efeito rodando 2x, etc.).
+const emAndamento = new Map<string, Promise<unknown>>();
+
+function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if ((init?.method || 'GET').toUpperCase() !== 'GET') return enviar<T>(path, init);
+  let p = emAndamento.get(path) as Promise<T> | undefined;
+  if (!p) {
+    p = enviar<T>(path, init).finally(() => emAndamento.delete(path));
+    emAndamento.set(path, p);
+  }
+  return p;
+}
+
+async function enviar<T>(path: string, init?: RequestInit): Promise<T> {
   const leitura = (init?.method || 'GET').toUpperCase() === 'GET';
   let renovouToken = false;
 
