@@ -1084,12 +1084,12 @@ export function OrdensServico({
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4 bg-surface border-2 border-line rounded-lg p-5">
+        <div className="flex flex-col gap-4 rounded-2xl bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-ink text-balance">
+            <h1 className="text-base font-semibold sm:text-lg text-ink text-balance sm:text-[1.375rem]">
               Dar entrada em veículo (nova OS)
             </h1>
-            <p className="text-base text-ink-muted mt-1 text-pretty">
+            <p className="mt-1 text-sm text-ink-muted text-pretty">
               1º Escolha o cliente (por placa, nome, CPF ou telefone) e 2º selecione o
               veículo dele.
             </p>
@@ -1097,7 +1097,7 @@ export function OrdensServico({
           <button
             type="button"
             onClick={() => setView('lista')}
-            className="min-h-[54px] px-5 py-2.5 rounded-xl bg-surface hover:bg-muted border-2 border-line-strong text-ink font-semibold text-base flex items-center gap-2 cursor-pointer shrink-0"
+            className="flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg bg-muted px-4 text-sm font-medium text-ink hover:bg-line sm:w-auto"
           >
             <ArrowLeft className="w-5 h-5 text-brand-ink" aria-hidden="true" />
             <span>Voltar ao pátio</span>
@@ -1107,7 +1107,7 @@ export function OrdensServico({
         {erroOperacao && (
           <div
             aria-live="polite"
-            className="p-4 rounded-xl bg-danger/15 border-2 border-danger text-danger flex items-center gap-3 text-base font-medium"
+            className="p-4 rounded-xl bg-danger/15 text-danger flex items-center gap-3 text-base font-medium"
           >
             <AlertTriangle className="w-6 h-6 text-danger shrink-0" aria-hidden="true" />
             <span>{erroOperacao}</span>
@@ -1116,11 +1116,11 @@ export function OrdensServico({
 
         <form
           onSubmit={handleCriarNovaOS}
-          className="bg-surface border-2 border-line rounded-lg p-5 sm:p-7 space-y-6"
+          className="bg-surface rounded-2xl p-4 sm:p-6 space-y-6"
         >
-          <fieldset className="bg-sunken border-2 border-line rounded-lg p-5 space-y-4">
+          <fieldset className="bg-muted rounded-xl p-4 sm:p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <legend className="text-xl font-semibold text-ink flex items-center gap-2">
+              <legend className="text-base font-semibold sm:text-lg text-ink flex items-center gap-2">
                 <User className="w-6 h-6 text-brand-ink" aria-hidden="true" />
                 <span>1. Escolher Cliente</span>
               </legend>
@@ -1181,7 +1181,7 @@ export function OrdensServico({
                       autoCapitalize="off"
                       spellCheck={false}
                       placeholder="Comece a digitar nome, telefone, CPF ou placa (ex.: FUK2555)…"
-                      className="w-full min-h-[56px] pl-11 pr-4 py-2.5 bg-surface border-2 border-line-strong focus:border-brand rounded-xl text-ink text-base font-medium"
+                      className={`${CLASSE_CAMPO} pl-10`}
                     />
                   </div>
                 </div>
@@ -1190,7 +1190,7 @@ export function OrdensServico({
                   <div
                     role="listbox"
                     aria-label="Clientes encontrados"
-                    className="bg-surface border-2 border-brand rounded-xl divide-y divide-line max-h-72 overflow-y-auto"
+                    className="bg-surface rounded-xl shadow-card ring-1 ring-line divide-y divide-line max-h-72 overflow-y-auto"
                   >
                     {clientesFiltrados.length === 0 ? (
                       <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1260,7 +1260,7 @@ export function OrdensServico({
                 )}
 
                 {clienteSelecionado && (
-                  <div className="bg-muted/40 border-2 border-brand rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="bg-muted rounded-xl ring-2 ring-brand p-3.5 flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-semibold text-warning">
                         Cliente selecionado
@@ -1303,7 +1303,7 @@ export function OrdensServico({
                     value={novoClienteNome}
                     onChange={(e) => setNovoClienteNome(e.target.value)}
                     placeholder="Ex.: Marcos Oliveira…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-surface border-2 border-line rounded-xl text-ink text-base"
+                    className={`${CLASSE_CAMPO} `}
                   />
                 </div>
 
@@ -1323,7 +1323,7 @@ export function OrdensServico({
                     value={novoClienteTelefone}
                     onChange={(e) => setNovoClienteTelefone(e.target.value)}
                     placeholder="(11) 99999-0000…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-surface border-2 border-line rounded-xl text-ink font-mono text-base tabular-nums"
+                    className={`${CLASSE_CAMPO} font-mono tabular-nums`}
                   />
                 </div>
 
@@ -1343,7 +1343,7 @@ export function OrdensServico({
                     value={novoClienteCpf}
                     onChange={(e) => setNovoClienteCpf(e.target.value)}
                     placeholder="000.000.000-00…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-surface border-2 border-line rounded-xl text-ink font-mono text-base tabular-nums"
+                    className={`${CLASSE_CAMPO} font-mono tabular-nums`}
                   />
                 </div>
               </div>
@@ -1351,9 +1351,9 @@ export function OrdensServico({
           </fieldset>
 
           {(clienteSelecionado || modoClienteOS === 'NOVO_CLIENTE') && (
-            <fieldset className="bg-sunken border-2 border-line rounded-lg p-5 space-y-4">
+            <fieldset className="bg-muted rounded-xl p-4 sm:p-5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <legend className="text-xl font-semibold text-ink flex items-center gap-2">
+                <legend className="text-base font-semibold sm:text-lg text-ink flex items-center gap-2">
                   <Car className="w-6 h-6 text-brand-ink" aria-hidden="true" />
                   <span>
                     2. Veículo de{' '}
@@ -1397,7 +1397,7 @@ export function OrdensServico({
 
               {modoClienteOS === 'BUSCAR' && modoVeiculoCliente === 'DO_CLIENTE' ? (
                 carrosDoClienteSelecionado.length === 0 ? (
-                  <div className="p-4 rounded-xl bg-surface border border-line flex items-center justify-between gap-4">
+                  <div className="p-4 rounded-xl bg-muted flex items-center justify-between gap-4">
                     <span className="text-sm text-ink-muted">
                       Este cliente ainda não possui veículos cadastrados.
                     </span>
@@ -1483,7 +1483,7 @@ export function OrdensServico({
                         value={novaPlaca}
                         onChange={(e) => setNovaPlaca(e.target.value.toUpperCase())}
                         placeholder="ABC1D23…"
-                        className="w-full min-h-[54px] px-4 py-2.5 bg-surface border-2 border-brand rounded-xl font-mono text-xl font-semibold text-ink uppercase tracking-widest"
+                        className={`${CLASSE_CAMPO} font-mono font-semibold uppercase tracking-widest`}
                       />
                     </div>
 
@@ -1526,7 +1526,7 @@ export function OrdensServico({
                         value={novoModelo}
                         onChange={(e) => setNovoModelo(e.target.value)}
                         placeholder="Ex.: Onix 1.0 Turbo…"
-                        className="w-full min-h-[48px] px-3.5 py-2 bg-surface border-2 border-line rounded-xl text-ink text-sm"
+                        className={`${CLASSE_CAMPO} `}
                       />
                     </div>
 
@@ -1544,7 +1544,7 @@ export function OrdensServico({
                         value={novaMarca}
                         onChange={(e) => setNovaMarca(e.target.value)}
                         placeholder="Chevrolet…"
-                        className="w-full min-h-[48px] px-3.5 py-2 bg-surface border-2 border-line rounded-xl text-ink text-sm"
+                        className={`${CLASSE_CAMPO} `}
                       />
                     </div>
 
@@ -1563,7 +1563,7 @@ export function OrdensServico({
                           value={novaCor}
                           onChange={(e) => setNovaCor(e.target.value)}
                           placeholder="Prata"
-                          className="w-full min-h-[48px] px-3 py-2 bg-surface border-2 border-line rounded-xl text-ink text-sm"
+                          className={`${CLASSE_CAMPO} `}
                         />
                       </div>
 
@@ -1583,7 +1583,7 @@ export function OrdensServico({
                           value={novoAno}
                           onChange={(e) => setNovoAno(e.target.value.replace(/\D/g, ''))}
                           placeholder="2022"
-                          className="w-full min-h-[48px] px-3 py-2 bg-surface border-2 border-line rounded-xl text-ink font-mono text-sm tabular-nums"
+                          className={`${CLASSE_CAMPO} font-mono tabular-nums`}
                         />
                       </div>
                     </div>
@@ -1610,7 +1610,7 @@ export function OrdensServico({
                 value={novaOsKm}
                 onChange={(e) => setNovaOsKm(e.target.value.replace(/\D/g, ''))}
                 placeholder="Ex.: 84500…"
-                className="w-full min-h-[54px] px-4 py-2.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink font-mono text-lg tabular-nums"
+                className={`${CLASSE_CAMPO} font-mono tabular-nums`}
               />
             </div>
 
@@ -1628,7 +1628,7 @@ export function OrdensServico({
                 value={novaOsProblema}
                 onChange={(e) => setNovaOsProblema(e.target.value)}
                 placeholder="Ex.: Barulho na suspensão dianteira e revisão de freios…"
-                className="w-full min-h-[54px] px-4 py-2.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink text-base"
+                className={`${CLASSE_CAMPO} `}
               />
             </div>
           </div>
@@ -1636,7 +1636,7 @@ export function OrdensServico({
           <button
             type="submit"
             disabled={criandoOS}
-            className="w-full min-h-[60px] px-6 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-lg flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+            className="w-full min-h-12 px-6 py-3 rounded-lg bg-brand hover:bg-brand-hover text-on-brand font-semibold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
           >
             <PlusCircle className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
             <span>
