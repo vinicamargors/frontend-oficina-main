@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { EMPRESA_ID, abrirTela, avaliacoes, empresa, entrarComo, escalas, exigirRedeCompleta, simularBackend, usuarios, type Cenario } from './mocks';
+import { EMPRESA_ID, abrirTela, configuracoesEmpresa, avaliacoes, empresa, entrarComo, escalas, exigirRedeCompleta, simularBackend, usuarios, type Cenario } from './mocks';
 import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
@@ -289,15 +289,38 @@ test.describe('folha e holerite', () => {
     await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
     const e = (await ultimaEscrita(page))!;
     expect(e.metodo).toBe('POST');
-    expect(e.corpo).toMatchObject({
-      tipo: 'DESPESA',
-      categoria: 'FOLHA_PAGAMENTO',
-      valor: TOTAL_FOLHA,
+    expect(e.caminho).toMatch(/\/equipe\/folha\/[^/]+\/lancar-contas-a-pagar$/);
+    expect(e.corpo).toEqual({
+      mes_referencia: '11/2026',
       data_vencimento: '2026-12-05',
-      status: 'PENDENTE',
-      descricao: 'Folha de Pagamento & Comissões — Mês 11/2026',
+      incluir_vales: true,
+      descricao_custom: 'Folha de Pagamento & Comissões — Mês 11/2026',
     });
     await expect(page.getByRole('status').filter({ hasText: 'agendada' })).toBeVisible();
+  });
+
+  test('F10: dia de pagamento 31 em mês de 30 dias vence no último dia (30/11), não em 31/11', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    // registrada depois da simulação para valer antes dela
+    await page.route(/\/empresas\/[^/]+\/configuracoes$/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify({ ...configuracoesEmpresa, dia_pagamento_folha: 31 }),
+      })
+    );
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'equipe');
+    await irParaAba(page, 'Folha');
+    await page.getByLabel('Mês de referência').fill('2026-10');
+    await page.getByRole('button', { name: /Lançar em contas a pagar/ }).click();
+    const d = page.getByRole('dialog', { name: 'Lançar folha em contas a pagar?' });
+    await expect(d).toContainText('30/11/2026');
+    await d.getByRole('button', { name: /Lançar folha de/ }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    expect((await ultimaEscrita(page))!.corpo).toMatchObject({ mes_referencia: '10/2026', data_vencimento: '2026-11-30' });
   });
 
   test('holerite: bloco branco com tinta preta, mesmos valores, cargo legível, mês por extenso e empresa', async ({ page }, info) => {

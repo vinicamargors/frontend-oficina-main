@@ -1,3 +1,4 @@
+import { formatBRL } from '../lib/format';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../api/client';
 import { hojeLocalISO } from '../lib/data';
@@ -38,10 +39,6 @@ const CATEGORIAS_PADRAO = [
   'DIVERSOS',
 ];
 
-const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    Number(valor || 0)
-  );
 
 // Gerador vetorial nativo de Código de Barras Code 128 (padrão universal B)
 // Sem nenhuma dependência externa, 100% offline e ultra-nítido na impressão térmica

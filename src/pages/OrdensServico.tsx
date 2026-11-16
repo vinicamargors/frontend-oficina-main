@@ -1,3 +1,4 @@
+import { formatBRL, linkWhatsApp } from '../lib/format';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api, OrdenacaoOS } from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -69,10 +70,6 @@ const ROTULO_TIPO_ITEM: Record<TipoItemOS, string> = {
   TERCEIRIZADO: 'Terceirizado',
 };
 
-const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    Number(valor || 0)
-  );
 
 const formatDataHora = (iso?: string | null) => {
   if (!iso) return '—';
@@ -390,6 +387,10 @@ export function OrdensServico({
     });
   }, [estoque, buscaEstoqueTexto]);
 
+  // Ref: o refresh de token troca o objeto `user`; como dependência reabriria a OS (e perderia o que foi digitado)
+  const userRef = useRef(user);
+  userRef.current = user;
+
   const abrirBancadaOS = useCallback(
     async (osId: string, mensagemInicial: string | null = null) => {
       setSelectedOsId(osId);
@@ -414,14 +415,14 @@ export function OrdensServico({
           dossieRes.ordem.km_atual != null ? String(dossieRes.ordem.km_atual) : ''
         );
         setEditProblema(dossieRes.ordem.descricao_problema || '');
-        setEditMecanicoId(dossieRes.ordem.mecanico_responsavel_id || user?.id || '');
+        setEditMecanicoId(dossieRes.ordem.mecanico_responsavel_id || userRef.current?.id || '');
         setEditFormaPagamento(dossieRes.ordem.forma_pagamento || 'PIX');
 
         api
           .getUsuarios(empresaId)
           .then((lista) => setMecanicos(lista.filter((u) => u.ativo)))
           .catch(() => {
-            if (user) setMecanicos([user]);
+            if (userRef.current) setMecanicos([userRef.current]);
           });
       } catch (err: unknown) {
         const e = err as Error;
@@ -430,7 +431,7 @@ export function OrdensServico({
         setLoadingDossie(false);
       }
     },
-    [empresaId, user]
+    [empresaId]
   );
 
   const sincronizarDossieSilencioso = useCallback(
@@ -1048,8 +1049,7 @@ export function OrdensServico({
       .filter(Boolean)
       .join('\n');
 
-    const base = fone ? `https://wa.me/55${fone}` : 'https://wa.me/';
-    return `${base}?text=${encodeURIComponent(texto)}`;
+    return linkWhatsApp(fone, texto);
   };
 
   const aplicarAtalhoPeriodo = (dias: number | null) => {

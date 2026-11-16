@@ -1,3 +1,4 @@
+import { formatBRL, linkWhatsApp } from '../../lib/format';
 import { MessageCircle } from 'lucide-react';
 import type { StatusOS, UltimaOS } from '../../types';
 import { Button, PlateChip, StatusBadge } from '../../components/ui';
@@ -5,8 +6,6 @@ import { MarcaAtraso } from '../../components/MarcaAtraso';
 import { diasDesde, nivelAtraso, textoDias } from '../radar/diasNaEtapa';
 import { proximaEtapa } from './etapas';
 
-const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(valor || 0));
 
 /**
  * Uma OS na lista: a linha inteira abre a bancada; à direita o WhatsApp e, só no desktop (≥1024), a ação única
@@ -79,7 +78,7 @@ export function LinhaOrdem({
           ) : null}
           {fone && (
             <a
-              href={`https://wa.me/55${fone}`}
+              href={linkWhatsApp(fone)}
               target="_blank"
               rel="noreferrer"
               aria-label={`Conversar no WhatsApp com ${clienteNome}`}

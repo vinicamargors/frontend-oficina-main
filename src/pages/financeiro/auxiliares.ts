@@ -1,3 +1,5 @@
+import { formatBRL, formatData } from '../../lib/format';
+export { formatBRL, formatData };
 import type { StatusTransacao, TipoTransacao } from '../../types';
 import { dataLocalISO } from '../../lib/data';
 
@@ -14,20 +16,7 @@ export const PERIODOS: { id: AtalhoPeriodo | 'CUSTOM'; rotulo: string }[] = [
   { id: 'CUSTOM', rotulo: 'Personalizado' },
 ];
 
-export const formatBRL = (valor?: number | null) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    Number(valor || 0)
-  );
 
-export const formatData = (iso?: string | null) => {
-  if (!iso) return '—';
-  try {
-    const [y, m, d] = iso.slice(0, 10).split('-');
-    return `${d}/${m}/${y}`;
-  } catch {
-    return iso.slice(0, 10);
-  }
-};
 
 /** Percentual com uma casa e vírgula (só exibição; o CSV mantém o formato original). */
 export const formatPct = (valor: number) => `${valor.toFixed(1).replace('.', ',')}%`;

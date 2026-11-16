@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MessageCircle, Star } from 'lucide-react';
 import { api } from '../../api/client';
+import { linkWhatsApp } from '../../lib/format';
 import { Button, classesBotao } from '../../components/ui';
 
 interface Props {
@@ -34,8 +35,7 @@ export function PedirAvaliacao({ empresaId, osId, status, nomeCliente, telefone,
         'Conta pra gente como foi o serviço no seu carro? Leva menos de 1 minuto:',
         `${window.location.origin}${caminho}`,
       ].join('\n');
-      const fone = telefone.replace(/\D/g, '');
-      setUrl(`${fone ? `https://wa.me/55${fone}` : 'https://wa.me/'}?text=${encodeURIComponent(texto)}`);
+      setUrl(linkWhatsApp(telefone, texto));
     } catch (e) {
       setErro((e as Error).message || 'Não foi possível gerar o link de avaliação.');
     } finally {

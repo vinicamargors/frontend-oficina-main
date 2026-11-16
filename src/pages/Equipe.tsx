@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../api/client';
 import { dataLocalISO, hojeLocalISO } from '../lib/data';
+import { linkWhatsApp } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import {
   Usuario,
@@ -466,10 +467,7 @@ export function Equipe({ empresaId }: EquipeProps) {
     if (!linkConviteGerado) handleGerarConvite();
     const tel = telConvite.replace(/\D/g, '');
     const msg = `Olá ${nomeConvite || 'Colaborador'}, você foi convidado para a equipe no Mecanify (${cargoConvite}). Crie sua senha e acesse seu painel aqui: ${linkConviteGerado}`;
-    const waUrl = tel
-      ? `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-    window.open(waUrl, '_blank');
+    window.open(linkWhatsApp(tel, msg), '_blank');
   };
 
   // Automação: Lançar Folha no Contas a Pagar (Sem dados fictícios) — valores mostrados na folha de confirmação
@@ -481,25 +479,21 @@ export function Equipe({ empresaId }: EquipeProps) {
     const [ano, mes] = mesFolhaRef.split('-');
     try {
       setProcessando(true);
-      await api.criarTransacaoFinanceira({
-        empresa_id: empresaId,
-        tipo: 'DESPESA',
-        descricao: `Folha de Pagamento & Comissões — Mês ${mes}/${ano}`,
-        categoria: 'FOLHA_PAGAMENTO',
-        valor: totalFolhaGeral,
+      // O servidor soma a folha (a tela só mostra a prévia) e grava a despesa
+      const r = await api.lancarFolhaContasAPagar(empresaId, {
+        mes_referencia: `${mes}/${ano}`,
         data_vencimento: dataVencimentoFolha,
-        status: 'PENDENTE',
-        forma_pagamento: 'TED / Transferência',
-        observacoes: `Lançamento automático de folha (${usuariosAtivos.length} colaboradores ativos).`,
+        incluir_vales: true,
+        descricao_custom: `Folha de Pagamento & Comissões — Mês ${mes}/${ano}`,
       });
       setConfirmarFolhaAberto(false);
       dispararFeedback(
         `Folha de ${formatBRL(
-          totalFolhaGeral
+          r.valor_total_folha
         )} agendada com sucesso em contas a pagar para ${formatData(dataVencimentoFolha)}!`
       );
-    } catch {
-      setErroFolha('Erro ao agendar folha no financeiro.');
+    } catch (e) {
+      setErroFolha((e as Error).message || 'Erro ao agendar folha no financeiro.');
     } finally {
       setProcessando(false);
     }

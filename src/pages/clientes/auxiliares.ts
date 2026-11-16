@@ -1,13 +1,9 @@
 import { Cliente, Veiculo } from '../../types';
+import { linkWhatsApp } from '../../lib/format';
 
 export const PAGE_SIZE = 50;
 
-export function formatarMoeda(valor: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(valor || 0);
-}
+export { formatBRL as formatarMoeda } from '../../lib/format';
 
 export function formatarDataCurta(iso?: string | null): string {
   if (!iso) return '—';
@@ -26,11 +22,10 @@ export function montarLinkWhatsApp(telefone?: string | null, nomeCliente?: strin
   if (!telefone) return null;
   const digitos = telefone.replace(/\D/g, '');
   if (digitos.length < 10) return null;
-  const foneComDdi = digitos.startsWith('55') && digitos.length >= 12 ? digitos : `55${digitos}`;
   const saudacao = nomeCliente
     ? `Olá ${nomeCliente.split(' ')[0]}, tudo bem? Aqui é da oficina sobre${placa ? ` o veículo ${placa}` : ' seu atendimento'}.`
     : 'Olá, tudo bem? Aqui é da oficina.';
-  return `https://wa.me/${foneComDdi}?text=${encodeURIComponent(saudacao)}`;
+  return linkWhatsApp(digitos, saudacao);
 }
 
 export function agruparPor<T>(itens: T[], chave: (item: T) => string | null | undefined): Record<string, T[]> {
