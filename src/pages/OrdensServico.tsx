@@ -1083,12 +1083,12 @@ export function OrdensServico({
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4 bg-surface border-2 border-line rounded-lg p-5">
+        <div className="flex flex-col gap-4 rounded-2xl bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-ink text-balance">
+            <h1 className="text-base font-semibold sm:text-lg text-ink text-balance sm:text-[1.375rem]">
               Dar entrada em veículo (nova OS)
             </h1>
-            <p className="text-base text-ink-muted mt-1 text-pretty">
+            <p className="mt-1 text-sm text-ink-muted text-pretty">
               1º Escolha o cliente (por placa, nome, CPF ou telefone) e 2º selecione o
               veículo dele.
             </p>
@@ -1096,7 +1096,7 @@ export function OrdensServico({
           <button
             type="button"
             onClick={() => setView('lista')}
-            className="min-h-[54px] px-5 py-2.5 rounded-xl bg-surface hover:bg-muted border-2 border-line-strong text-ink font-semibold text-base flex items-center gap-2 cursor-pointer shrink-0"
+            className="flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg bg-muted px-4 text-sm font-medium text-ink hover:bg-line sm:w-auto"
           >
             <ArrowLeft className="w-5 h-5 text-brand-ink" aria-hidden="true" />
             <span>Voltar ao pátio</span>
@@ -1115,11 +1115,11 @@ export function OrdensServico({
 
         <form
           onSubmit={handleCriarNovaOS}
-          className="bg-surface border-2 border-line rounded-lg p-5 sm:p-7 space-y-6"
+          className="bg-surface rounded-2xl p-4 sm:p-6 space-y-6"
         >
-          <fieldset className="bg-sunken border-2 border-line rounded-lg p-5 space-y-4">
+          <fieldset className="bg-muted rounded-xl p-4 sm:p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <legend className="text-xl font-semibold text-ink flex items-center gap-2">
+              <legend className="text-base font-semibold sm:text-lg text-ink flex items-center gap-2">
                 <User className="w-6 h-6 text-brand-ink" aria-hidden="true" />
                 <span>1. Escolher Cliente</span>
               </legend>
@@ -1350,9 +1350,9 @@ export function OrdensServico({
           </fieldset>
 
           {(clienteSelecionado || modoClienteOS === 'NOVO_CLIENTE') && (
-            <fieldset className="bg-sunken border-2 border-line rounded-lg p-5 space-y-4">
+            <fieldset className="bg-muted rounded-xl p-4 sm:p-5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <legend className="text-xl font-semibold text-ink flex items-center gap-2">
+                <legend className="text-base font-semibold sm:text-lg text-ink flex items-center gap-2">
                   <Car className="w-6 h-6 text-brand-ink" aria-hidden="true" />
                   <span>
                     2. Veículo de{' '}
@@ -1482,7 +1482,7 @@ export function OrdensServico({
                         value={novaPlaca}
                         onChange={(e) => setNovaPlaca(e.target.value.toUpperCase())}
                         placeholder="ABC1D23…"
-                        className="w-full min-h-[54px] px-4 py-2.5 bg-surface border-2 border-brand rounded-xl font-mono text-xl font-semibold text-ink uppercase tracking-widest"
+                        className="w-full min-h-[54px] px-4 py-2.5 bg-surface border-2 border-brand rounded-xl font-mono text-base font-semibold sm:text-lg text-ink uppercase tracking-widest"
                       />
                     </div>
 
