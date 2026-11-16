@@ -32,6 +32,9 @@ export function AbaBalanco({
 }) {
   return (
     <Panel espaco="nenhum" className="px-5 py-2 lg:px-6 lg:py-4">
+      <p role="note" className="mt-3 rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink-muted text-pretty">
+        <strong className="font-semibold text-ink">Valores estimados.</strong> Somamos as ordens de serviço e os lançamentos do período. Não é o saldo do banco nem um balanço contábil: confira o extrato antes de decidir.
+      </p>
       <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-12">
         <section aria-labelledby="titulo-ativo" className="pt-3">
           <h2 id="titulo-ativo" className="text-base font-semibold text-ink text-balance">
@@ -39,7 +42,7 @@ export function AbaBalanco({
           </h2>
           <p className="text-xs text-ink-muted text-pretty">Bens e direitos</p>
           <dl className="mt-1 divide-y divide-line">
-            <Linha rotulo="Caixa e bancos" dica="OS pagas + receitas avulsas recebidas" valor={<span className="text-ink">{formatBRL(caixaTotal)}</span>} />
+            <Linha rotulo="Caixa e bancos" dica="Estimativa: OS pagas + receitas avulsas recebidas" valor={<span className="text-ink">{formatBRL(caixaTotal)}</span>} />
             <Linha rotulo="Contas a receber" dica="OS em aberto + entradas pendentes" valor={<span className="text-ink">{formatBRL(totalAReceber)}</span>} />
             <Linha rotulo="Patrimônio em estoque" dica="Peças no almoxarifado, pelo custo" valor={<span className="text-ink">{formatBRL(patrimonioEstoque)}</span>} />
             <Linha rotulo="Total do ativo" forte valor={<span className="text-ink">{formatBRL(totalAtivo)}</span>} />
