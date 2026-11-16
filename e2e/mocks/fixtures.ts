@@ -198,6 +198,13 @@ export const estoque: EstoqueItem[] = ITENS.map(([nome, categoria, quantidade, c
 
 const abaixoDoMinimo = (e: EstoqueItem) => e.quantidade < e.minimo_alerta;
 
+// Como o servidor: padrão da oficina + as categorias que os itens já usam
+export const CATEGORIAS_PADRAO_ESTOQUE = ['PECAS', 'FLUIDOS', 'PNEUS', 'ELETRICA', 'ACESSORIOS', 'FERRAMENTAS', 'DIVERSOS'];
+export function categoriasEstoque(cenario: Cenario): string[] {
+  const base = cenario === 'vazio' ? [] : estoque;
+  return Array.from(new Set([...CATEGORIAS_PADRAO_ESTOQUE, ...base.map((i) => i.categoria)]));
+}
+
 export function listaEstoque(cenario: Cenario, categoria?: string | null): EstoqueListResponse {
   const base = cenario === 'vazio' ? [] : estoque;
   const itens = categoria ? base.filter((i) => i.categoria === categoria.toUpperCase()) : base;

@@ -237,6 +237,19 @@ export const api = {
       `/estoque/${empresaId}${categoria ? `?categoria=${encodeURIComponent(categoria)}` : ''}`
     ),
 
+  // Categorias da oficina (servidor): padrão + criadas + as que os itens usam
+  listarCategoriasEstoque: (empresaId: string) => request<string[]>(`/estoque/${empresaId}/categorias`),
+
+  criarCategoriaEstoque: (empresaId: string, nome: string) =>
+    post<{ nome: string }>(`/estoque/${empresaId}/categorias`, { nome }),
+
+  // Os itens da categoria vão para DIVERSOS no próprio servidor
+  excluirCategoriaEstoque: (empresaId: string, nome: string) =>
+    request<{ status: string; itens_reclassificados: number }>(
+      `/estoque/${empresaId}/categorias/${encodeURIComponent(nome)}`,
+      { method: 'DELETE' }
+    ),
+
   criarItemEstoque: (dados: EstoqueCreateInput) =>
     post<EstoqueItem>('/estoque/', {
       ...dados,
