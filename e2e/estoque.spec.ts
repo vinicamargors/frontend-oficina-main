@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { abrirTela, entrarComo, estoque, exigirRedeCompleta, simularBackend, type Cenario } from './mocks';
+import { EMPRESA_ID, abrirTela, entrarComo, estoque, exigirRedeCompleta, simularBackend, type Cenario } from './mocks';
 import { coletarErros, contextoDoProjeto, exigirFocoNoPrimeiroCampo } from './contexto';
 
 type Escrita = { metodo: string; caminho: string; corpo: Record<string, unknown> } | undefined;
@@ -356,10 +356,73 @@ test.describe('categorias', () => {
     await page.getByRole('button', { name: /^Categorias/ }).click();
     await d.getByRole('button', { name: 'Excluir categoria Fluidos' }).click();
     await expect(d.getByRole('alert')).toContainText('reclassificá-los para "Diversos"');
-    expect(await ultimaEscrita(page)).toBeUndefined();
+    // a última escrita continua sendo a criação: perguntar não exclui nada
+    expect((await ultimaEscrita(page))!.metodo).toBe('POST');
     await d.getByRole('button', { name: 'Manter categoria' }).click();
     await expect(d.getByRole('alert')).toHaveCount(0);
-    expect(await ultimaEscrita(page)).toBeUndefined();
+    expect((await ultimaEscrita(page))!.metodo).toBe('POST');
+  });
+
+  test('F61: criar categoria grava no servidor (nome normalizado); excluir com itens é uma chamada só, sem PUT por item', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    const d = page.getByRole('dialog', { name: 'Gerenciar categorias' });
+    await d.getByLabel(/Nome da nova categoria/).fill('  Lanternagem ');
+    await d.getByRole('button', { name: 'Criar' }).click();
+    await expect.poll(() => ultimaEscrita(page)).toBeTruthy();
+    let e = (await ultimaEscrita(page))!;
+    expect(e.metodo).toBe('POST');
+    expect(e.caminho).toMatch(/\/estoque\/[^/]+\/categorias$/);
+    expect(e.corpo).toEqual({ nome: 'LANTERNAGEM' });
+
+    await d.getByRole('button', { name: 'Excluir categoria Fluidos' }).click();
+    await d.getByRole('button', { name: 'Reclassificar e excluir' }).click();
+    await expect.poll(async () => (await ultimaEscrita(page))!.metodo).toBe('DELETE');
+    e = (await ultimaEscrita(page))!;
+    expect(e.caminho).toMatch(/\/estoque\/[^/]+\/categorias\/FLUIDOS$/);
+  });
+
+  test('F61: categorias que só existiam neste navegador sobem para o servidor uma vez e a chave local some', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    const posts: unknown[] = [];
+    await simularBackend(page, 'cheio');
+    page.on('request', (r) => {
+      if (r.method() === 'POST' && /\/estoque\/[^/]+\/categorias$/.test(r.url())) posts.push(r.postDataJSON());
+    });
+    await entrarComo(page, 'DONO', tema);
+    await page.addInitScript(([chave]) => localStorage.setItem(chave, JSON.stringify(['PECAS', 'Vidros', 'LUBRIFICANTES'])), [`autotec_categorias_${EMPRESA_ID}`]);
+    await abrirTela(page, 'estoque');
+    await expect(chips(page).getByRole('button', { name: /^Vidros/ })).toBeVisible();
+    // PECAS o servidor já tinha; no dev (StrictMode) a carga roda duas vezes e o servidor ignora o repetido
+    expect([...new Set(posts.map((x) => JSON.stringify(x)))]).toEqual([JSON.stringify({ nome: 'Vidros' }), JSON.stringify({ nome: 'LUBRIFICANTES' })]);
+    expect(await page.evaluate((c) => localStorage.getItem(c), `autotec_categorias_${EMPRESA_ID}`)).toBeNull();
+  });
+
+  test('F61: só as categorias falham (500): as peças continuam na lista, com aviso; excluir devolve o foco ao campo da folha', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await simularBackend(page, 'cheio');
+    await page.route('**/api/v1/estoque/*/categorias', (route) =>
+      route.request().method() === 'GET'
+        ? route.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'cat down' }) })
+        : route.fallback(),
+    );
+    await entrarComo(page, 'DONO', tema);
+    await abrirTela(page, 'estoque');
+    await expect(lista(page).getByRole('listitem')).toHaveCount(estoque.length);
+    await expect(page.getByRole('alert').first()).toContainText('categorias');
+    await expect(chips(page).getByRole('button', { name: /^Fluidos/ })).toBeVisible(); // derivada das peças
+  });
+
+  test('F61: depois de excluir uma categoria o foco fica no campo da folha (não vai para o início da página)', async ({ page }, info) => {
+    const { tema } = contextoDoProjeto(info);
+    await abrir(page, tema);
+    await page.getByRole('button', { name: /^Categorias/ }).click();
+    const d = page.getByRole('dialog', { name: 'Gerenciar categorias' });
+    await d.getByRole('button', { name: 'Excluir categoria Fluidos' }).click();
+    await d.getByRole('button', { name: 'Reclassificar e excluir' }).click();
+    await expect(d.getByLabel(/Nome da nova categoria/)).toBeFocused();
+    await expect(d.getByRole('button', { name: 'Excluir categoria Fluidos' })).toHaveCount(0);
   });
 
   test('reclassificar que falha: aviso dentro da folha, sem diálogo nativo', async ({ page }, info) => {
@@ -370,16 +433,16 @@ test.describe('categorias', () => {
       void dl.dismiss();
     });
     await abrir(page, tema);
-    await page.route('**/api/v1/estoque/*/*', (r) =>
+    await page.route('**/api/v1/estoque/**', (r) =>
       r.request().method() === 'GET'
         ? r.fallback()
-        : r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'x' }) }),
+        : r.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ detail: 'Falha no servidor ao excluir' }) }),
     );
     await page.getByRole('button', { name: /^Categorias/ }).click();
     const d = page.getByRole('dialog', { name: 'Gerenciar categorias' });
     await d.getByRole('button', { name: 'Excluir categoria Fluidos' }).click();
     await d.getByRole('button', { name: 'Reclassificar e excluir' }).click();
-    await expect(d.getByRole('alert')).toContainText('Falha ao reclassificar itens da categoria.');
+    await expect(d.getByRole('alert')).toContainText('Falha no servidor ao excluir');
     expect(nativos).toEqual([]);
   });
 });
@@ -479,6 +542,9 @@ test.describe('menu por teclado e categorias ambíguas', () => {
         body: JSON.stringify({ itens, stats: { total_itens: 2, estoque_baixo: 0, valor_total_custo: 0, valor_total_venda: 0 } }),
       });
     });
+    await page.route('**/api/v1/estoque/*/categorias', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(['ELETRICA', 'ELÉTRICA']) }),
+    );
     await entrarComo(page, 'DONO', tema);
     await abrirTela(page, 'estoque');
     const a = chips(page).getByRole('button', { name: /^Elétrica \(ELETRICA\)/ });
