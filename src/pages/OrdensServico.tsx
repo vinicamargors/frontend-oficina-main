@@ -1106,7 +1106,7 @@ export function OrdensServico({
         {erroOperacao && (
           <div
             aria-live="polite"
-            className="p-4 rounded-xl bg-danger/15 border-2 border-danger text-danger flex items-center gap-3 text-base font-medium"
+            className="p-4 rounded-xl bg-danger/15 text-danger flex items-center gap-3 text-base font-medium"
           >
             <AlertTriangle className="w-6 h-6 text-danger shrink-0" aria-hidden="true" />
             <span>{erroOperacao}</span>
@@ -1180,7 +1180,7 @@ export function OrdensServico({
                       autoCapitalize="off"
                       spellCheck={false}
                       placeholder="Comece a digitar nome, telefone, CPF ou placa (ex.: FUK2555)…"
-                      className="w-full min-h-[56px] pl-11 pr-4 py-2.5 bg-surface border-2 border-line-strong focus:border-brand rounded-xl text-ink text-base font-medium"
+                      className={`${CLASSE_CAMPO} pl-10`}
                     />
                   </div>
                 </div>
@@ -1189,7 +1189,7 @@ export function OrdensServico({
                   <div
                     role="listbox"
                     aria-label="Clientes encontrados"
-                    className="bg-surface border-2 border-brand rounded-xl divide-y divide-line max-h-72 overflow-y-auto"
+                    className="bg-surface rounded-xl shadow-card ring-1 ring-line divide-y divide-line max-h-72 overflow-y-auto"
                   >
                     {clientesFiltrados.length === 0 ? (
                       <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1259,7 +1259,7 @@ export function OrdensServico({
                 )}
 
                 {clienteSelecionado && (
-                  <div className="bg-muted/40 border-2 border-brand rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="bg-muted rounded-xl ring-2 ring-brand p-3.5 flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-semibold text-warning">
                         Cliente selecionado
@@ -1302,7 +1302,7 @@ export function OrdensServico({
                     value={novoClienteNome}
                     onChange={(e) => setNovoClienteNome(e.target.value)}
                     placeholder="Ex.: Marcos Oliveira…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-surface border-2 border-line rounded-xl text-ink text-base"
+                    className={`${CLASSE_CAMPO} `}
                   />
                 </div>
 
@@ -1322,7 +1322,7 @@ export function OrdensServico({
                     value={novoClienteTelefone}
                     onChange={(e) => setNovoClienteTelefone(e.target.value)}
                     placeholder="(11) 99999-0000…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-surface border-2 border-line rounded-xl text-ink font-mono text-base tabular-nums"
+                    className={`${CLASSE_CAMPO} font-mono tabular-nums`}
                   />
                 </div>
 
@@ -1342,7 +1342,7 @@ export function OrdensServico({
                     value={novoClienteCpf}
                     onChange={(e) => setNovoClienteCpf(e.target.value)}
                     placeholder="000.000.000-00…"
-                    className="w-full min-h-[52px] px-4 py-2 bg-surface border-2 border-line rounded-xl text-ink font-mono text-base tabular-nums"
+                    className={`${CLASSE_CAMPO} font-mono tabular-nums`}
                   />
                 </div>
               </div>
@@ -1396,7 +1396,7 @@ export function OrdensServico({
 
               {modoClienteOS === 'BUSCAR' && modoVeiculoCliente === 'DO_CLIENTE' ? (
                 carrosDoClienteSelecionado.length === 0 ? (
-                  <div className="p-4 rounded-xl bg-surface border border-line flex items-center justify-between gap-4">
+                  <div className="p-4 rounded-xl bg-muted flex items-center justify-between gap-4">
                     <span className="text-sm text-ink-muted">
                       Este cliente ainda não possui veículos cadastrados.
                     </span>
@@ -1482,7 +1482,7 @@ export function OrdensServico({
                         value={novaPlaca}
                         onChange={(e) => setNovaPlaca(e.target.value.toUpperCase())}
                         placeholder="ABC1D23…"
-                        className="w-full min-h-[54px] px-4 py-2.5 bg-surface border-2 border-brand rounded-xl font-mono text-base font-semibold sm:text-lg text-ink uppercase tracking-widest"
+                        className={`${CLASSE_CAMPO} font-mono font-semibold uppercase tracking-widest`}
                       />
                     </div>
 
@@ -1525,7 +1525,7 @@ export function OrdensServico({
                         value={novoModelo}
                         onChange={(e) => setNovoModelo(e.target.value)}
                         placeholder="Ex.: Onix 1.0 Turbo…"
-                        className="w-full min-h-[48px] px-3.5 py-2 bg-surface border-2 border-line rounded-xl text-ink text-sm"
+                        className={`${CLASSE_CAMPO} `}
                       />
                     </div>
 
@@ -1543,7 +1543,7 @@ export function OrdensServico({
                         value={novaMarca}
                         onChange={(e) => setNovaMarca(e.target.value)}
                         placeholder="Chevrolet…"
-                        className="w-full min-h-[48px] px-3.5 py-2 bg-surface border-2 border-line rounded-xl text-ink text-sm"
+                        className={`${CLASSE_CAMPO} `}
                       />
                     </div>
 
@@ -1562,7 +1562,7 @@ export function OrdensServico({
                           value={novaCor}
                           onChange={(e) => setNovaCor(e.target.value)}
                           placeholder="Prata"
-                          className="w-full min-h-[48px] px-3 py-2 bg-surface border-2 border-line rounded-xl text-ink text-sm"
+                          className={`${CLASSE_CAMPO} `}
                         />
                       </div>
 
@@ -1582,7 +1582,7 @@ export function OrdensServico({
                           value={novoAno}
                           onChange={(e) => setNovoAno(e.target.value.replace(/\D/g, ''))}
                           placeholder="2022"
-                          className="w-full min-h-[48px] px-3 py-2 bg-surface border-2 border-line rounded-xl text-ink font-mono text-sm tabular-nums"
+                          className={`${CLASSE_CAMPO} font-mono tabular-nums`}
                         />
                       </div>
                     </div>
@@ -1609,7 +1609,7 @@ export function OrdensServico({
                 value={novaOsKm}
                 onChange={(e) => setNovaOsKm(e.target.value.replace(/\D/g, ''))}
                 placeholder="Ex.: 84500…"
-                className="w-full min-h-[54px] px-4 py-2.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink font-mono text-lg tabular-nums"
+                className={`${CLASSE_CAMPO} font-mono tabular-nums`}
               />
             </div>
 
@@ -1627,7 +1627,7 @@ export function OrdensServico({
                 value={novaOsProblema}
                 onChange={(e) => setNovaOsProblema(e.target.value)}
                 placeholder="Ex.: Barulho na suspensão dianteira e revisão de freios…"
-                className="w-full min-h-[54px] px-4 py-2.5 bg-sunken border-2 border-line focus:border-brand rounded-xl text-ink text-base"
+                className={`${CLASSE_CAMPO} `}
               />
             </div>
           </div>
@@ -1635,7 +1635,7 @@ export function OrdensServico({
           <button
             type="submit"
             disabled={criandoOS}
-            className="w-full min-h-[60px] px-6 py-3.5 rounded-xl bg-brand hover:bg-brand-hover text-on-brand font-semibold text-lg flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
+            className="w-full min-h-12 px-6 py-3 rounded-lg bg-brand hover:bg-brand-hover text-on-brand font-semibold text-base flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60"
           >
             <PlusCircle className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
             <span>
