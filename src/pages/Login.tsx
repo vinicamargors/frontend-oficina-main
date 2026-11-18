@@ -16,7 +16,7 @@ import {
   ClipboardCheck,
   ShieldCheck,
 } from "lucide-react";
-import { Button, Field, Logo, Tabs, ThemeToggle } from "../components/ui";
+import { Button, Field, Logo, MedidorSenha, Tabs, ThemeToggle } from "../components/ui";
 import { CLASSE_CAMPO } from "../components/ui/campo";
 
 type AuthMode = "login" | "cadastro" | "recuperar" | "nova-senha";
@@ -222,6 +222,15 @@ export function Login() {
         msg: "A senha precisa ter pelo menos 6 caracteres.",
       });
       senhaInputRef.current?.focus();
+      return;
+    }
+
+    if (mode === "cadastro" && trimmedSenha !== trimmedConfirmar) {
+      setErroCampo({
+        campo: "confirmar",
+        msg: "As duas senhas digitadas não conferem. Digite novamente.",
+      });
+      confirmarSenhaInputRef.current?.focus();
       return;
     }
 
@@ -609,9 +618,6 @@ export function Login() {
                 {mode !== "recuperar" && (
                   <Field
                     rotulo={mode === "nova-senha" ? "Nova senha" : "Senha"}
-                    dica={
-                      mode !== "login" ? "Mínimo de 6 caracteres." : undefined
-                    }
                     erro={erroDe("senha")}
                     anunciar
                     adorno={
@@ -640,6 +646,9 @@ export function Login() {
                       }
                       required
                       minLength={6}
+                      aria-describedby={
+                        mode !== "login" ? "medidor-senha" : undefined
+                      }
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
                       placeholder={
@@ -652,9 +661,21 @@ export function Login() {
                   </Field>
                 )}
 
-                {mode === "nova-senha" && (
+                {mode !== "login" && mode !== "recuperar" && (
+                  <MedidorSenha
+                    id="medidor-senha"
+                    senha={senha}
+                    contexto={{ oficina: nomeOficina, nome, email }}
+                  />
+                )}
+
+                {(mode === "nova-senha" || mode === "cadastro") && (
                   <Field
-                    rotulo="Repita a nova senha"
+                    rotulo={
+                      mode === "nova-senha"
+                        ? "Repita a nova senha"
+                        : "Repita a senha"
+                    }
                     erro={erroDe("confirmar")}
                     anunciar
                   >
@@ -672,6 +693,26 @@ export function Login() {
                     />
                   </Field>
                 )}
+                {(mode === "nova-senha" || mode === "cadastro") &&
+                  confirmarSenha.length > 0 && (
+                    <p
+                      role="status"
+                      aria-live="polite"
+                      className={`-mt-2 flex items-center gap-1.5 text-[0.8125rem] ${
+                        confirmarSenha === senha
+                          ? "text-success"
+                          : confirmarSenha.length >= senha.length
+                            ? "text-danger"
+                            : "text-ink-muted"
+                      }`}
+                    >
+                      {confirmarSenha === senha
+                        ? "As senhas conferem."
+                        : confirmarSenha.length >= senha.length
+                          ? "As senhas ainda não conferem."
+                          : "Continue digitando…"}
+                    </p>
+                  )}
 
                 <Button
                   type="submit"
