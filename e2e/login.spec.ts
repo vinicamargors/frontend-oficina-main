@@ -120,6 +120,48 @@ test.describe('login', () => {
     await centro();
   });
 
+  test('cadastro: medidor de força orienta sem bloquear; previsível fica fraca', async ({ page }) => {
+    await abrir(page, 'cadastro');
+    await page.getByLabel('Nome da oficina').fill('Auto Centro Irmãos Silva');
+    await page.getByLabel('Seu nome').fill('Carlos Mecânico');
+    const senha = page.getByLabel('Senha', { exact: true });
+    const nivel = page.locator('#medidor-senha').getByRole('status');
+    await expect(nivel).toHaveText('Crie uma senha');
+    await expect(page.locator('#medidor-senha').getByRole('list', { name: 'Dicas de senha' })).toContainText('8 caracteres');
+    await senha.fill('abcd');
+    await expect(nivel).toHaveText('Senha fraca');
+    await expect(page.locator('#medidor-senha')).toContainText('sequências');
+    await senha.fill('Carlos#Forte77x');
+    await expect(nivel).toHaveText('Senha fraca');
+    await expect(page.locator('#medidor-senha')).toContainText('nome da oficina');
+    await senha.fill('Pedro25031990!');
+    await expect(page.locator('#medidor-senha')).toContainText('datas');
+    await senha.fill('Tuboazul8Mel');
+    await expect(nivel).toHaveText('Senha boa');
+    await senha.fill('Tuboazul8!Mel#Cafe');
+    await expect(nivel).toHaveText('Senha forte');
+  });
+
+  test('cadastro: pede confirmar a senha e não envia se forem diferentes', async ({ page }) => {
+    await abrir(page, 'cadastro');
+    await page.getByLabel('Nome da oficina').fill('Oficina Modelo');
+    await page.getByLabel('Seu nome').fill('Ana');
+    await page.getByLabel('E-mail').fill('ana@oficina.com.br');
+    await page.getByLabel('Senha', { exact: true }).fill('Tuboazul8Mel');
+    const conf = page.getByLabel('Repita a senha');
+    await conf.fill('Tuboazul8Mex');
+    await expect(page.getByText('As senhas ainda não conferem.')).toBeVisible();
+    await page.getByRole('button', { name: 'Criar conta' }).last().click();
+    await expect(page.getByRole('alert').filter({ hasText: 'não conferem' })).toBeVisible();
+    await expect(conf).toBeFocused();
+    await conf.fill('Tuboazul8Mel');
+    await expect(page.getByText('As senhas conferem.')).toBeVisible();
+    // um único botão de mostrar senha, que mostra os dois campos
+    await expect(page.getByRole('button', { name: 'Mostrar senha' })).toHaveCount(1);
+    await page.getByRole('button', { name: 'Mostrar senha' }).click();
+    await expect(conf).toHaveAttribute('type', 'text');
+  });
+
   test('ThemeToggle de desktop tem ancestral posicionado (rola junto com a página)', async ({ page }, info) => {
     test.skip(contextoDoProjeto(info).largura < 1024, 'só desktop');
     await abrir(page);

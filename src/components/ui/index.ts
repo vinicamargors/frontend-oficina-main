@@ -5,6 +5,7 @@ export { StatusBadge } from './StatusBadge';
 export { STATUS_OS } from './status';
 export { Badge } from './Badge';
 export { Field } from './Field';
+export { MedidorSenha } from './MedidorSenha';
 export { Tabs, type TabItem } from './Tabs';
 export { PlateChip, formatarPlaca } from './PlateChip';
 export { Skeleton } from './Skeleton';

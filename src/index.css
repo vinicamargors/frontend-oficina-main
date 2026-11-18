@@ -214,3 +214,9 @@ progress.loading-spinner:indeterminate {
     display: none !important;
   }
 }
+
+/* O botão "mostrar senha" é do sistema: esconde o olho nativo do Edge/IE para não aparecerem dois */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
